@@ -32,11 +32,14 @@ function Header() {
 
   return (
     <header>
-      <Navbar bg="dark" variant="dark" expand="lg" collapseOnSelect>
+      <Navbar bg="light" variant="light" expand="lg" collapseOnSelect>
         <Container>
           <LinkContainer to="/">
             <Navbar.Brand>
-              <img src={logo} alt="Otaku Shop" />
+              <img 
+              width={350}
+              height={34}
+              src={logo} alt="CheapElectra." />
             </Navbar.Brand>
           </LinkContainer>
 
@@ -51,8 +54,8 @@ function Header() {
               navbarScroll
             >
               <LinkContainer to="/cart">
-                <Nav.Link>
-                  <i className="fas fa-shopping-cart"></i> Cart
+                <Nav.Link style={{ color: '#000' }}>
+                  <i className="fas fa-shopping-cart" style={{ color: '#000' }}></i> Cart
                 </Nav.Link>
               </LinkContainer>
 
@@ -68,8 +71,8 @@ function Header() {
                 </NavDropdown>
               ) : (
                 <LinkContainer to="/login">
-                  <Nav.Link>
-                    <i className="fas fa-user"></i> Login
+                  <Nav.Link style={{ color: '#000' }}>
+                    <i className="fas fa-user" style={{ color: '#000' }}></i> Login
                   </Nav.Link>
                 </LinkContainer>
               )}
