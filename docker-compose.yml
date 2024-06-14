@@ -1,0 +1,23 @@
+# docker-compose.yml
+
+version: '3'
+
+services:
+  backend:
+    image: skudsi/ecommerce-django-react-backend:latest
+    container_name: backend
+    command: gunicorn backend.wsgi:application --bind 0.0.0.0:8000
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=1
+    volumes:
+      - ./backend:/app
+
+  frontend:
+    image: skudsi/ecommerce-django-react-frontend:latest
+    container_name: frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
