@@ -1,5 +1,7 @@
 pipeline {
-    agent any
+    agent {
+        label 'docker'
+    }
     environment {
         REPO_URL = 'https://github.com/skudsi490/ecommerce-django-react.git'
         DOCKER_IMAGE_BACKEND = 'skudsi/ecommerce-django-react-backend'
@@ -8,6 +10,11 @@ pipeline {
         JIRA_URL = 'https://ecommerce-django-react.atlassian.net/'
         JIRA_USER = 'skudsi490@gmail.com'
         NODE_OPTIONS = "--openssl-legacy-provider"
+        JIRA_API_TOKEN = credentials('JIRA_API_TOKEN')
+        JIRA_SITE = credentials('JIRA_SITE')
+        JIRA_PROJECT_KEY = credentials('JIRA_PROJECT_KEY')
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub')
+        AWS_CREDENTIALS = credentials('aws-credentials')
     }
 
     stages {
@@ -19,7 +26,7 @@ pipeline {
         stage('Build Backend') {
             steps {
                 script {
-                    docker.withRegistry('', 'dockerhub') {
+                    docker.withRegistry('', "${DOCKERHUB_CREDENTIALS}") {
                         def backendImage = docker.build("${DOCKER_IMAGE_BACKEND}:latest", "./backend")
                         backendImage.push('latest')
                     }
@@ -29,7 +36,7 @@ pipeline {
         stage('Build Frontend') {
             steps {
                 script {
-                    docker.withRegistry('', 'dockerhub') {
+                    docker.withRegistry('', "${DOCKERHUB_CREDENTIALS}") {
                         def frontendImage = docker.build("${DOCKER_IMAGE_FRONTEND}:latest", "./frontend")
                         frontendImage.push('latest')
                     }
@@ -75,7 +82,7 @@ pipeline {
             }
             steps {
                 script {
-                    docker.withRegistry('', 'dockerhub') {
+                    docker.withRegistry('', "${DOCKERHUB_CREDENTIALS}") {
                         docker.image("${DOCKER_IMAGE_BACKEND}:latest").push('latest')
                         docker.image("${DOCKER_IMAGE_FRONTEND}:latest").push('latest')
                     }
@@ -107,7 +114,7 @@ pipeline {
                 def jiraIssue = jiraNewIssue site: "${JIRA_SITE}",
                                              issue: [
                                                  fields: [
-                                                     project: [key: credentials('JIRA_PROJECT_KEY')],
+                                                     project: [key: "${JIRA_PROJECT_KEY}"],
                                                      summary: "Build failure in Jenkins job ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                                                      description: errorReport,
                                                      issuetype: [name: 'Bug']

@@ -9,7 +9,7 @@ To run the end-to-end tests, use the following command:
 docker-compose -f docker-compose.e2e.yml up --abort-on-container-exit
 
 
-ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.75.89.248
+ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.67.135.52
 
 Having logs for the SSH :
 ssh -vvv -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.70.222.92
@@ -24,6 +24,9 @@ sudo systemctl status jenkins
 
 Get the Jinkins Admin Password:
 sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+
+Check status of Docker :
+sudo systemctl status docker
 
 
 Check status of SSH:
@@ -46,3 +49,6 @@ python manage.py runserver
 npm start
 
 
+git add Jenkinsfile
+git commit -m "Update Jenkinsfile"
+git push origin main

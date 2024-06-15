@@ -148,8 +148,10 @@ resource "aws_instance" "jenkins" {
                   exit=$?
                   count=$((count + 1))
                   if [ $count -lt $retries ]; then
+                    echo "Retry $count/$retries:"
                     sleep 10
                   else
+                    echo "Command failed after $retries attempts."
                     return $exit
                   fi
                 done
@@ -175,11 +177,19 @@ resource "aws_instance" "jenkins" {
               retry_command sudo apt-get install -y jenkins
 
               echo "Starting Jenkins service..."
-              sudo systemctl start jenkins
-              sudo systemctl enable jenkins
+              retry_command sudo systemctl start jenkins
+              retry_command sudo systemctl enable jenkins
+
+              echo "Installing Docker..."
+              retry_command sudo apt-get update -y
+              retry_command sudo apt-get install -y docker.io
+              retry_command sudo systemctl start docker
+              retry_command sudo systemctl enable docker
+              retry_command sudo usermod -aG docker jenkins
+              retry_command sudo usermod -aG docker ubuntu
 
               echo "Allowing port 8080 through UFW..."
-              sudo ufw allow 8080
+              retry_command sudo ufw allow 8080
               EOF
 }
 
@@ -198,9 +208,17 @@ resource "aws_instance" "my_ubuntu" {
 
   user_data = <<-EOF
               #!/bin/bash
+              exec > /var/log/user-data.log 2>&1
+              set -o xtrace
+              
+              echo "Updating apt repository..."
               sudo apt update -y
+              echo "Installing Docker..."
               sudo apt install -y docker.io
+              echo "Starting Docker..."
               sudo systemctl start docker
+              sudo systemctl enable docker
+              echo "Adding user to Docker group..."
               sudo usermod -aG docker ubuntu
               EOF
 }
