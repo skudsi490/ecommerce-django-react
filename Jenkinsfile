@@ -18,7 +18,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git url: "${REPO_URL}"
+                git url: "${REPO_URL}", branch: 'main'
             }
         }
         stage('Build Backend') {
@@ -96,7 +96,7 @@ pipeline {
     post {
         failure {
             script {
-                def errorReport = currentBuild.rawBuild.getLog(50).join("\n")
+                def errorReport = currentBuild.log.take(50).join("\n")
                 emailext (
                     to: 'skudsi490@gmail.com',
                     subject: "Build failed in Jenkins: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
