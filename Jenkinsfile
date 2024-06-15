@@ -37,7 +37,7 @@ pipeline {
             steps {
                 script {
                     withDockerCredentials {
-                        docker.withRegistry('https://index.docker.io/v1/', "${DOCKERHUB_CREDENTIALS}") {
+                        docker.withRegistry('https://index.docker.io/v1/', '') {
                             def backendImage = docker.build("${DOCKER_IMAGE_BACKEND}:latest", "./backend")
                             backendImage.push('latest')
                         }
@@ -49,7 +49,7 @@ pipeline {
             steps {
                 script {
                     withDockerCredentials {
-                        docker.withRegistry('https://index.docker.io/v1/', "${DOCKERHUB_CREDENTIALS}") {
+                        docker.withRegistry('https://index.docker.io/v1/', '') {
                             def frontendImage = docker.build("${DOCKER_IMAGE_FRONTEND}:latest", "./frontend")
                             frontendImage.push('latest')
                         }
@@ -97,7 +97,7 @@ pipeline {
             steps {
                 script {
                     withDockerCredentials {
-                        docker.withRegistry('https://index.docker.io/v1/', "${DOCKERHUB_CREDENTIALS}") {
+                        docker.withRegistry('https://index.docker.io/v1/', '') {
                             docker.image("${DOCKER_IMAGE_BACKEND}:latest").push('latest')
                             docker.image("${DOCKER_IMAGE_FRONTEND}:latest").push('latest')
                         }
