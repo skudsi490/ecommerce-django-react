@@ -26,7 +26,7 @@ pipeline {
         stage('Test Docker Login') {
             steps {
                 script {
-                    withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                    withDockerCredentials {
                         sh 'docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD'
                         echo 'Docker login successful!'
                     }
@@ -36,7 +36,7 @@ pipeline {
         stage('Build Backend') {
             steps {
                 script {
-                    withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                    withDockerCredentials {
                         docker.withRegistry('https://index.docker.io/v1/', "${DOCKERHUB_CREDENTIALS}") {
                             def backendImage = docker.build("${DOCKER_IMAGE_BACKEND}:latest", "./backend")
                             backendImage.push('latest')
@@ -48,7 +48,7 @@ pipeline {
         stage('Build Frontend') {
             steps {
                 script {
-                    withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                    withDockerCredentials {
                         docker.withRegistry('https://index.docker.io/v1/', "${DOCKERHUB_CREDENTIALS}") {
                             def frontendImage = docker.build("${DOCKER_IMAGE_FRONTEND}:latest", "./frontend")
                             frontendImage.push('latest')
@@ -96,7 +96,7 @@ pipeline {
             }
             steps {
                 script {
-                    withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                    withDockerCredentials {
                         docker.withRegistry('https://index.docker.io/v1/', "${DOCKERHUB_CREDENTIALS}") {
                             docker.image("${DOCKER_IMAGE_BACKEND}:latest").push('latest')
                             docker.image("${DOCKER_IMAGE_FRONTEND}:latest").push('latest')
@@ -128,5 +128,11 @@ pipeline {
                 )
             }
         }
+    }
+}
+
+def withDockerCredentials(body) {
+    withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+        body()
     }
 }
