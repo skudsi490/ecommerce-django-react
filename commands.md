@@ -9,7 +9,7 @@ To run the end-to-end tests, use the following command:
 docker-compose -f docker-compose.e2e.yml up --abort-on-container-exit
 
 
-ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.70.222.92
+ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.75.89.248
 
 Having logs for the SSH :
 ssh -vvv -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.70.222.92
@@ -22,5 +22,27 @@ terraform state list
 check status of Jenkins :
 sudo systemctl status jenkins
 
+Get the Jinkins Admin Password:
+sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+
+
 Check status of SSH:
 sudo systemctl status sshd
+
+ reboot your system:
+sudo reboot
+
+Doing Apply without writing "yes":
+terraform apply -auto-approve
+
+Destroying one instance only :
+terraform destroy -target="aws_instance.jenkins" -auto-approve
+
+
+.\env\Scripts\activate  
+
+
+python manage.py runserver   
+npm start
+
+

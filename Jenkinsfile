@@ -1,13 +1,18 @@
 pipeline {
     agent any
     environment {
-        REPO_URL = 'https://github.com/gagishmagi/ecommerce-django-react'
-        DOCKER_IMAGE_BACKEND = 'your_dockerhub_username/ecommerce-django-react-backend'
-        DOCKER_IMAGE_FRONTEND = 'your_dockerhub_username/ecommerce-django-react-frontend'
+        REPO_URL = 'https://github.com/skudsi490/ecommerce-django-react.git'
+        DOCKER_IMAGE_BACKEND = 'skudsi/ecommerce-django-react-backend'
+        DOCKER_IMAGE_FRONTEND = 'skudsi/ecommerce-django-react-frontend'
         S3_BUCKET = 'jenkins-artifacts-bucket-123456'
         JIRA_URL = 'https://ecommerce-django-react.atlassian.net/'
         JIRA_USER = 'skudsi490@gmail.com'
-        JIRA_API_TOKEN = credentials('JIRA_API_TOKEN') 
+        JIRA_API_TOKEN = credentials('JIRA_API_TOKEN')
+        JIRA_SITE = credentials('JIRA_SITE')
+        JIRA_PROJECT_KEY = credentials('JIRA_PROJECT_KEY')
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub')
+        AWS_CREDENTIALS = credentials('aws-credentials')
+        NODE_OPTIONS = "--openssl-legacy-provider"
     }
 
     stages {
@@ -98,10 +103,10 @@ pipeline {
                     body: "Check Jenkins logs for details:\n\n${errorReport}"
                 )
                 // Create JIRA issue
-                def jiraIssue = jiraNewIssue site: 'your-jira-site',
+                def jiraIssue = jiraNewIssue site: "${JIRA_SITE}",
                                              issue: [
                                                  fields: [
-                                                     project: [key: 'YOUR_PROJECT_KEY'],
+                                                     project: [key: "${JIRA_PROJECT_KEY}"],
                                                      summary: "Build failure in Jenkins job ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                                                      description: errorReport,
                                                      issuetype: [name: 'Bug']
