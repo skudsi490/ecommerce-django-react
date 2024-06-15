@@ -53,7 +53,7 @@ pipeline {
                     withDockerCredentials {
                         dir('frontend') {
                             docker.withRegistry('https://index.docker.io/v1/', '') {
-                                def frontendImage = docker.build("${DOCKER_IMAGE_FRONTEND}:latest", ".")
+                                def frontendImage = docker.build("${DOCKER_IMAGE_FRONTEND}:latest", "..")
                                 frontendImage.push('latest')
                             }
                         }
