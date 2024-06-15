@@ -23,6 +23,15 @@ pipeline {
                 git url: "${REPO_URL}", branch: 'main'
             }
         }
+        stage('Test Docker Login') {
+            steps {
+                script {
+                    docker.withRegistry('', "${DOCKERHUB_CREDENTIALS}") {
+                        echo 'Docker login successful!'
+                    }
+                }
+            }
+        }
         stage('Build Backend') {
             steps {
                 script {
