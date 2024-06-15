@@ -38,7 +38,7 @@ pipeline {
                 script {
                     withDockerCredentials {
                         docker.withRegistry('https://index.docker.io/v1/', '') {
-                            def backendImage = docker.build("${DOCKER_IMAGE_BACKEND}:latest", "./backend")
+                            def backendImage = docker.build("${DOCKER_IMAGE_BACKEND}:latest", ".")
                             backendImage.push('latest')
                         }
                     }
