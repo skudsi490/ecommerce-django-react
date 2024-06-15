@@ -123,7 +123,7 @@ resource "aws_security_group" "default_sg" {
   }
 }
 
-# EC2 Instances
+# Jenkins EC2 Instance
 resource "aws_instance" "jenkins" {
   ami                          = "ami-01e444924a2233b07"
   instance_type                = var.instance_type
@@ -188,12 +188,53 @@ resource "aws_instance" "jenkins" {
               retry_command sudo usermod -aG docker jenkins
               retry_command sudo usermod -aG docker ubuntu
 
+              echo "Installing Docker Compose..."
+              retry_command sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-\$(uname -s)-\$(uname -m)" -o /usr/local/bin/docker-compose
+              retry_command sudo chmod +x /usr/local/bin/docker-compose
+              retry_command sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+
               echo "Allowing port 8080 through UFW..."
               retry_command sudo ufw allow 8080
+
+              echo "Cleaning up unnecessary files to free up disk space..."
+              retry_command sudo docker system prune -a -f
+              retry_command sudo rm -rf /var/lib/jenkins/workspace/*
+              retry_command sudo rm -rf /var/lib/jenkins/logs/*
+              retry_command sudo apt-get clean
               EOF
 }
 
+# Jenkins Agent EC2 Instance
+resource "aws_instance" "jenkins_agent" {
+  ami                          = "ami-01e444924a2233b07"
+  instance_type                = var.instance_type
+  subnet_id                    = aws_subnet.subnet1.id
+  associate_public_ip_address  = true
+  vpc_security_group_ids       = [aws_security_group.default_sg.id]
+  key_name                     = var.key_name
 
+  tags = {
+    Name = "Jenkins Agent"
+  }
+
+  user_data = <<-EOF
+              #!/bin/bash
+              exec > /var/log/user-data.log 2>&1
+              set -o xtrace
+
+              sudo apt-get update -y
+              sudo apt-get install -y openjdk-17-jre docker.io
+              sudo systemctl start docker
+              sudo systemctl enable docker
+              sudo usermod -aG docker ubuntu
+
+              wget -O /home/ubuntu/agent.jar http://<jenkins-server>/jnlpJars/agent.jar
+
+              nohup java -jar /home/ubuntu/agent.jar -jnlpUrl http://<jenkins-server>/computer/<node-name>/jenkins-agent.jnlp -secret <agent-secret> &
+              EOF
+}
+
+# My Ubuntu EC2 Instance
 resource "aws_instance" "my_ubuntu" {
   ami                          = "ami-01e444924a2233b07"
   instance_type                = var.instance_type
@@ -223,6 +264,7 @@ resource "aws_instance" "my_ubuntu" {
               EOF
 }
 
+# My Windows EC2 Instance
 resource "aws_instance" "my_windows" {
   ami                          = "ami-034de56da2366e342"
   instance_type                = var.instance_type
@@ -265,6 +307,10 @@ resource "aws_s3_bucket_versioning" "jenkins_artifacts_versioning" {
 # Outputs
 output "jenkins_url" {
   value = aws_instance.jenkins.public_dns
+}
+
+output "jenkins_agent_ip" {
+  value = aws_instance.jenkins_agent.public_ip
 }
 
 output "ubuntu_ip" {

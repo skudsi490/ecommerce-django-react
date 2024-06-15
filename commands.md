@@ -9,7 +9,7 @@ To run the end-to-end tests, use the following command:
 docker-compose -f docker-compose.e2e.yml up --abort-on-container-exit
 
 
-ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.67.135.52
+ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@18.199.159.184
 
 Having logs for the SSH :
 ssh -vvv -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.70.222.92

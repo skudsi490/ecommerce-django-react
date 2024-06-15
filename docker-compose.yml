@@ -1,23 +1,38 @@
-# docker-compose.yml
-
 version: '3'
 
 services:
   backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     image: skudsi/ecommerce-django-react-backend:latest
     container_name: backend
-    command: gunicorn backend.wsgi:application --bind 0.0.0.0:8000
+    command: >
+      sh -c "python /app/manage.py collectstatic --noinput &&
+             python /app/manage.py migrate &&
+             gunicorn backend.wsgi:application --bind 0.0.0.0:8000"
     ports:
       - "8000:8000"
     environment:
       - DEBUG=1
+      - DJANGO_SETTINGS_MODULE=backend.settings
     volumes:
-      - ./backend:/app
+      - ./backend:/app/backend
+      - ./base:/app/base
+      - ./requirements.txt:/app/requirements.txt
+      - ./manage.py:/app/manage.py
+      - ./static:/app/static
+      - ./staticfiles:/app/staticfiles
 
   frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
     image: skudsi/ecommerce-django-react-frontend:latest
     container_name: frontend
     ports:
       - "80:80"
     depends_on:
       - backend
+    volumes:
+      - ./frontend:/app/frontend
