@@ -52,3 +52,13 @@ npm start
 git add Jenkinsfile
 git commit -m "Update Jenkinsfile"
 git push origin main
+
+
+docker build -t skudsi/ecommerce-django-react-frontend:latest -f frontend/Dockerfile .
+docker tag skudsi/ecommerce-django-react-frontend:latest index.docker.io/skudsi/ecommerce-django-react-frontend:latest
+docker push index.docker.io/skudsi/ecommerce-django-react-frontend:latest
+
+
+git add .
+git commit -m "Update Dockerfiles and requirements 01"
+git push origin main

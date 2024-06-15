@@ -15,6 +15,7 @@ pipeline {
         JIRA_PROJECT_KEY = 'PROJECT_KEY'
         DOCKERHUB_CREDENTIALS = credentials('dockerhub')
         AWS_CREDENTIALS = credentials('aws-credentials')
+        DJANGO_SETTINGS_MODULE = 'backend.settings'
     }
 
     stages {

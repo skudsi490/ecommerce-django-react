@@ -23,6 +23,7 @@ COPY ./backend/settings.py /app/backend/settings.py
 COPY ./backend/wsgi.py /app/backend/wsgi.py
 COPY ./backend/urls.py /app/backend/urls.py
 COPY ./static /app/static  
+COPY ./pytest.ini /app/pytest.ini
 
 # Ensure the backend and base modules are within the Python path
 ENV PYTHONPATH /app:/app/backend:/app/base
