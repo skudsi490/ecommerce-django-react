@@ -24,8 +24,9 @@ pipeline {
         stage('Build Backend') {
             steps {
                 script {
-                    docker.withRegistry('', 'dockerhub') {
-                        docker.build("${DOCKER_IMAGE_BACKEND}:latest", "./backend")
+                    docker.withRegistry('', "${DOCKERHUB_CREDENTIALS}") {
+                        def backendImage = docker.build("${DOCKER_IMAGE_BACKEND}:latest", "./backend")
+                        backendImage.push('latest')
                     }
                 }
             }
@@ -33,8 +34,9 @@ pipeline {
         stage('Build Frontend') {
             steps {
                 script {
-                    docker.withRegistry('', 'dockerhub') {
-                        docker.build("${DOCKER_IMAGE_FRONTEND}:latest", "./frontend")
+                    docker.withRegistry('', "${DOCKERHUB_CREDENTIALS}") {
+                        def frontendImage = docker.build("${DOCKER_IMAGE_FRONTEND}:latest", "./frontend")
+                        frontendImage.push('latest')
                     }
                 }
             }
@@ -78,7 +80,7 @@ pipeline {
             }
             steps {
                 script {
-                    docker.withRegistry('', 'dockerhub') {
+                    docker.withRegistry('', "${DOCKERHUB_CREDENTIALS}") {
                         docker.image("${DOCKER_IMAGE_BACKEND}:latest").push('latest')
                         docker.image("${DOCKER_IMAGE_FRONTEND}:latest").push('latest')
                     }
