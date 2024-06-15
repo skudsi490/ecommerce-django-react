@@ -69,7 +69,7 @@ pipeline {
             when {
                 allOf {
                     branch 'main'
-                    success()
+                    expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
                 }
             }
             steps {
@@ -85,7 +85,7 @@ pipeline {
             when {
                 allOf {
                     branch 'main'
-                    success()
+                    expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
                 }
             }
             steps {
