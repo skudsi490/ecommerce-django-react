@@ -27,6 +27,8 @@ pipeline {
             steps {
                 script {
                     withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                        echo "DOCKER_USERNAME: ${DOCKER_USERNAME}"
+                        echo "Attempting Docker login..."
                         sh 'docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD'
                         sh 'echo Docker login successful!'
                     }
