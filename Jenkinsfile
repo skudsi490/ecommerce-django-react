@@ -27,7 +27,7 @@ pipeline {
             steps {
                 script {
                     docker.withRegistry('', "${DOCKERHUB_CREDENTIALS}") {
-                        echo 'Docker login successful!'
+                        sh 'echo Docker login successful!'
                     }
                 }
             }
@@ -119,17 +119,6 @@ pipeline {
                     subject: "Build failed in Jenkins: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                     body: "Check Jenkins logs for details:\n\n${errorReport}"
                 )
-                // Create JIRA issue
-                def jiraIssue = jiraNewIssue site: "${JIRA_SITE}",
-                                             issue: [
-                                                 fields: [
-                                                     project: [key: "${JIRA_PROJECT_KEY}"],
-                                                     summary: "Build failure in Jenkins job ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                                                     description: errorReport,
-                                                     issuetype: [name: 'Bug']
-                                                 ]
-                                             ]
-                echo "JIRA issue created: ${jiraIssue.key}"
             }
         }
     }
