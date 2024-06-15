@@ -26,6 +26,7 @@ pipeline {
         stage('Test Docker Login') {
             steps {
                 script {
+                    echo "DOCKERHUB_CREDENTIALS: ${DOCKERHUB_CREDENTIALS}"
                     docker.withRegistry('', "${DOCKERHUB_CREDENTIALS}") {
                         sh 'echo Docker login successful!'
                     }
