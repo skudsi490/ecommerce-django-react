@@ -11,8 +11,8 @@ pipeline {
         JIRA_USER = 'skudsi490@gmail.com'
         NODE_OPTIONS = "--openssl-legacy-provider"
         JIRA_API_TOKEN = credentials('JIRA_API_TOKEN')
-        JIRA_SITE = credentials('JIRA_SITE')
-        JIRA_PROJECT_KEY = credentials('JIRA_PROJECT_KEY')
+        JIRA_SITE = 'ecommerce-django-react'
+        JIRA_PROJECT_KEY = 'PROJECT_KEY'
         DOCKERHUB_CREDENTIALS = credentials('dockerhub')
         AWS_CREDENTIALS = credentials('aws-credentials')
     }
