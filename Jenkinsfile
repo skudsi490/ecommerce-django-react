@@ -7,6 +7,11 @@ pipeline {
         S3_BUCKET = 'jenkins-artifacts-bucket-123456'
         JIRA_URL = 'https://ecommerce-django-react.atlassian.net/'
         JIRA_USER = 'skudsi490@gmail.com'
+        JIRA_API_TOKEN = credentials('JIRA_API_TOKEN')
+        JIRA_SITE = credentials('JIRA_SITE')
+        JIRA_PROJECT_KEY = credentials('JIRA_PROJECT_KEY')
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub')
+        AWS_CREDENTIALS = credentials('aws-credentials')
         NODE_OPTIONS = "--openssl-legacy-provider"
     }
 
@@ -95,7 +100,7 @@ pipeline {
     post {
         failure {
             script {
-                def errorReport = currentBuild.log.take(50).join("\n")
+                def errorReport = currentBuild.rawBuild.log.take(50).join("\n")
                 emailext (
                     to: 'skudsi490@gmail.com',
                     subject: "Build failed in Jenkins: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
