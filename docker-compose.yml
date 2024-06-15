@@ -16,6 +16,7 @@ services:
     environment:
       - DEBUG=1
       - DJANGO_SETTINGS_MODULE=backend.settings
+      - PYTHONPATH=/app:/app/backend:/app/base
     volumes:
       - ./backend:/app/backend
       - ./base:/app/base
@@ -23,6 +24,7 @@ services:
       - ./manage.py:/app/manage.py
       - ./static:/app/static
       - ./staticfiles:/app/staticfiles
+      - ./pytest.ini:/app/pytest.ini
 
   frontend:
     build:

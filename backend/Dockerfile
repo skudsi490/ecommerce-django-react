@@ -32,7 +32,7 @@ ENV PYTHONPATH /app:/app/backend:/app/base
 ENV DJANGO_SETTINGS_MODULE=backend.settings
 
 # Set the working directory to the backend directory
-WORKDIR /app/backend
+WORKDIR /app
 
 # Debug steps to verify paths and settings
 RUN ls -la /app/backend
@@ -44,7 +44,7 @@ RUN python -c "import backend.settings"
 RUN mkdir -p /app/staticfiles
 
 # Collect static files
-RUN python /app/manage.py collectstatic --noinput
+RUN python manage.py collectstatic --noinput
 
 # Run the Django application
 CMD ["gunicorn", "--bind", "0.0.0.0:8000", "backend.wsgi:application"]

@@ -58,7 +58,11 @@ docker build -t skudsi/ecommerce-django-react-frontend:latest -f frontend/Docker
 docker tag skudsi/ecommerce-django-react-frontend:latest index.docker.io/skudsi/ecommerce-django-react-frontend:latest
 docker push index.docker.io/skudsi/ecommerce-django-react-frontend:latest
 
+docker build -t skudsi/ecommerce-django-react-backend:latest -f backend/Dockerfile .
+docker tag skudsi/ecommerce-django-react-backend:latest index.docker.io/skudsi/ecommerce-django-react-backend:latest
+docker push skudsi/ecommerce-django-react-backend:latest
+
 
 git add .
-git commit -m "Update Dockerfiles and requirements 01"
+git commit -m "Update Dockerfiles and requirements 02"
 git push origin main

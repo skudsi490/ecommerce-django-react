@@ -16,6 +16,7 @@ pipeline {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub')
         AWS_CREDENTIALS = credentials('aws-credentials')
         DJANGO_SETTINGS_MODULE = 'backend.settings'
+        PYTHONPATH = '/app:/app/backend:/app/base'
     }
 
     stages {
