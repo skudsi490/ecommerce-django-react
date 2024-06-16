@@ -12,7 +12,7 @@ pipeline {
         NODE_OPTIONS = "--openssl-legacy-provider"
         JIRA_API_TOKEN = credentials('JIRA_API_TOKEN')
         JIRA_SITE = 'ecommerce-django-react'
-        JIRA_PROJECT_KEY = 'TF'
+        JIRA_PROJECT_KEY = 'TD'
         DOCKERHUB_CREDENTIALS = credentials('dockerhub')
         AWS_CREDENTIALS = credentials('aws-credentials')
         DJANGO_SETTINGS_MODULE = 'backend.settings'
@@ -227,16 +227,12 @@ pipeline {
                     body: "Build was successful:\n\n${successReport}"
                 )
                 // Create JIRA issue
-                def jiraIssue = jiraNewIssue site: "${env.JIRA_SITE}",
-                                             issue: [
-                                                 fields: [
-                                                     project: [key: "${env.JIRA_PROJECT_KEY}"],
-                                                     summary: "Build success in Jenkins job ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                                                     description: successReport,
-                                                     issuetype: [name: 'Task']
-                                                 ]
-                                             ]
-                echo "JIRA issue created: ${jiraIssue.key}"
+                jiraSendIssue site: "${env.JIRA_SITE}", 
+                              projectKey: "${env.JIRA_PROJECT_KEY}",
+                              issueType: 'Task', 
+                              summary: "Build success in Jenkins job ${env.JOB_NAME} #${env.BUILD_NUMBER}", 
+                              description: "Build was successful. Check details at: ${env.BUILD_URL}"
+                echo "JIRA issue notification sent."
             }
         }
     }
