@@ -35,12 +35,11 @@ pipeline {
                 }
             }
         }
-        stage('Clean Workspace') {
+        stage('Clean Docker') {
             steps {
                 sh '''
-                echo "Cleaning up workspace and docker"
+                echo "Cleaning up docker"
                 docker system prune -af --volumes
-                sudo rm -rf /home/ubuntu/jenkins/workspace/Django-CICD-V1/*
                 sudo apt-get clean
                 sudo apt-get autoremove -y
                 df -h
