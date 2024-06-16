@@ -194,7 +194,21 @@ pipeline {
                 sh 'docker-compose up -d'
             }
         }
-    } 
+        stage('Post to Jira') {
+            when {
+                allOf {
+                    branch 'main'
+                    expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
+                }
+            }
+            steps {
+                script {
+                    def jiraComment = "Build ${env.JOB_NAME} #${env.BUILD_NUMBER} was successful. See details at ${env.BUILD_URL}"
+                    jiraSendBuildInfo site: "${JIRA_SITE}", projectKey: "${JIRA_PROJECT_KEY}", buildName: "${env.JOB_NAME}", buildKey: "${env.BUILD_NUMBER}", comment: jiraComment
+                }
+            }
+        }
+    }
 
     post {
         failure {
@@ -204,6 +218,8 @@ pipeline {
                     subject: "Build failed in Jenkins: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                     body: "Check Jenkins logs for details."
                 )
+                def jiraComment = "Build ${env.JOB_NAME} #${env.BUILD_NUMBER} failed. Check Jenkins logs for details."
+                jiraSendBuildInfo site: "${JIRA_SITE}", projectKey: "${JIRA_PROJECT_KEY}", buildName: "${env.JOB_NAME}", buildKey: "${env.BUILD_NUMBER}", comment: jiraComment
             }
         }
     }
