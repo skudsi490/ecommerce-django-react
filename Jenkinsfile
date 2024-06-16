@@ -65,6 +65,11 @@ pipeline {
                     }
                 }
             }
+            post {
+                always {
+                    jiraSendBuildInfo site: "${JIRA_SITE}", projectKey: "${JIRA_PROJECT_KEY}", buildName: "${env.JOB_NAME}", buildKey: "${env.BUILD_NUMBER}"
+                }
+            }
         }
 
         stage('Build Frontend') {
@@ -78,6 +83,11 @@ pipeline {
                             }
                         }
                     }
+                }
+            }
+            post {
+                always {
+                    jiraSendBuildInfo site: "${JIRA_SITE}", projectKey: "${JIRA_PROJECT_KEY}", buildName: "${env.JOB_NAME}", buildKey: "${env.BUILD_NUMBER}"
                 }
             }
         }
@@ -148,6 +158,7 @@ pipeline {
             post {
                 always {
                     junit 'backend/reports/unit_tests.xml'
+                    jiraSendBuildInfo site: "${JIRA_SITE}", projectKey: "${JIRA_PROJECT_KEY}", buildName: "${env.JOB_NAME}", buildKey: "${env.BUILD_NUMBER}"
                 }
             }
         }
@@ -162,6 +173,7 @@ pipeline {
             post {
                 always {
                     junit 'backend/reports/integration_tests.xml'
+                    jiraSendBuildInfo site: "${JIRA_SITE}", projectKey: "${JIRA_PROJECT_KEY}", buildName: "${env.JOB_NAME}", buildKey: "${env.BUILD_NUMBER}"
                 }
             }
         }
@@ -176,6 +188,7 @@ pipeline {
             post {
                 always {
                     junit 'frontend/reports/e2e_tests.xml'
+                    jiraSendBuildInfo site: "${JIRA_SITE}", projectKey: "${JIRA_PROJECT_KEY}", buildName: "${env.JOB_NAME}", buildKey: "${env.BUILD_NUMBER}"
                 }
             }
         }
@@ -198,6 +211,11 @@ pipeline {
                     }
                 }
             }
+            post {
+                always {
+                    jiraSendDeploymentInfo site: "${JIRA_SITE}", projectKey: "${JIRA_PROJECT_KEY}", environmentId: 'production', environmentName: 'Production', serviceIds: ["${DOCKER_IMAGE_BACKEND}", "${DOCKER_IMAGE_FRONTEND}"]
+                }
+            }
         }
 
         stage('Deploy') {
@@ -209,6 +227,11 @@ pipeline {
             }
             steps {
                 sh 'docker-compose up -d'
+            }
+            post {
+                always {
+                    jiraSendDeploymentInfo site: "${JIRA_SITE}", projectKey: "${JIRA_PROJECT_KEY}", environmentId: 'production', environmentName: 'Production', serviceIds: ["${DOCKER_IMAGE_BACKEND}", "${DOCKER_IMAGE_FRONTEND}"]
+                }
             }
         }
 
