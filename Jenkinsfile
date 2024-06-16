@@ -76,13 +76,19 @@ pipeline {
         }
         stage('Install Python 3.9.18') {
             steps {
-                sh '''
-                sudo apt-get update
-                sudo apt-get install -y software-properties-common
-                sudo add-apt-repository ppa:deadsnakes/ppa
-                sudo apt-get update
-                sudo apt-get install -y python3.9 python3.9-venv python3.9-dev
-                '''
+                retry(3) {
+                    sh '''
+                    while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do
+                      echo "Waiting for other apt-get process to release lock..."
+                      sleep 5
+                    done
+                    sudo apt-get update
+                    sudo apt-get install -y software-properties-common
+                    sudo add-apt-repository ppa:deadsnakes/ppa
+                    sudo apt-get update
+                    sudo apt-get install -y python3.9 python3.9-venv python3.9-dev
+                    '''
+                }
             }
         }
         stage('Install Dependencies') {
