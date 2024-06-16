@@ -64,5 +64,5 @@ docker push skudsi/ecommerce-django-react-backend:latest
 
 
 git add .
-git commit -m "Update Dockerfiles and requirements 02"
+git commit -m "Update Dockerfiles and requirements 03"
 git push origin main
