@@ -129,6 +129,7 @@ pipeline {
         stage('Unit Tests') {
             steps {
                 sh '''
+                mkdir -p reports
                 bash -c "source venv/bin/activate && docker-compose run backend pytest --junitxml=reports/unit_tests.xml"
                 '''
             }
@@ -141,6 +142,7 @@ pipeline {
         stage('Integration Tests') {
             steps {
                 sh '''
+                mkdir -p reports
                 bash -c "source venv/bin/activate && docker-compose run backend pytest --junitxml=reports/integration_tests.xml"
                 '''
             }
@@ -153,6 +155,7 @@ pipeline {
         stage('E2E Tests') {
             steps {
                 sh '''
+                mkdir -p reports
                 bash -c "source venv/bin/activate && docker-compose -f docker-compose.e2e.yml run frontend pytest --junitxml=reports/e2e_tests.xml"
                 '''
             }
