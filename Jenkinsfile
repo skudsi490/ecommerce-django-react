@@ -23,6 +23,9 @@ pipeline {
         stage('Checkout') {
             steps {
                 git url: "${REPO_URL}", branch: 'main'
+                script {
+                    echo "Current branch: ${env.GIT_BRANCH}"
+                }
             }
         }
 
@@ -186,6 +189,7 @@ pipeline {
             }
             steps {
                 script {
+                    echo "Current build result: ${currentBuild.result}"
                     withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
                         docker.withRegistry('https://index.docker.io/v1/', '') {
                             docker.image("${DOCKER_IMAGE_BACKEND}:latest").push('latest')
