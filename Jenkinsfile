@@ -74,18 +74,33 @@ pipeline {
                 '''
             }
         }
-        stage('Install Dependencies') {
+        stage('Install Python 3.9.18') {
             steps {
                 sh '''
                 sudo apt-get update
-                sudo apt-get install -y python3-pip
-                pip3 install -r requirements.txt
+                sudo apt-get install -y software-properties-common
+                sudo add-apt-repository ppa:deadsnakes/ppa
+                sudo apt-get update
+                sudo apt-get install -y python3.9 python3.9-venv python3.9-dev
+                '''
+            }
+        }
+        stage('Install Dependencies') {
+            steps {
+                sh '''
+                python3.9 -m venv venv
+                source venv/bin/activate
+                pip install --upgrade pip
+                pip install -r requirements.txt
                 '''
             }
         }
         stage('Unit Tests') {
             steps {
-                sh 'docker-compose run backend pytest --junitxml=reports/unit_tests.xml'
+                sh '''
+                source venv/bin/activate
+                docker-compose run backend pytest --junitxml=reports/unit_tests.xml
+                '''
             }
             post {
                 always {
@@ -95,7 +110,10 @@ pipeline {
         }
         stage('Integration Tests') {
             steps {
-                sh 'docker-compose run backend pytest --junitxml=reports/integration_tests.xml'
+                sh '''
+                source venv/bin/activate
+                docker-compose run backend pytest --junitxml=reports/integration_tests.xml
+                '''
             }
             post {
                 always {
@@ -105,7 +123,10 @@ pipeline {
         }
         stage('E2E Tests') {
             steps {
-                sh 'docker-compose -f docker-compose.e2e.yml run frontend pytest --junitxml=reports/e2e_tests.xml'
+                sh '''
+                source venv/bin/activate
+                docker-compose -f docker-compose.e2e.yml run frontend pytest --junitxml=reports/e2e_tests.xml
+                '''
             }
             post {
                 always {
@@ -146,11 +167,10 @@ pipeline {
     post {
         failure {
             script {
-                def errorReport = currentBuild.rawBuild.log.take(50).join("\n")
                 emailext (
                     to: 'skudsi490@gmail.com',
                     subject: "Build failed in Jenkins: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                    body: "Check Jenkins logs for details:\n\n${errorReport}"
+                    body: "Check Jenkins logs for details."
                 )
             }
         }
