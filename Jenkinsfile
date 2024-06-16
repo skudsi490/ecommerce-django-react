@@ -35,6 +35,18 @@ pipeline {
                 }
             }
         }
+        stage('Clean Workspace') {
+            steps {
+                sh '''
+                echo "Cleaning up workspace and docker"
+                docker system prune -af --volumes
+                sudo rm -rf /home/ubuntu/jenkins/workspace/Django-CICD-V1/*
+                sudo apt-get clean
+                sudo apt-get autoremove -y
+                df -h
+                '''
+            }
+        }
         stage('Build Backend') {
             steps {
                 script {
@@ -89,15 +101,6 @@ pipeline {
                     sudo apt-get install -y python3.9 python3.9-venv python3.9-dev
                     '''
                 }
-            }
-        }
-        stage('Clean Up System') {
-            steps {
-                sh '''
-                sudo apt-get clean
-                sudo apt-get autoremove -y
-                docker system prune -af --volumes
-                '''
             }
         }
         stage('Install Dependencies') {
