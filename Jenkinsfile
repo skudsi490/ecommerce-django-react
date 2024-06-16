@@ -63,7 +63,7 @@ pipeline {
                 }
             }
         }
-        stage('Install Docker Compose and Selenium') {
+        stage('Install Docker Compose') {
             steps {
                 sh '''
                 if ! [ -x "$(command -v docker-compose)" ]; then
@@ -71,15 +71,15 @@ pipeline {
                   sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
                   sudo chmod +x /usr/local/bin/docker-compose
                 fi
-                if ! [ -x "$(command -v chromedriver)" ]; then
-                  echo "Chromedriver not found, installing..."
-                  sudo apt-get update
-                  sudo apt-get install -y wget unzip
-                  wget https://chromedriver.storage.googleapis.com/114.0.5735.90/chromedriver_linux64.zip
-                  unzip chromedriver_linux64.zip
-                  sudo mv chromedriver /usr/local/bin/chromedriver
-                  sudo chmod +x /usr/local/bin/chromedriver
-                fi
+                '''
+            }
+        }
+        stage('Install Dependencies') {
+            steps {
+                sh '''
+                sudo apt-get update
+                sudo apt-get install -y python3-pip
+                pip3 install -r requirements.txt
                 '''
             }
         }

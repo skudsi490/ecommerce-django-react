@@ -1,12 +1,15 @@
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 import pytest
 
 @pytest.fixture
 def browser():
-    driver = webdriver.Chrome()
+    service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service)
     yield driver
     driver.quit()
 
 def test_homepage(browser):
-    browser.get('http://localhost:80')
+    browser.get('http://localhost')
     assert 'Ecommerce' in browser.title
