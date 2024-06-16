@@ -199,11 +199,44 @@ pipeline {
     post {
         failure {
             script {
+                def errorReport = currentBuild.rawBuild.getLog(50).join("\n")
                 emailext (
                     to: 'skudsi490@gmail.com',
                     subject: "Build failed in Jenkins: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                    body: "Check Jenkins logs for details."
+                    body: "Check Jenkins logs for details:\n\n${errorReport}"
                 )
+                // Create JIRA issue
+                def jiraIssue = jiraNewIssue site: "${env.JIRA_SITE}",
+                                             issue: [
+                                                 fields: [
+                                                     project: [key: "${env.JIRA_PROJECT_KEY}"],
+                                                     summary: "Build failure in Jenkins job ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                                                     description: errorReport,
+                                                     issuetype: [name: 'Bug']
+                                                 ]
+                                             ]
+                echo "JIRA issue created: ${jiraIssue.key}"
+            }
+        }
+        success {
+            script {
+                def successReport = currentBuild.rawBuild.getLog(50).join("\n")
+                emailext (
+                    to: 'skudsi490@gmail.com',
+                    subject: "Build successful in Jenkins: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                    body: "Build was successful:\n\n${successReport}"
+                )
+                // Create JIRA issue
+                def jiraIssue = jiraNewIssue site: "${env.JIRA_SITE}",
+                                             issue: [
+                                                 fields: [
+                                                     project: [key: "${env.JIRA_PROJECT_KEY}"],
+                                                     summary: "Build success in Jenkins job ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                                                     description: successReport,
+                                                     issuetype: [name: 'Task']
+                                                 ]
+                                             ]
+                echo "JIRA issue created: ${jiraIssue.key}"
             }
         }
     }
