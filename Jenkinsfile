@@ -189,11 +189,13 @@ pipeline {
                     branch 'main'
                     expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
                 }
+            }
             steps {
                 sh 'docker-compose up -d'
             }
         }
-    }
+    } 
+
     post {
         failure {
             script {
