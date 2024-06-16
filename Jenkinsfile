@@ -120,7 +120,7 @@ pipeline {
                 sudo apt-get update
                 sudo apt-get install -y --no-install-recommends google-chrome-stable
                 wget https://chromedriver.storage.googleapis.com/114.0.5735.90/chromedriver_linux64.zip
-                unzip chromedriver_linux64.zip
+                unzip -o chromedriver_linux64.zip  # Automatically overwrite existing files
                 sudo mv chromedriver /usr/local/bin/
                 sudo chmod +x /usr/local/bin/chromedriver
                 '''
@@ -189,7 +189,6 @@ pipeline {
                     branch 'main'
                     expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
                 }
-            }
             steps {
                 sh 'docker-compose up -d'
             }
