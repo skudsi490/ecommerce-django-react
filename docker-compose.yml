@@ -25,6 +25,7 @@ services:
       - ./static:/app/static
       - ./staticfiles:/app/staticfiles
       - ./pytest.ini:/app/pytest.ini
+      - ./backend/reports:/app/reports  
 
   frontend:
     build:
@@ -38,3 +39,4 @@ services:
       - backend
     volumes:
       - ./frontend:/app/frontend
+      - ./frontend/reports:/app/reports  
