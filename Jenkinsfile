@@ -91,6 +91,15 @@ pipeline {
                 }
             }
         }
+        stage('Clean Up System') {
+            steps {
+                sh '''
+                sudo apt-get clean
+                sudo apt-get autoremove -y
+                docker system prune -af --volumes
+                '''
+            }
+        }
         stage('Install Dependencies') {
             steps {
                 sh '''
@@ -107,7 +116,7 @@ pipeline {
                 wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
                 sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list'
                 sudo apt-get update
-                sudo apt-get install -y google-chrome-stable
+                sudo apt-get install -y --no-install-recommends google-chrome-stable
                 wget https://chromedriver.storage.googleapis.com/114.0.5735.90/chromedriver_linux64.zip
                 unzip chromedriver_linux64.zip
                 sudo mv chromedriver /usr/local/bin/
