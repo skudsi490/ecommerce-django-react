@@ -17,7 +17,6 @@ pipeline {
         AWS_CREDENTIALS = credentials('aws-credentials')
         DJANGO_SETTINGS_MODULE = 'backend.settings'
         PYTHONPATH = '/app:/app/backend:/app/base'
-        DOCKER_BUILDKIT = 1
     }
 
     stages {
@@ -29,7 +28,7 @@ pipeline {
         stage('Test Docker Login') {
             steps {
                 script {
-                    withDockerRegistry(credentialsId: 'dockerhub') {
+                    withDockerCredentials {
                         sh 'docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD'
                         echo 'Docker login successful!'
                     }
@@ -50,10 +49,12 @@ pipeline {
         stage('Build Backend') {
             steps {
                 script {
-                    withDockerRegistry(credentialsId: 'dockerhub') {
+                    withDockerCredentials {
                         dir('backend') {
-                            docker.build("${DOCKER_IMAGE_BACKEND}:latest", "--build-arg BUILDKIT_INLINE_CACHE=1 -f Dockerfile ..")
-                            docker.image("${DOCKER_IMAGE_BACKEND}:latest").push('latest')
+                            docker.withRegistry('https://index.docker.io/v1/', '') {
+                                def backendImage = docker.build("${DOCKER_IMAGE_BACKEND}:latest", "..")
+                                backendImage.push('latest')
+                            }
                         }
                     }
                 }
@@ -62,10 +63,12 @@ pipeline {
         stage('Build Frontend') {
             steps {
                 script {
-                    withDockerRegistry(credentialsId: 'dockerhub') {
+                    withDockerCredentials {
                         dir('frontend') {
-                            docker.build("${DOCKER_IMAGE_FRONTEND}:latest", "--build-arg BUILDKIT_INLINE_CACHE=1 -f Dockerfile ..")
-                            docker.image("${DOCKER_IMAGE_FRONTEND}:latest").push('latest')
+                            docker.withRegistry('https://index.docker.io/v1/', '') {
+                                def frontendImage = docker.build("${DOCKER_IMAGE_FRONTEND}:latest", "..")
+                                frontendImage.push('latest')
+                            }
                         }
                     }
                 }
@@ -75,8 +78,9 @@ pipeline {
             steps {
                 sh '''
                 if ! [ -x "$(command -v docker-compose)" ]; then
-                    sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-                    sudo chmod +x /usr/local/bin/docker-compose
+                  echo "Docker Compose not found, installing..."
+                  sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+                  sudo chmod +x /usr/local/bin/docker-compose
                 fi
                 '''
             }
@@ -85,9 +89,13 @@ pipeline {
             steps {
                 retry(3) {
                     sh '''
+                    while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do
+                      echo "Waiting for other apt-get process to release lock..."
+                      sleep 5
+                    done
                     sudo apt-get update
                     sudo apt-get install -y software-properties-common
-                    sudo add-apt-repository ppa:deadsnakes/ppa -y
+                    sudo add-apt-repository ppa:deadsnakes/ppa
                     sudo apt-get update
                     sudo apt-get install -y python3.9 python3.9-venv python3.9-dev
                     '''
@@ -98,7 +106,7 @@ pipeline {
             steps {
                 sh '''
                 python3.9 -m venv venv
-                source venv/bin/activate && pip install --upgrade pip && pip install -r requirements.txt
+                bash -c "source venv/bin/activate && pip install --upgrade pip && pip install -r requirements.txt"
                 '''
             }
         }
@@ -110,9 +118,9 @@ pipeline {
                 wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
                 sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list'
                 sudo apt-get update
-                sudo apt-get install -y google-chrome-stable
+                sudo apt-get install -y --no-install-recommends google-chrome-stable
                 wget https://chromedriver.storage.googleapis.com/114.0.5735.90/chromedriver_linux64.zip
-                unzip -o chromedriver_linux64.zip
+                unzip -o chromedriver_linux64.zip  # Automatically overwrite existing files
                 sudo mv chromedriver /usr/local/bin/
                 sudo chmod +x /usr/local/bin/chromedriver
                 '''
@@ -122,7 +130,7 @@ pipeline {
             steps {
                 sh '''
                 mkdir -p backend/reports
-                source venv/bin/activate && docker-compose run backend pytest --junitxml=/app/reports/unit_tests.xml
+                bash -c "source venv/bin/activate && docker-compose run backend pytest --junitxml=/app/reports/unit_tests.xml"
                 '''
             }
             post {
@@ -135,7 +143,7 @@ pipeline {
             steps {
                 sh '''
                 mkdir -p backend/reports
-                source venv/bin/activate && docker-compose run backend pytest --junitxml=/app/reports/integration_tests.xml
+                bash -c "source venv/bin/activate && docker-compose run backend pytest --junitxml=/app/reports/integration_tests.xml"
                 '''
             }
             post {
@@ -148,7 +156,7 @@ pipeline {
             steps {
                 sh '''
                 mkdir -p frontend/reports
-                source venv/bin/activate && docker-compose -f docker-compose.e2e.yml run frontend pytest --junitxml=/app/reports/e2e_tests.xml
+                bash -c "source venv/bin/activate && docker-compose -f docker-compose.e2e.yml run frontend pytest --junitxml=/app/reports/e2e_tests.xml"
                 '''
             }
             post {
@@ -159,13 +167,18 @@ pipeline {
         }
         stage('Push Docker Images') {
             when {
-                branch 'main'
+                allOf {
+                    branch 'main'
+                    expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
+                }
             }
             steps {
                 script {
-                    withDockerRegistry(credentialsId: 'dockerhub') {
-                        docker.image("${DOCKER_IMAGE_BACKEND}:latest").push('latest')
-                        docker.image("${DOCKER_IMAGE_FRONTEND}:latest").push('latest')
+                    withDockerCredentials {
+                        docker.withRegistry('https://index.docker.io/v1/', '') {
+                            docker.image("${DOCKER_IMAGE_BACKEND}:latest").push('latest')
+                            docker.image("${DOCKER_IMAGE_FRONTEND}:latest").push('latest')
+                        }
                     }
                 }
             }
@@ -186,40 +199,11 @@ pipeline {
     post {
         failure {
             script {
-                def errorReport = currentBuild.rawBuild.getLog(50).join("\n")
                 emailext (
                     to: 'skudsi490@gmail.com',
                     subject: "Build failed in Jenkins: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                    body: "Check Jenkins logs for details:\n\n${errorReport}"
+                    body: "Check Jenkins logs for details."
                 )
-                // Create JIRA issue
-                def jiraIssue = jiraNewIssue site: "${env.JIRA_SITE}",
-                                             issue: [
-                                                 fields: [
-                                                     project: [key: "${env.JIRA_PROJECT_KEY}"],
-                                                     summary: "Build failure in Jenkins job ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                                                     description: errorReport,
-                                                     issuetype: [name: 'Bug']
-                                                 ]
-                                             ]
-                echo "JIRA issue created: ${jiraIssue.key}"
-            }
-        }
-        success {
-            script {
-                def successReport = currentBuild.rawBuild.getLog(50).join("\n")
-                emailext (
-                    to: 'skudsi490@gmail.com',
-                    subject: "Build successful in Jenkins: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                    body: "Build was successful:\n\n${successReport}"
-                )
-                // Create JIRA issue
-                jiraSendIssue site: "${env.JIRA_SITE}", 
-                              projectKey: "${env.JIRA_PROJECT_KEY}",
-                              issueType: 'Task', 
-                              summary: "Build success in Jenkins job ${env.JOB_NAME} #${env.BUILD_NUMBER}", 
-                              description: "Build was successful. Check details at: ${env.BUILD_URL}"
-                echo "JIRA issue notification sent."
             }
         }
     }
