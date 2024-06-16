@@ -130,12 +130,12 @@ pipeline {
             steps {
                 sh '''
                 mkdir -p reports
-                bash -c "source venv/bin/activate && docker-compose run backend pytest --junitxml=reports/unit_tests.xml"
+                bash -c "source venv/bin/activate && docker-compose run backend pytest --junitxml=/code/reports/unit_tests.xml"
                 '''
             }
             post {
                 always {
-                    junit 'reports/unit_tests.xml'
+                    junit 'backend/reports/unit_tests.xml'
                 }
             }
         }
@@ -143,12 +143,12 @@ pipeline {
             steps {
                 sh '''
                 mkdir -p reports
-                bash -c "source venv/bin/activate && docker-compose run backend pytest --junitxml=reports/integration_tests.xml"
+                bash -c "source venv/bin/activate && docker-compose run backend pytest --junitxml=/code/reports/integration_tests.xml"
                 '''
             }
             post {
                 always {
-                    junit 'reports/integration_tests.xml'
+                    junit 'backend/reports/integration_tests.xml'
                 }
             }
         }
@@ -156,12 +156,12 @@ pipeline {
             steps {
                 sh '''
                 mkdir -p reports
-                bash -c "source venv/bin/activate && docker-compose -f docker-compose.e2e.yml run frontend pytest --junitxml=reports/e2e_tests.xml"
+                bash -c "source venv/bin/activate && docker-compose -f docker-compose.e2e.yml run frontend pytest --junitxml=/code/reports/e2e_tests.xml"
                 '''
             }
             post {
                 always {
-                    junit 'reports/e2e_tests.xml'
+                    junit 'frontend/reports/e2e_tests.xml'
                 }
             }
         }
