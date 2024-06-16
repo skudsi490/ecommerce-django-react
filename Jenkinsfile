@@ -25,16 +25,18 @@ pipeline {
                 git url: "${REPO_URL}", branch: 'main'
             }
         }
+
         stage('Test Docker Login') {
             steps {
                 script {
-                    withDockerCredentials {
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
                         sh 'docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD'
-                        echo 'Docker login successful!'
                     }
+                    echo 'Docker login successful!'
                 }
             }
         }
+
         stage('Clean Docker') {
             steps {
                 sh '''
@@ -46,10 +48,11 @@ pipeline {
                 '''
             }
         }
+
         stage('Build Backend') {
             steps {
                 script {
-                    withDockerCredentials {
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
                         dir('backend') {
                             docker.withRegistry('https://index.docker.io/v1/', '') {
                                 def backendImage = docker.build("${DOCKER_IMAGE_BACKEND}:latest", "..")
@@ -60,10 +63,11 @@ pipeline {
                 }
             }
         }
+
         stage('Build Frontend') {
             steps {
                 script {
-                    withDockerCredentials {
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
                         dir('frontend') {
                             docker.withRegistry('https://index.docker.io/v1/', '') {
                                 def frontendImage = docker.build("${DOCKER_IMAGE_FRONTEND}:latest", "..")
@@ -74,6 +78,7 @@ pipeline {
                 }
             }
         }
+
         stage('Install Docker Compose') {
             steps {
                 sh '''
@@ -85,6 +90,7 @@ pipeline {
                 '''
             }
         }
+
         stage('Install Python 3.9.18') {
             steps {
                 retry(3) {
@@ -102,6 +108,7 @@ pipeline {
                 }
             }
         }
+
         stage('Install Dependencies') {
             steps {
                 sh '''
@@ -110,6 +117,7 @@ pipeline {
                 '''
             }
         }
+
         stage('Install Chrome and ChromeDriver') {
             steps {
                 sh '''
@@ -120,12 +128,13 @@ pipeline {
                 sudo apt-get update
                 sudo apt-get install -y --no-install-recommends google-chrome-stable
                 wget https://chromedriver.storage.googleapis.com/114.0.5735.90/chromedriver_linux64.zip
-                unzip -o chromedriver_linux64.zip  # Automatically overwrite existing files
+                unzip -o chromedriver_linux64.zip
                 sudo mv chromedriver /usr/local/bin/
                 sudo chmod +x /usr/local/bin/chromedriver
                 '''
             }
         }
+
         stage('Unit Tests') {
             steps {
                 sh '''
@@ -139,6 +148,7 @@ pipeline {
                 }
             }
         }
+
         stage('Integration Tests') {
             steps {
                 sh '''
@@ -152,6 +162,7 @@ pipeline {
                 }
             }
         }
+
         stage('E2E Tests') {
             steps {
                 sh '''
@@ -165,6 +176,7 @@ pipeline {
                 }
             }
         }
+
         stage('Push Docker Images') {
             when {
                 allOf {
@@ -174,7 +186,7 @@ pipeline {
             }
             steps {
                 script {
-                    withDockerCredentials {
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
                         docker.withRegistry('https://index.docker.io/v1/', '') {
                             docker.image("${DOCKER_IMAGE_BACKEND}:latest").push('latest')
                             docker.image("${DOCKER_IMAGE_FRONTEND}:latest").push('latest')
@@ -183,6 +195,7 @@ pipeline {
                 }
             }
         }
+
         stage('Deploy') {
             when {
                 allOf {
@@ -194,6 +207,7 @@ pipeline {
                 sh 'docker-compose up -d'
             }
         }
+
         stage('Post to Jira') {
             when {
                 allOf {
@@ -222,11 +236,5 @@ pipeline {
                 jiraSendBuildInfo site: "${JIRA_SITE}", projectKey: "${JIRA_PROJECT_KEY}", buildName: "${env.JOB_NAME}", buildKey: "${env.BUILD_NUMBER}", comment: jiraComment
             }
         }
-    }
-}
-
-def withDockerCredentials(body) {
-    withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-        body()
     }
 }
