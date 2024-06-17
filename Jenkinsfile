@@ -221,15 +221,6 @@ pipeline {
                         echo "Deploying to Ubuntu instance at ${MY_UBUNTU_IP}"
                         ssh -o StrictHostKeyChecking=no ubuntu@${MY_UBUNTU_IP} <<EOF
                         set -e
-                        if [ ! -d "/home/ubuntu/ecommerce-django-react" ]; then
-                            echo "Cloning repository..."
-                            git clone https://github.com/skudsi490/ecommerce-django-react.git /home/ubuntu/ecommerce-django-react || exit 1
-                        else
-                            echo "Repository already exists, pulling latest changes..."
-                            cd /home/ubuntu/ecommerce-django-react
-                            git pull || exit 1
-                        fi
-                        cd /home/ubuntu/ecommerce-django-react || exit 1
                         echo "Bringing down existing Docker containers..."
                         docker-compose down || exit 1
                         echo "Pulling latest Docker images..."
@@ -266,15 +257,7 @@ pipeline {
                         $ErrorActionPreference = 'Stop';
                         $winrm = Get-WinRmInstance -HostName ${MY_WINDOWS_IP} -Username 'Administrator' -Password (Get-Secret -Name 'aws-instance-password')
                         Invoke-WinRmCommand -WinRm $winrm -Command '
-                        if (-Not (Test-Path -Path \\"C:\\ecommerce-django-react\\")) {
-                            echo \\"Cloning repository...\\"
-                            git clone https://github.com/skudsi490/ecommerce-django-react.git C:\\ecommerce-django-react
-                        } else {
-                            echo \\"Repository already exists, pulling latest changes...\\"
-                            cd C:\\ecommerce-django-react
-                            git pull
-                        }
-                        cd C:\\ecommerce-django-react
+                        cd C:\\path\\to\\your\\project
                         docker-compose down
                         docker-compose pull
                         docker-compose up -d
