@@ -200,34 +200,42 @@ pipeline {
             }
         }
 
-        stage('Deploy to Ubuntu') {
-            when {
-                allOf {
-                    branch 'main'
-                    expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
-                }
+    stage('Deploy to Ubuntu') {
+        when {
+            allOf {
+                branch 'main'
+                expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
             }
-            steps {
-                script {
-                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
-                        sh 'terraform output -json > terraform_output.json'
-                        def terraformOutputs = readJSON file: 'terraform_output.json'
-                        env.MY_UBUNTU_IP = terraformOutputs.ubuntu_ip.value
-                    }
+        }
+        steps {
+            script {
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
+                    sh 'terraform output -json > terraform_output.json'
+                    def terraformOutputs = readJSON file: 'terraform_output.json'
+                    env.MY_UBUNTU_IP = terraformOutputs.ubuntu_ip.value
+                }
 
-                    sshagent(credentials: ['aws-credentials']) {
-                        sh '''
-                        ssh -o StrictHostKeyChecking=no ubuntu@${MY_UBUNTU_IP} <<EOF
-                          cd /path/to/your/project
-                          docker-compose down
-                          docker-compose pull
-                          docker-compose up -d
-                        EOF
-                        '''
-                    }
+                sshagent(credentials: ['aws-credentials']) {
+                    sh '''
+                    set -e
+                    echo "Deploying to Ubuntu instance at ${MY_UBUNTU_IP}"
+                    ssh -o StrictHostKeyChecking=no ubuntu@${MY_UBUNTU_IP} <<EOF
+                    set -e
+                    cd /path/to/your/project || exit 1
+                    echo "Bringing down existing Docker containers..."
+                    docker-compose down || exit 1
+                    echo "Pulling latest Docker images..."
+                    docker-compose pull || exit 1
+                    echo "Starting Docker containers..."
+                    docker-compose up -d || exit 1
+                    echo "Deployment successful!"
+                    EOF
+                    '''
                 }
             }
         }
+    }
+
 
         stage('Deploy to Windows') {
             when {
