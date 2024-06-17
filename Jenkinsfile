@@ -200,42 +200,49 @@ pipeline {
             }
         }
 
-    stage('Deploy to Ubuntu') {
-        when {
-            allOf {
-                branch 'main'
-                expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
-            }
-        }
-        steps {
-            script {
-                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
-                    sh 'terraform output -json > terraform_output.json'
-                    def terraformOutputs = readJSON file: 'terraform_output.json'
-                    env.MY_UBUNTU_IP = terraformOutputs.ubuntu_ip.value
-                }
-
-                sshagent(credentials: ['aws-credentials']) {
-                    sh '''
-                    set -e
-                    echo "Deploying to Ubuntu instance at ${MY_UBUNTU_IP}"
-                    ssh -o StrictHostKeyChecking=no ubuntu@${MY_UBUNTU_IP} <<EOF
-                    set -e
-                    cd /path/to/your/project || exit 1
-                    echo "Bringing down existing Docker containers..."
-                    docker-compose down || exit 1
-                    echo "Pulling latest Docker images..."
-                    docker-compose pull || exit 1
-                    echo "Starting Docker containers..."
-                    docker-compose up -d || exit 1
-                    echo "Deployment successful!"
-                    EOF
-                    '''
+        stage('Deploy to Ubuntu') {
+            when {
+                allOf {
+                    branch 'main'
+                    expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
                 }
             }
-        }
-    }
+            steps {
+                script {
+                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
+                        sh 'terraform output -json > terraform_output.json'
+                        def terraformOutputs = readJSON file: 'terraform_output.json'
+                        env.MY_UBUNTU_IP = terraformOutputs.ubuntu_ip.value
+                    }
 
+                    sshagent(credentials: ['aws-credentials']) {
+                        sh '''
+                        set -e
+                        echo "Deploying to Ubuntu instance at ${MY_UBUNTU_IP}"
+                        ssh -o StrictHostKeyChecking=no ubuntu@${MY_UBUNTU_IP} <<EOF
+                        set -e
+                        if [ ! -d "/home/ubuntu/ecommerce-django-react" ]; then
+                            echo "Cloning repository..."
+                            git clone https://github.com/skudsi490/ecommerce-django-react.git /home/ubuntu/ecommerce-django-react || exit 1
+                        else
+                            echo "Repository already exists, pulling latest changes..."
+                            cd /home/ubuntu/ecommerce-django-react
+                            git pull || exit 1
+                        fi
+                        cd /home/ubuntu/ecommerce-django-react || exit 1
+                        echo "Bringing down existing Docker containers..."
+                        docker-compose down || exit 1
+                        echo "Pulling latest Docker images..."
+                        docker-compose pull || exit 1
+                        echo "Starting Docker containers..."
+                        docker-compose up -d || exit 1
+                        echo "Deployment successful!"
+                        EOF
+                        '''
+                    }
+                }
+            }
+        }
 
         stage('Deploy to Windows') {
             when {
@@ -258,7 +265,20 @@ pipeline {
                         powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "
                         $ErrorActionPreference = 'Stop';
                         $winrm = Get-WinRmInstance -HostName ${MY_WINDOWS_IP} -Username 'Administrator' -Password (Get-Secret -Name 'aws-instance-password')
-                        Invoke-WinRmCommand -WinRm $winrm -Command 'cd /path/to/your/project; docker-compose down; docker-compose pull; docker-compose up -d'
+                        Invoke-WinRmCommand -WinRm $winrm -Command '
+                        if (-Not (Test-Path -Path \\"C:\\ecommerce-django-react\\")) {
+                            echo \\"Cloning repository...\\"
+                            git clone https://github.com/skudsi490/ecommerce-django-react.git C:\\ecommerce-django-react
+                        } else {
+                            echo \\"Repository already exists, pulling latest changes...\\"
+                            cd C:\\ecommerce-django-react
+                            git pull
+                        }
+                        cd C:\\ecommerce-django-react
+                        docker-compose down
+                        docker-compose pull
+                        docker-compose up -d
+                        '
                         "
                         '''
                     }
