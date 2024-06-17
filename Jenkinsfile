@@ -193,6 +193,19 @@ pipeline {
             }
         }
 
+        stage('Install AWS CLI') {
+            steps {
+                sh '''
+                if ! [ -x "$(command -v aws)" ]; then
+                  echo "AWS CLI not found, installing..."
+                  curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+                  unzip awscliv2.zip
+                  sudo ./aws/install
+                fi
+                '''
+            }
+        }
+
         stage('Push Docker Images') {
             when {
                 allOf {
