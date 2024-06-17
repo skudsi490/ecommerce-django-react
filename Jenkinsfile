@@ -200,7 +200,7 @@ pipeline {
             }
         }
 
-        stage('Deploy') {
+        stage('Deploy to Ubuntu') {
             when {
                 allOf {
                     branch 'main'
@@ -208,7 +208,53 @@ pipeline {
                 }
             }
             steps {
-                sh 'docker-compose up -d'
+                script {
+                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
+                        sh 'terraform output -json > terraform_output.json'
+                        def terraformOutputs = readJSON file: 'terraform_output.json'
+                        env.MY_UBUNTU_IP = terraformOutputs.ubuntu_ip.value
+                    }
+
+                    sshagent(credentials: ['aws-credentials']) {
+                        sh '''
+                        ssh -o StrictHostKeyChecking=no ubuntu@${MY_UBUNTU_IP} <<EOF
+                          cd /path/to/your/project
+                          docker-compose down
+                          docker-compose pull
+                          docker-compose up -d
+                        EOF
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Deploy to Windows') {
+            when {
+                allOf {
+                    branch 'main'
+                    expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
+                }
+            }
+            steps {
+                script {
+                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
+                        sh 'terraform output -json > terraform_output.json'
+                        def terraformOutputs = readJSON file: 'terraform_output.json'
+                        env.MY_WINDOWS_IP = terraformOutputs.windows_ip.value
+                    }
+
+                    // Assuming you have WinRM enabled on the Windows instance for remote management
+                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
+                        bat '''
+                        powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "
+                        $ErrorActionPreference = 'Stop';
+                        $winrm = Get-WinRmInstance -HostName ${MY_WINDOWS_IP} -Username 'Administrator' -Password (Get-Secret -Name 'aws-instance-password')
+                        Invoke-WinRmCommand -WinRm $winrm -Command 'cd /path/to/your/project; docker-compose down; docker-compose pull; docker-compose up -d'
+                        "
+                        '''
+                    }
+                }
             }
         }
 
