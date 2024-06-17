@@ -11,6 +11,8 @@ docker-compose -f docker-compose.e2e.yml up --abort-on-container-exit
 
 ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@18.195.72.28
 
+ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@18.197.60.165
+ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.78.246.16
 Having logs for the SSH :
 ssh -vvv -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.70.222.92
 
@@ -50,7 +52,7 @@ npm start
 
 
 git add Jenkinsfile
-git commit -m "Update Jenkinsfile v5"
+git commit -m "Update Jenkinsfile v31"
 git push origin main
 
 
@@ -133,3 +135,7 @@ Save and Launch:
 
 Click Save.
 Jenkins will attempt to connect to the agent using the provided SSH credentials.
+
+
+sudo systemctl daemon-reload
+sudo systemctl restart jenkins
