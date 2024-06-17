@@ -21,6 +21,19 @@ pipeline {
     }
 
     stages {
+        stage('Pre-Cleanup') {
+            steps {
+                sh '''
+                echo "Cleaning up workspace and Docker resources"
+                docker system prune -af --volumes
+                sudo rm -rf ${WORKSPACE}/*
+                sudo apt-get clean
+                sudo apt-get autoremove -y
+                df -h
+                '''
+            }
+        }
+
         stage('Checkout') {
             steps {
                 git url: "${REPO_URL}", branch: 'main'
