@@ -17,7 +17,6 @@ pipeline {
         AWS_CREDENTIALS = credentials('aws-credentials')
         DJANGO_SETTINGS_MODULE = 'backend.settings'
         PYTHONPATH = '/app:/app/backend:/app/base'
-        PROJECT_DIR_WINDOWS = 'C:\\ecommerce-django-react'
     }
 
     stages {
@@ -201,6 +200,21 @@ pipeline {
             }
         }
 
+        stage('Archive Artifacts') {
+            steps {
+                sh '''
+                mkdir -p archive/backend archive/frontend
+                cp -r backend/* archive/backend/
+                cp -r frontend/* archive/frontend/
+                '''
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
+                    sh '''
+                    aws s3 sync archive/ s3://${S3_BUCKET}/
+                    '''
+                }
+            }
+        }
+
         stage('Deploy to Ubuntu') {
             when {
                 allOf {
@@ -222,12 +236,14 @@ pipeline {
                         echo "Deploying to Ubuntu instance at ${MY_UBUNTU_IP}"
                         ssh -o StrictHostKeyChecking=no ubuntu@${MY_UBUNTU_IP} <<EOF
                         set -e
-                        # Install Docker Compose if not already installed
                         if ! [ -x "$(command -v docker-compose)" ]; then
                           echo "Docker Compose not found, installing..."
                           sudo apt update
                           sudo apt install docker-compose -y
                         fi
+                        echo "Downloading artifacts from S3..."
+                        aws s3 sync s3://${S3_BUCKET}/ /home/ubuntu/ecommerce-django-react/
+                        cd /home/ubuntu/ecommerce-django-react
                         echo "Bringing down existing Docker containers..."
                         docker-compose down || exit 1
                         echo "Pulling latest Docker images..."
@@ -264,11 +280,11 @@ pipeline {
                         $ErrorActionPreference = 'Stop';
                         $winrm = Get-WinRmInstance -HostName ${MY_WINDOWS_IP} -Username 'Administrator' -Password (Get-Secret -Name 'aws-instance-password')
                         Invoke-WinRmCommand -WinRm $winrm -Command '
-                        cd ${PROJECT_DIR_WINDOWS}
-                        if (!(Get-Command docker-compose -ErrorAction SilentlyContinue)) {
-                            Invoke-WebRequest -Uri https://github.com/docker/compose/releases/download/1.29.2/docker-compose-Windows-x86_64.exe -OutFile C:\\ProgramData\\docker-compose.exe
-                            Start-Process -FilePath C:\\ProgramData\\docker-compose.exe -ArgumentList "/install" -NoNewWindow -Wait
+                        if (!(Test-Path -Path C:\\ecommerce-django-react)) {
+                            New-Item -ItemType Directory -Path C:\\ecommerce-django-react
                         }
+                        aws s3 sync s3://${S3_BUCKET}/ C:\\ecommerce-django-react
+                        cd C:\\ecommerce-django-react
                         docker-compose down
                         docker-compose pull
                         docker-compose up -d
