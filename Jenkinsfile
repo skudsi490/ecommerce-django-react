@@ -276,6 +276,7 @@ pipeline {
                     branch 'main'
                     expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
                 }
+            }
             steps {
                 script {
                     withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
@@ -313,6 +314,7 @@ pipeline {
                     branch 'main'
                     expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
                 }
+            }
             steps {
                 script {
                     def jiraComment = "Build ${env.JOB_NAME} #${env.BUILD_NUMBER} was successful. See details at ${env.BUILD_URL}"
