@@ -14,7 +14,8 @@ pipeline {
         JIRA_SITE = 'ecommerce-django-react'
         JIRA_PROJECT_KEY = 'TD'
         DOCKERHUB_CREDENTIALS = credentials('dockerhub')
-        AWS_CREDENTIALS = credentials('aws-credentials')
+        AWS_ACCESS_KEY_ID = credentials('aws-access-key-id')
+        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-access-key')
         DJANGO_SETTINGS_MODULE = 'backend.settings'
         PYTHONPATH = '/app:/app/backend:/app/base'
     }
@@ -219,9 +220,14 @@ pipeline {
                 cp -r backend/* archive/backend/
                 cp -r frontend/* archive/frontend/
                 '''
-                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
+                withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                                 string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')]) {
                     sh '''
+                    export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                    export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
                     aws s3 sync archive/ s3://${S3_BUCKET}/
+                    unset AWS_ACCESS_KEY_ID
+                    unset AWS_SECRET_ACCESS_KEY
                     '''
                 }
             }
@@ -236,13 +242,21 @@ pipeline {
             }
             steps {
                 script {
-                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
+                    withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                                     string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')]) {
                         sh 'terraform output -json > terraform_output.json'
                         def terraformOutputs = readJSON file: 'terraform_output.json'
                         env.MY_UBUNTU_IP = terraformOutputs.ubuntu_ip.value
+                        sh '''
+                        export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                        export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                        ssh-agent bash -c 'ssh-add ~/.ssh/id_rsa && scp -o StrictHostKeyChecking=no terraform_output.json ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/terraform_output.json'
+                        unset AWS_ACCESS_KEY_ID
+                        unset AWS_SECRET_ACCESS_KEY
+                        '''
                     }
 
-                    sshagent(credentials: ['aws-credentials']) {
+                    sshagent(credentials: ['ssh-key-credentials']) {
                         sh '''
                         set -e
                         echo "Deploying to Ubuntu instance at ${MY_UBUNTU_IP}"
@@ -279,15 +293,14 @@ pipeline {
             }
             steps {
                 script {
-                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
+                    withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                                     string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')]) {
                         sh 'terraform output -json > terraform_output.json'
                         def terraformOutputs = readJSON file: 'terraform_output.json'
                         env.MY_WINDOWS_IP = terraformOutputs.windows_ip.value
-                    }
-
-                    // Assuming you have WinRM enabled on the Windows instance for remote management
-                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
-                        bat '''
+                        sh '''
+                        export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                        export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
                         powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "
                         $ErrorActionPreference = 'Stop';
                         $winrm = Get-WinRmInstance -HostName ${MY_WINDOWS_IP} -Username 'Administrator' -Password (Get-Secret -Name 'aws-instance-password')
@@ -302,6 +315,8 @@ pipeline {
                         docker-compose up -d
                         '
                         "
+                        unset AWS_ACCESS_KEY_ID
+                        unset AWS_SECRET_ACCESS_KEY
                         '''
                     }
                 }
