@@ -150,8 +150,11 @@ pipeline {
         stage('Unit Tests') {
             steps {
                 sh '''
+                # Clean the workspace to ensure no old test files are present
+                rm -rf archive
+
                 mkdir -p backend/reports
-                bash -c "source venv/bin/activate && docker-compose run backend pytest --junitxml=/app/reports/unit_tests.xml"
+                bash -c "source venv/bin/activate && docker-compose run backend pytest backend/tests --junitxml=/app/reports/unit_tests.xml"
                 '''
             }
             post {
@@ -165,7 +168,7 @@ pipeline {
             steps {
                 sh '''
                 mkdir -p backend/reports
-                bash -c "source venv/bin/activate && docker-compose run backend pytest --junitxml=/app/reports/integration_tests.xml"
+                bash -c "source venv/bin/activate && docker-compose run backend pytest backend/tests --junitxml=/app/reports/integration_tests.xml"
                 '''
             }
             post {
@@ -179,7 +182,7 @@ pipeline {
             steps {
                 sh '''
                 mkdir -p frontend/reports
-                bash -c "source venv/bin/activate && docker-compose -f docker-compose.e2e.yml run frontend pytest --junitxml=/app/reports/e2e_tests.xml"
+                bash -c "source venv/bin/activate && docker-compose -f docker-compose.e2e.yml run frontend pytest frontend/tests --junitxml=/app/reports/e2e_tests.xml"
                 '''
             }
             post {
@@ -273,7 +276,6 @@ pipeline {
                     branch 'main'
                     expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
                 }
-            }
             steps {
                 script {
                     withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
@@ -311,7 +313,6 @@ pipeline {
                     branch 'main'
                     expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
                 }
-            }
             steps {
                 script {
                     def jiraComment = "Build ${env.JOB_NAME} #${env.BUILD_NUMBER} was successful. See details at ${env.BUILD_URL}"
