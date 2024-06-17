@@ -138,6 +138,15 @@ pipeline {
             }
         }
 
+        stage('Clean PyCache') {
+            steps {
+                sh '''
+                find . -type d -name "__pycache__" -exec rm -rf {} +
+                find . -type f -name "*.pyc" -delete
+                '''
+            }
+        }
+
         stage('Unit Tests') {
             steps {
                 sh '''
