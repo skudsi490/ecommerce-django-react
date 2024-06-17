@@ -24,11 +24,18 @@ pipeline {
         stage('Pre-Cleanup') {
             steps {
                 sh '''
+                echo "Disk usage before cleanup:"
+                df -h
+                
                 echo "Cleaning up workspace and Docker resources"
-                docker system prune -af --volumes
+                docker system prune -af --volumes || true
                 sudo rm -rf ${WORKSPACE}/*
-                sudo apt-get clean
-                sudo apt-get autoremove -y
+                sudo apt-get clean || true
+                sudo apt-get autoremove -y || true
+                sudo rm -rf /var/lib/docker/tmp/*
+                sudo rm -rf /var/lib/apt/lists/*
+                
+                echo "Disk usage after cleanup:"
                 df -h
                 '''
             }
@@ -58,9 +65,9 @@ pipeline {
             steps {
                 sh '''
                 echo "Cleaning up docker"
-                docker system prune -af --volumes
-                sudo apt-get clean
-                sudo apt-get autoremove -y
+                docker system prune -af --volumes || true
+                sudo apt-get clean || true
+                sudo apt-get autoremove -y || true
                 df -h
                 '''
             }
