@@ -294,8 +294,10 @@ pipeline {
                     withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
                                      string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')]) {
                         sh 'terraform output -json > terraform_output.json'
-                        def terraformOutputs = readJSON file: 'terraform_output.json'
-                        env.MY_UBUNTU_IP = terraformOutputs.ubuntu_ip.value
+                        def terraformOutputs = readFile 'terraform_output.json'
+                        def jsonSlurper = new groovy.json.JsonSlurper()
+                        def terraformJson = jsonSlurper.parseText(terraformOutputs)
+                        env.MY_UBUNTU_IP = terraformJson.ubuntu_ip.value
                         sh '''
                         export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
                         export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
@@ -345,8 +347,10 @@ pipeline {
                     withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
                                      string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')]) {
                         sh 'terraform output -json > terraform_output.json'
-                        def terraformOutputs = readJSON file: 'terraform_output.json'
-                        env.MY_WINDOWS_IP = terraformOutputs.windows_ip.value
+                        def terraformOutputs = readFile 'terraform_output.json'
+                        def jsonSlurper = new groovy.json.JsonSlurper()
+                        def terraformJson = jsonSlurper.parseText(terraformOutputs)
+                        env.MY_WINDOWS_IP = terraformJson.windows_ip.value
                         sh '''
                         export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
                         export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
@@ -393,9 +397,11 @@ pipeline {
                     withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
                                      string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')]) {
                         sh 'terraform output -json > terraform_output.json'
-                        def terraformOutputs = readJSON file: 'terraform_output.json'
-                        def ubuntuIp = terraformOutputs.ubuntu_ip.value
-                        def windowsIp = terraformOutputs.windows_ip.value
+                        def terraformOutputs = readFile 'terraform_output.json'
+                        def jsonSlurper = new groovy.json.JsonSlurper()
+                        def terraformJson = jsonSlurper.parseText(terraformOutputs)
+                        def ubuntuIp = terraformJson.ubuntu_ip.value
+                        def windowsIp = terraformJson.windows_ip.value
                         
                         // Verify deployment on Ubuntu instance
                         sshagent(credentials: ['ssh-key-credentials']) {
