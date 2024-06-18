@@ -291,6 +291,7 @@ pipeline {
             }
             steps {
                 script {
+                    echo "Deploying to Ubuntu"
                     echo "Current branch: ${env.GIT_BRANCH}"
                     echo "Current build result: ${currentBuild.result}"
                     withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
@@ -349,6 +350,7 @@ pipeline {
             }
             steps {
                 script {
+                    echo "Deploying to Windows"
                     echo "Current branch: ${env.GIT_BRANCH}"
                     echo "Current build result: ${currentBuild.result}"
                     withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
