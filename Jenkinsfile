@@ -297,39 +297,42 @@ pipeline {
                         def terraformOutputs = readFile 'terraform_output.json'
                         def jsonSlurper = new groovy.json.JsonSlurper()
                         def terraformJson = jsonSlurper.parseText(terraformOutputs)
-                        env.MY_UBUNTU_IP = terraformJson.ubuntu_ip.value
-                        sh '''
-                        export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-                        export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-                        ssh-agent bash -c 'ssh-add ~/.ssh/id_rsa && scp -o StrictHostKeyChecking=no terraform_output.json ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/terraform_output.json'
-                        unset AWS_ACCESS_KEY_ID
-                        unset AWS_SECRET_ACCESS_KEY
-                        '''
-                    }
-
-                    sshagent(credentials: ['ssh-key-credentials']) {
-                        sh '''
-                        set -e
-                        echo "Deploying to Ubuntu instance at ${MY_UBUNTU_IP}"
-                        ssh -o StrictHostKeyChecking=no ubuntu@${MY_UBUNTU_IP} <<EOF
-                        set -e
-                        if ! [ -x "$(command -v docker-compose)" ]; then
-                          echo "Docker Compose not found, installing..."
-                          sudo apt update
-                          sudo apt install docker-compose -y
-                        fi
-                        echo "Downloading artifacts from S3..."
-                        aws s3 sync s3://${S3_BUCKET}/ /home/ubuntu/ecommerce-django-react/
-                        cd /home/ubuntu/ecommerce-django-react
-                        echo "Bringing down existing Docker containers..."
-                        docker-compose down || exit 1
-                        echo "Pulling latest Docker images..."
-                        docker-compose pull || exit 1
-                        echo "Starting Docker containers..."
-                        docker-compose up -d || exit 1
-                        echo "Deployment successful!"
-                        EOF
-                        '''
+                        if (terraformJson.ubuntu_ip) {
+                            env.MY_UBUNTU_IP = terraformJson.ubuntu_ip.value
+                            sh '''
+                            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                            ssh-agent bash -c 'ssh-add ~/.ssh/id_rsa && scp -o StrictHostKeyChecking=no terraform_output.json ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/terraform_output.json'
+                            unset AWS_ACCESS_KEY_ID
+                            unset AWS_SECRET_ACCESS_KEY
+                            '''
+                            sshagent(credentials: ['ssh-key-credentials']) {
+                                sh '''
+                                set -e
+                                echo "Deploying to Ubuntu instance at ${MY_UBUNTU_IP}"
+                                ssh -o StrictHostKeyChecking=no ubuntu@${MY_UBUNTU_IP} <<EOF
+                                set -e
+                                if ! [ -x "$(command -v docker-compose)" ]; then
+                                  echo "Docker Compose not found, installing..."
+                                  sudo apt update
+                                  sudo apt install docker-compose -y
+                                fi
+                                echo "Downloading artifacts from S3..."
+                                aws s3 sync s3://${S3_BUCKET}/ /home/ubuntu/ecommerce-django-react/
+                                cd /home/ubuntu/ecommerce-django-react
+                                echo "Bringing down existing Docker containers..."
+                                docker-compose down || exit 1
+                                echo "Pulling latest Docker images..."
+                                docker-compose pull || exit 1
+                                echo "Starting Docker containers..."
+                                docker-compose up -d || exit 1
+                                echo "Deployment successful!"
+                                EOF
+                                '''
+                            }
+                        } else {
+                            error("Missing ubuntu_ip in terraform output.")
+                        }
                     }
                 }
             }
@@ -350,27 +353,31 @@ pipeline {
                         def terraformOutputs = readFile 'terraform_output.json'
                         def jsonSlurper = new groovy.json.JsonSlurper()
                         def terraformJson = jsonSlurper.parseText(terraformOutputs)
-                        env.MY_WINDOWS_IP = terraformJson.windows_ip.value
-                        sh '''
-                        export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-                        export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-                        powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "
-                        $ErrorActionPreference = 'Stop';
-                        $winrm = Get-WinRmInstance -HostName ${MY_WINDOWS_IP} -Username 'Administrator' -Password (Get-Secret -Name 'aws-instance-password')
-                        Invoke-WinRmCommand -WinRm $winrm -Command '
-                        if (!(Test-Path -Path C:\\ecommerce-django-react)) {
-                            New-Item -ItemType Directory -Path C:\\ecommerce-django-react
+                        if (terraformJson.windows_ip) {
+                            env.MY_WINDOWS_IP = terraformJson.windows_ip.value
+                            sh '''
+                            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                            powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "
+                            $ErrorActionPreference = 'Stop';
+                            $winrm = Get-WinRmInstance -HostName ${MY_WINDOWS_IP} -Username 'Administrator' -Password (Get-Secret -Name 'aws-instance-password')
+                            Invoke-WinRmCommand -WinRm $winrm -Command '
+                            if (!(Test-Path -Path C:\\ecommerce-django-react)) {
+                                New-Item -ItemType Directory -Path C:\\ecommerce-django-react
+                            }
+                            aws s3 sync s3://${S3_BUCKET}/ C:\\ecommerce-django-react
+                            cd C:\\ecommerce-django-react
+                            docker-compose down
+                            docker-compose pull
+                            docker-compose up -d
+                            '
+                            "
+                            unset AWS_ACCESS_KEY_ID
+                            unset AWS_SECRET_ACCESS_KEY
+                            '''
+                        } else {
+                            error("Missing windows_ip in terraform output.")
                         }
-                        aws s3 sync s3://${S3_BUCKET}/ C:\\ecommerce-django-react
-                        cd C:\\ecommerce-django-react
-                        docker-compose down
-                        docker-compose pull
-                        docker-compose up -d
-                        '
-                        "
-                        unset AWS_ACCESS_KEY_ID
-                        unset AWS_SECRET_ACCESS_KEY
-                        '''
                     }
                 }
             }
@@ -400,32 +407,40 @@ pipeline {
                         def terraformOutputs = readFile 'terraform_output.json'
                         def jsonSlurper = new groovy.json.JsonSlurper()
                         def terraformJson = jsonSlurper.parseText(terraformOutputs)
-                        def ubuntuIp = terraformJson.ubuntu_ip.value
-                        def windowsIp = terraformJson.windows_ip.value
-                        
-                        // Verify deployment on Ubuntu instance
-                        sshagent(credentials: ['ssh-key-credentials']) {
-                            sh """
-                            ssh -o StrictHostKeyChecking=no ubuntu@${ubuntuIp} <<EOF
-                            docker-compose ps
-                            EOF
-                            """
+                        def ubuntuIp = terraformJson.ubuntu_ip?.value
+                        def windowsIp = terraformJson.windows_ip?.value
+
+                        if (ubuntuIp) {
+                            // Verify deployment on Ubuntu instance
+                            sshagent(credentials: ['ssh-key-credentials']) {
+                                sh """
+                                ssh -o StrictHostKeyChecking=no ubuntu@${ubuntuIp} <<EOF
+                                docker-compose ps
+                                EOF
+                                """
+                            }
+                        } else {
+                            echo "Skipping Ubuntu verification, IP not found."
                         }
 
-                        // Verify deployment on Windows instance
-                        sh """
-                        export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-                        export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-                        powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "
-                        $ErrorActionPreference = 'Stop';
-                        $winrm = Get-WinRmInstance -HostName ${windowsIp} -Username 'Administrator' -Password (Get-Secret -Name 'aws-instance-password')
-                        Invoke-WinRmCommand -WinRm $winrm -Command '
-                        docker-compose ps
-                        '
-                        "
-                        unset AWS_ACCESS_KEY_ID
-                        unset AWS_SECRET_ACCESS_KEY
-                        """
+                        if (windowsIp) {
+                            // Verify deployment on Windows instance
+                            sh """
+                            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                            powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "
+                            $ErrorActionPreference = 'Stop';
+                            $winrm = Get-WinRmInstance -HostName ${windowsIp} -Username 'Administrator' -Password (Get-Secret -Name 'aws-instance-password')
+                            Invoke-WinRmCommand -WinRm $winrm -Command '
+                            docker-compose ps
+                            '
+                            "
+                            unset AWS_ACCESS_KEY_ID
+                            unset AWS_SECRET_ACCESS_KEY
+                            """
+                        } else {
+                            echo "Skipping Windows verification, IP not found."
+                        }
                     }
                 }
             }
