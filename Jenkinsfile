@@ -370,6 +370,44 @@ pipeline {
                 }
             }
         }
+
+        stage('Verify Deployment on Instances') {
+            steps {
+                script {
+                    withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                                     string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')]) {
+                        sh 'terraform output -json > terraform_output.json'
+                        def terraformOutputs = readJSON file: 'terraform_output.json'
+                        def ubuntuIp = terraformOutputs.ubuntu_ip.value
+                        def windowsIp = terraformOutputs.windows_ip.value
+                        
+                        // Verify deployment on Ubuntu instance
+                        sshagent(credentials: ['ssh-key-credentials']) {
+                            sh """
+                            ssh -o StrictHostKeyChecking=no ubuntu@${ubuntuIp} <<EOF
+                            docker-compose ps
+                            EOF
+                            """
+                        }
+
+                        // Verify deployment on Windows instance
+                        sh """
+                        export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                        export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                        powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "
+                        $ErrorActionPreference = 'Stop';
+                        $winrm = Get-WinRmInstance -HostName ${windowsIp} -Username 'Administrator' -Password (Get-Secret -Name 'aws-instance-password')
+                        Invoke-WinRmCommand -WinRm $winrm -Command '
+                        docker-compose ps
+                        '
+                        "
+                        unset AWS_ACCESS_KEY_ID
+                        unset AWS_SECRET_ACCESS_KEY
+                        """
+                    }
+                }
+            }
+        }
     }
 
     post {
