@@ -369,7 +369,7 @@ pipeline {
             steps {
                 script {
                     def jiraComment = "Build ${env.JOB_NAME} #${env.BUILD_NUMBER} was successful. See details at ${env.BUILD_URL}"
-                    jiraSendBuildInfo site: "${JIRA_SITE}", projectKey: "${JIRA_PROJECT_KEY}", buildName: "${env.JOB_NAME}", buildKey: "${env.BUILD_NUMBER}", comment: jiraComment
+                    jiraComment issueKey: "${JIRA_PROJECT_KEY}-${env.BUILD_NUMBER}", comment: jiraComment
                 }
             }
         }
@@ -422,7 +422,7 @@ pipeline {
                     body: "Check Jenkins logs for details."
                 )
                 def jiraComment = "Build ${env.JOB_NAME} #${env.BUILD_NUMBER} failed. Check Jenkins logs for details."
-                jiraSendBuildInfo site: "${JIRA_SITE}", projectKey: "${JIRA_PROJECT_KEY}", buildName: "${env.JOB_NAME}", buildKey: "${env.BUILD_NUMBER}", comment: jiraComment
+                jiraComment issueKey: "${JIRA_PROJECT_KEY}-${env.BUILD_NUMBER}", comment: jiraComment
             }
         }
     }   
