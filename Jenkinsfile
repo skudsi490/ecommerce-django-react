@@ -311,7 +311,7 @@ pipeline {
                         unset AWS_SECRET_ACCESS_KEY
                         '''
                         def terraformState = readFile 'terraform.tfstate'
-                        def terraformJson = new groovy.json.JsonSlurperClassic().parseText(terraformState)
+                        def terraformJson = new groovy.json.JsonSlurper().parseText(terraformState)
                         def ubuntuIp = terraformJson.resources.find { it.type == 'aws_instance' && it.name == 'my_ubuntu' }.instances[0].attributes.public_ip
                         def windowsIp = terraformJson.resources.find { it.type == 'aws_instance' && it.name == 'my_windows' }.instances[0].attributes.public_ip
 
@@ -388,8 +388,8 @@ pipeline {
                         unset AWS_SECRET_ACCESS_KEY
                         '''
                         def terraformState = readFile 'terraform.tfstate'
-                        def terraformJson = new groovy.json.JsonSlurperClassic().parseText(terraformState)
-                        def ubuntuIp = terraformJson.resources.find { it.type == 'aws_instance' && it.name == 'my_ubuntu' }.instances[0].attributes.public_ip
+                        def terraformJson = new groovy.json.JsonSlurper().parseText(terraformState)
+                        def ubuntuIp = terraformJson.resources.find { it.type == 'aws_instance' && it name == 'my_ubuntu' }.instances[0].attributes.public_ip
                         def windowsIp = terraformJson.resources.find { it.type == 'aws_instance' && it.name == 'my_windows' }.instances[0].attributes.public_ip
 
                         echo "Ubuntu IP: ${ubuntuIp}"
@@ -457,7 +457,7 @@ pipeline {
                         unset AWS_SECRET_ACCESS_KEY
                         '''
                         def terraformState = readFile 'terraform.tfstate'
-                        def terraformJson = new groovy.json.JsonSlurperClassic().parseText(terraformState)
+                        def terraformJson = new groovy.json.JsonSlurper().parseText(terraformState)
                         def ubuntuIp = terraformJson.resources.find { it.type == 'aws_instance' && it.name == 'my_ubuntu' }.instances[0].attributes.public_ip
                         def windowsIp = terraformJson.resources.find { it.type == 'aws_instance' && it.name == 'my_windows' }.instances[0].attributes.public_ip
 
