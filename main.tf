@@ -153,8 +153,14 @@ resource "aws_instance" "jenkins" {
   key_name                     = var.key_name
   instance_initiated_shutdown_behavior = "stop"
 
+  ebs_block_device {
+    device_name = "/dev/sdh"
+    volume_size = 30
+    volume_type = "gp2"
+  }
+
   lifecycle {
-    prevent_destroy = true
+    # prevent_destroy = true
     ignore_changes  = [associate_public_ip_address]
   }
 
@@ -240,8 +246,14 @@ resource "aws_instance" "jenkins_agent" {
   key_name                     = var.key_name
   instance_initiated_shutdown_behavior = "stop"
 
+  ebs_block_device {
+    device_name = "/dev/sdh"
+    volume_size = 30
+    volume_type = "gp2"
+  }
+
   lifecycle {
-    prevent_destroy = true
+    # prevent_destroy = true
     ignore_changes  = [associate_public_ip_address]
   }
 
@@ -276,8 +288,14 @@ resource "aws_instance" "my_ubuntu" {
   key_name                     = var.key_name
   instance_initiated_shutdown_behavior = "stop"
 
+  ebs_block_device {
+    device_name = "/dev/sdh"
+    volume_size = 30
+    volume_type = "gp2"
+  }
+
   lifecycle {
-    prevent_destroy = true
+    # prevent_destroy = true
     ignore_changes  = [associate_public_ip_address]
   }
 
@@ -312,8 +330,14 @@ resource "aws_instance" "my_windows" {
   key_name                     = var.key_name
   instance_initiated_shutdown_behavior = "stop"
 
+  ebs_block_device {
+    device_name = "/dev/sdh"
+    volume_size = 30
+    volume_type = "gp2"
+  }
+
   lifecycle {
-    prevent_destroy = true
+    # prevent_destroy = true
     ignore_changes  = [associate_public_ip_address]
   }
 
