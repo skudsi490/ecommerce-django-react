@@ -60,7 +60,7 @@ pipeline {
             }
         }
 
-        stage('Check Instance States') {
+        stage('Check and Start Instances') {
             steps {
                 script {
                     withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
@@ -69,9 +69,27 @@ pipeline {
                         export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
                         export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
                         
-                        # Check the state of instances
+                        # Check and start instances if stopped
+                        INSTANCE_IDS=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].InstanceId' --output text)
                         INSTANCE_STATES=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].State.Name' --output text)
-                        echo "Instance states before proceeding: ${INSTANCE_STATES}"
+
+                        echo "Instance IDs: ${INSTANCE_IDS}"
+                        echo "Instance states before starting: ${INSTANCE_STATES}"
+                        
+                        for i in ${INSTANCE_IDS}; do
+                            STATE=$(aws ec2 describe-instances --instance-ids $i --query 'Reservations[*].Instances[*].State.Name' --output text)
+                            if [ "$STATE" == "stopped" ]; then
+                                aws ec2 start-instances --instance-ids $i
+                                aws ec2 wait instance-running --instance-ids $i
+                            fi
+                        done
+                        
+                        INSTANCE_STATES=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].State.Name' --output text)
+                        echo "Instance states after starting: ${INSTANCE_STATES}"
+                        
+                        # Get the new IP addresses
+                        INSTANCE_IPS=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --output text)
+                        echo "Instance IPs: ${INSTANCE_IPS}"
                         
                         unset AWS_ACCESS_KEY_ID
                         unset AWS_SECRET_ACCESS_KEY
