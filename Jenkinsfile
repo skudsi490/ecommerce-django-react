@@ -63,6 +63,22 @@ pipeline {
             }
         }
 
+        stage('Apply Terraform') {
+            steps {
+                script {
+                    withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                                     string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')]) {
+                        sh '''
+                        export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                        export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                        terraform init
+                        terraform apply -auto-approve
+                        '''
+                    }
+                }
+            }
+        }
+
         stage('Test Docker Login') {
             steps {
                 script {
@@ -300,6 +316,9 @@ pipeline {
                         def terraformOutputs = readFile 'terraform_output.json'
                         def jsonSlurper = new groovy.json.JsonSlurper()
                         def terraformJson = jsonSlurper.parseText(terraformOutputs)
+                        echo "Terraform Output: ${terraformOutputs}"
+                        echo "Ubuntu IP: ${terraformJson.ubuntu_ip?.value}"
+                        echo "Windows IP: ${terraformJson.windows_ip?.value}"
                         if (terraformJson.ubuntu_ip) {
                             env.MY_UBUNTU_IP = terraformJson.ubuntu_ip.value
                             sh '''
@@ -367,6 +386,9 @@ pipeline {
                         def terraformOutputs = readFile 'terraform_output.json'
                         def jsonSlurper = new groovy.json.JsonSlurper()
                         def terraformJson = jsonSlurper.parseText(terraformOutputs)
+                        echo "Terraform Output: ${terraformOutputs}"
+                        echo "Ubuntu IP: ${terraformJson.ubuntu_ip?.value}"
+                        echo "Windows IP: ${terraformJson.windows_ip?.value}"
                         if (terraformJson.windows_ip) {
                             env.MY_WINDOWS_IP = terraformJson.windows_ip.value
                             sh '''

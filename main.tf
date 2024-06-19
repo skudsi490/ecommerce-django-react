@@ -1,4 +1,10 @@
 terraform {
+  backend "s3" {
+    bucket         = "jenkins-artifacts-bucket-123456"
+    key            = "terraform/state/terraform.tfstate"
+    region         = "eu-central-1"
+    dynamodb_table = "terraform-lock-table"
+  }
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -31,6 +37,20 @@ variable "instance_type" {
 variable "key_name" {
   description = "Name of the SSH key pair"
   default     = "tesi-aws"
+}
+
+# DynamoDB table for state locking
+resource "aws_dynamodb_table" "terraform_lock" {
+  name         = "terraform-lock-table"
+  billing_mode = "PROVISIONED"
+  read_capacity = 5
+  write_capacity = 5
+  hash_key     = "LockID"
+
+  attribute {
+    name = "LockID"
+    type = "S"
+  }
 }
 
 # VPC

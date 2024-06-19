@@ -9,10 +9,16 @@ To run the end-to-end tests, use the following command:
 docker-compose -f docker-compose.e2e.yml up --abort-on-container-exit
 
 
-ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@18.195.72.28
+ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@54.93.212.177
 
 ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@18.197.60.165
-ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.78.246.16
+ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@18.199.94.168
+ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@18.184.52.5
+
+check if docker and docker compose installed :
+docker ps
+docker-compose --version
+
 Having logs for the SSH :
 ssh -vvv -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.70.222.92
 
@@ -23,6 +29,10 @@ terraform state list
 
 check status of Jenkins :
 sudo systemctl status jenkins
+
+Restart Jenkins :
+sudo systemctl restart jenkins
+
 
 Get the Jinkins Admin Password:
 sudo cat /var/lib/jenkins/secrets/initialAdminPassword
@@ -52,7 +62,7 @@ npm start
 
 
 git add Jenkinsfile
-git commit -m "Update Jenkinsfile v31"
+git commit -m "Update Jenkinsfile v47"
 git push origin main
 
 
