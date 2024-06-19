@@ -323,42 +323,38 @@ pipeline {
                             sh '''
                             export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
                             export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-                            ssh-agent bash -c 'ssh-add ~/.ssh/id_rsa && scp -o StrictHostKeyChecking=no terraform_output.json ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/terraform_output.json'
+                            ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${MY_UBUNTU_IP} "mkdir -p /home/ubuntu/ecommerce-django-react"
                             unset AWS_ACCESS_KEY_ID
                             unset AWS_SECRET_ACCESS_KEY
                             '''
-                            sshagent(credentials: ['ssh-key-credentials']) {
-                                sh '''
-                                set -e
-                                echo "Deploying to Ubuntu instance at ${MY_UBUNTU_IP}"
-                                ssh -o StrictHostKeyChecking=no ubuntu@${MY_UBUNTU_IP} <<EOF
-                                set -e
-                                if ! [ -x "$(command -v docker)" ]; then
-                                  echo "Docker not found, installing..."
-                                  sudo apt update
-                                  sudo apt install docker.io -y
-                                  sudo systemctl start docker
-                                  sudo systemctl enable docker
-                                  sudo usermod -aG docker ubuntu
-                                fi
-                                if ! [ -x "$(command -v docker-compose)" ]; then
-                                  echo "Docker Compose not found, installing..."
-                                  sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-                                  sudo chmod +x /usr/local/bin/docker-compose
-                                fi
-                                echo "Downloading artifacts from S3..."
-                                aws s3 sync s3://${S3_BUCKET}/ /home/ubuntu/ecommerce-django-react/
-                                cd /home/ubuntu/ecommerce-django-react
-                                echo "Bringing down existing Docker containers..."
-                                docker-compose down || exit 1
-                                echo "Pulling latest Docker images..."
-                                docker-compose pull || exit 1
-                                echo "Starting Docker containers..."
-                                docker-compose up -d || exit 1
-                                echo "Deployment successful!"
-                                EOF
-                                '''
-                            }
+                            sh '''
+                            ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${MY_UBUNTU_IP} <<EOF
+                            set -e
+                            if ! [ -x "$(command -v docker)" ]; then
+                              echo "Docker not found, installing..."
+                              sudo apt update
+                              sudo apt install docker.io -y
+                              sudo systemctl start docker
+                              sudo systemctl enable docker
+                              sudo usermod -aG docker ubuntu
+                            fi
+                            if ! [ -x "$(command -v docker-compose)" ]; then
+                              echo "Docker Compose not found, installing..."
+                              sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+                              sudo chmod +x /usr/local/bin/docker-compose
+                            fi
+                            echo "Downloading artifacts from S3..."
+                            aws s3 sync s3://${S3_BUCKET}/ /home/ubuntu/ecommerce-django-react/
+                            cd /home/ubuntu/ecommerce-django-react
+                            echo "Bringing down existing Docker containers..."
+                            docker-compose down || exit 1
+                            echo "Pulling latest Docker images..."
+                            docker-compose pull || exit 1
+                            echo "Starting Docker containers..."
+                            docker-compose up -d || exit 1
+                            echo "Deployment successful!"
+                            EOF
+                            '''
                         } else {
                             error("Missing ubuntu_ip in terraform state.")
                         }
@@ -463,13 +459,11 @@ pipeline {
 
                         if (ubuntuIp) {
                             // Verify deployment on Ubuntu instance
-                            sshagent(credentials: ['ssh-key-credentials']) {
-                                sh """
-                                ssh -o StrictHostKeyChecking=no ubuntu@${ubuntuIp} <<EOF
-                                docker-compose ps
-                                EOF
-                                """
-                            }
+                            sh """
+                            ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${ubuntuIp} <<EOF
+                            docker-compose ps
+                            EOF
+                            """
                         } else {
                             echo "Skipping Ubuntu verification, IP not found."
                         }
