@@ -35,6 +35,12 @@ pipeline {
                 sudo rm -rf /var/lib/docker/tmp/*
                 sudo rm -rf /var/lib/apt/lists/*
                 
+                if ! [ -x "$(command -v unzip)" ]; then
+                    echo "Unzip not found, installing..."
+                    sudo apt-get update -y
+                    sudo apt-get install -y unzip
+                fi
+                
                 echo "Disk usage after cleanup:"
                 df -h
                 '''
