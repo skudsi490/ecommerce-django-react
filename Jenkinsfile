@@ -166,9 +166,12 @@ pipeline {
                         # Check if lock ID is present and force unlock if it is
                         if [ -n "$LOCK_ID" ]; then
                             terraform force-unlock -force ${LOCK_ID} || true
-                        else {
+                        else
                             echo "No lock ID found, skipping force unlock."
                         fi
+
+                        unset AWS_ACCESS_KEY_ID
+                        unset AWS_SECRET_ACCESS_KEY
                         '''
                     }
                 }
