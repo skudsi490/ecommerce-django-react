@@ -60,45 +60,6 @@ pipeline {
             }
         }
 
-        stage('Check and Start Instances') {
-            steps {
-                script {
-                    withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
-                                     string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')]) {
-                        sh '''
-                        export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-                        export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-                        
-                        # Check and start instances if stopped
-                        INSTANCE_IDS=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].InstanceId' --output text)
-                        INSTANCE_STATES=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].State.Name' --output text)
-
-                        echo "Instance IDs: ${INSTANCE_IDS}"
-                        echo "Instance states before starting: ${INSTANCE_STATES}"
-                        
-                        for i in ${INSTANCE_IDS}; do
-                            STATE=$(aws ec2 describe-instances --instance-ids $i --query 'Reservations[*].Instances[*].State.Name' --output text)
-                            if [ "$STATE" == "stopped" ]; then
-                                aws ec2 start-instances --instance-ids $i
-                                aws ec2 wait instance-running --instance-ids $i
-                            fi
-                        done
-                        
-                        INSTANCE_STATES=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].State.Name' --output text)
-                        echo "Instance states after starting: ${INSTANCE_STATES}"
-                        
-                        # Get the new IP addresses
-                        INSTANCE_IPS=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --output text)
-                        echo "Instance IPs: ${INSTANCE_IPS}"
-                        
-                        unset AWS_ACCESS_KEY_ID
-                        unset AWS_SECRET_ACCESS_KEY
-                        '''
-                    }
-                }
-            }
-        }
-
         stage('Checkout') {
             steps {
                 git url: "${REPO_URL}", branch: 'main'
@@ -118,80 +79,6 @@ pipeline {
                     sudo mv terraform /usr/local/bin/
                 fi
                 '''
-            }
-        }
-
-        stage('Check Terraform Lock') {
-            steps {
-                script {
-                    withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
-                                     string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')]) {
-                        sh '''
-                        export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-                        export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-                        terraform init -input=false
-                        terraform state list
-                        '''
-                    }
-                }
-            }
-        }
-
-        stage('Force Unlock Terraform State') {
-            when {
-                expression {
-                    return currentBuild.previousBuild != null && currentBuild.previousBuild.result == 'FAILURE'
-                }
-            }
-            steps {
-                script {
-                    withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
-                                    string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')]) {
-                        sh '''
-                        export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-                        export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-
-                        # Ensure jq is installed
-                        if ! command -v jq &> /dev/null; then
-                            sudo apt-get update -y
-                            sudo apt-get install -y jq
-                        fi
-
-                        # Initialize Terraform
-                        terraform init -input=false
-
-                        # Get the current lock ID
-                        LOCK_ID=$(terraform state pull | jq -r '.lock_info.id')
-
-                        # Check if lock ID is present and force unlock if it is
-                        if [ -n "$LOCK_ID" ]; then
-                            terraform force-unlock -force ${LOCK_ID} || true
-                        else
-                            echo "No lock ID found, skipping force unlock."
-                        fi
-
-                        unset AWS_ACCESS_KEY_ID
-                        unset AWS_SECRET_ACCESS_KEY
-                        '''
-                    }
-                }
-            }
-        }
-
-        stage('Apply Terraform') {
-            steps {
-                script {
-                    withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
-                                     string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')]) {
-                        sh '''
-                        export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-                        export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-                        terraform init -input=false
-                        terraform plan -out=tfplan
-                        terraform apply -input=false tfplan
-                        '''
-                    }
-                }
             }
         }
 
