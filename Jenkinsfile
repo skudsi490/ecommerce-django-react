@@ -311,7 +311,7 @@ pipeline {
                         unset AWS_SECRET_ACCESS_KEY
                         '''
                         def terraformState = readFile 'terraform.tfstate'
-                        def terraformJson = new groovy.json.JsonSlurper().parseText(terraformState)
+                        def terraformJson = new groovy.json.JsonSlurperClassic().parseText(terraformState)
                         def ubuntuIp = terraformJson.resources.find { it.type == 'aws_instance' && it.name == 'my_ubuntu' }.instances[0].attributes.public_ip
                         def windowsIp = terraformJson.resources.find { it.type == 'aws_instance' && it.name == 'my_windows' }.instances[0].attributes.public_ip
 
@@ -320,7 +320,7 @@ pipeline {
 
                         if (ubuntuIp) {
                             env.MY_UBUNTU_IP = ubuntuIp
-                            withCredentials([sshUserPrivateKey(credentialsId: 'ssh-key-credentials', keyFileVariable: 'SSH_KEY')]) {
+                            withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
                                 sh '''
                                 export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
                                 export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
@@ -388,7 +388,7 @@ pipeline {
                         unset AWS_SECRET_ACCESS_KEY
                         '''
                         def terraformState = readFile 'terraform.tfstate'
-                        def terraformJson = new groovy.json.JsonSlurper().parseText(terraformState)
+                        def terraformJson = new groovy.json.JsonSlurperClassic().parseText(terraformState)
                         def ubuntuIp = terraformJson.resources.find { it.type == 'aws_instance' && it.name == 'my_ubuntu' }.instances[0].attributes.public_ip
                         def windowsIp = terraformJson.resources.find { it.type == 'aws_instance' && it.name == 'my_windows' }.instances[0].attributes.public_ip
 
@@ -397,7 +397,7 @@ pipeline {
 
                         if (windowsIp) {
                             env.MY_WINDOWS_IP = windowsIp
-                            withCredentials([sshUserPrivateKey(credentialsId: 'ssh-key-credentials', keyFileVariable: 'SSH_KEY')]) {
+                            withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
                                 sh '''
                                 export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
                                 export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
@@ -457,13 +457,13 @@ pipeline {
                         unset AWS_SECRET_ACCESS_KEY
                         '''
                         def terraformState = readFile 'terraform.tfstate'
-                        def terraformJson = new groovy.json.JsonSlurper().parseText(terraformState)
+                        def terraformJson = new groovy.json.JsonSlurperClassic().parseText(terraformState)
                         def ubuntuIp = terraformJson.resources.find { it.type == 'aws_instance' && it.name == 'my_ubuntu' }.instances[0].attributes.public_ip
                         def windowsIp = terraformJson.resources.find { it.type == 'aws_instance' && it.name == 'my_windows' }.instances[0].attributes.public_ip
 
                         if (ubuntuIp) {
                             // Verify deployment on Ubuntu instance
-                            withCredentials([sshUserPrivateKey(credentialsId: 'ssh-key-credentials', keyFileVariable: 'SSH_KEY')]) {
+                            withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
                                 sh """
                                 ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${ubuntuIp} <<EOF
                                 docker-compose ps
