@@ -47,6 +47,27 @@ pipeline {
             }
         }
 
+        stage('Check Instance States') {
+            steps {
+                script {
+                    withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                                     string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')]) {
+                        sh '''
+                        export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                        export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                        
+                        # Check the state of instances
+                        INSTANCE_STATES=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].State.Name' --output text)
+                        echo "Instance states before proceeding: ${INSTANCE_STATES}"
+                        
+                        unset AWS_ACCESS_KEY_ID
+                        unset AWS_SECRET_ACCESS_KEY
+                        '''
+                    }
+                }
+            }
+        }
+
         stage('Checkout') {
             steps {
                 git url: "${REPO_URL}", branch: 'main'
@@ -538,6 +559,27 @@ pipeline {
                         } else {
                             echo "Skipping Windows verification, IP not found."
                         }
+                    }
+                }
+            }
+        }
+        
+        stage('Post-Check Instance States') {
+            steps {
+                script {
+                    withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                                     string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')]) {
+                        sh '''
+                        export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                        export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                        
+                        # Check the state of instances after deployment
+                        INSTANCE_STATES=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].State.Name' --output text)
+                        echo "Instance states after deployment: ${INSTANCE_STATES}"
+                        
+                        unset AWS_ACCESS_KEY_ID
+                        unset AWS_SECRET_ACCESS_KEY
+                        '''
                     }
                 }
             }
