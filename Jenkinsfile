@@ -315,10 +315,18 @@ pipeline {
                                 echo "Deploying to Ubuntu instance at ${MY_UBUNTU_IP}"
                                 ssh -o StrictHostKeyChecking=no ubuntu@${MY_UBUNTU_IP} <<EOF
                                 set -e
+                                if ! [ -x "$(command -v docker)" ]; then
+                                  echo "Docker not found, installing..."
+                                  sudo apt update
+                                  sudo apt install docker.io -y
+                                  sudo systemctl start docker
+                                  sudo systemctl enable docker
+                                  sudo usermod -aG docker ubuntu
+                                fi
                                 if ! [ -x "$(command -v docker-compose)" ]; then
                                   echo "Docker Compose not found, installing..."
-                                  sudo apt update
-                                  sudo apt install docker-compose -y
+                                  sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+                                  sudo chmod +x /usr/local/bin/docker-compose
                                 fi
                                 echo "Downloading artifacts from S3..."
                                 aws s3 sync s3://${S3_BUCKET}/ /home/ubuntu/ecommerce-django-react/
