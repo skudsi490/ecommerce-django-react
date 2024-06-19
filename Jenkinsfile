@@ -302,15 +302,24 @@ pipeline {
                     echo "Current build result: ${currentBuild.result}"
                     withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
                                      string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')]) {
-                        sh 'terraform output -json > terraform_output.json'
-                        def terraformOutputs = readFile 'terraform_output.json'
-                        def jsonSlurper = new groovy.json.JsonSlurper()
-                        def terraformJson = jsonSlurper.parseText(terraformOutputs)
-                        echo "Terraform Output: ${terraformOutputs}"
-                        echo "Ubuntu IP: ${terraformJson.ubuntu_ip?.value}"
-                        echo "Windows IP: ${terraformJson.windows_ip?.value}"
-                        if (terraformJson.ubuntu_ip) {
-                            env.MY_UBUNTU_IP = terraformJson.ubuntu_ip.value
+                        // Ensure the Terraform state is downloaded
+                        sh '''
+                        export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                        export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                        aws s3 cp s3://jenkins-artifacts-bucket-123456/terraform/state/terraform.tfstate terraform.tfstate
+                        unset AWS_ACCESS_KEY_ID
+                        unset AWS_SECRET_ACCESS_KEY
+                        '''
+                        def terraformState = readFile 'terraform.tfstate'
+                        def terraformJson = new groovy.json.JsonSlurper().parseText(terraformState)
+                        def ubuntuIp = terraformJson.resources.find { it.type == 'aws_instance' && it.name == 'my_ubuntu' }.instances[0].attributes.public_ip
+                        def windowsIp = terraformJson.resources.find { it.type == 'aws_instance' && it.name == 'my_windows' }.instances[0].attributes.public_ip
+
+                        echo "Ubuntu IP: ${ubuntuIp}"
+                        echo "Windows IP: ${windowsIp}"
+
+                        if (ubuntuIp) {
+                            env.MY_UBUNTU_IP = ubuntuIp
                             sh '''
                             export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
                             export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
@@ -351,7 +360,7 @@ pipeline {
                                 '''
                             }
                         } else {
-                            error("Missing ubuntu_ip in terraform output.")
+                            error("Missing ubuntu_ip in terraform state.")
                         }
                     }
                 }
@@ -372,15 +381,24 @@ pipeline {
                     echo "Current build result: ${currentBuild.result}"
                     withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
                                      string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')]) {
-                        sh 'terraform output -json > terraform_output.json'
-                        def terraformOutputs = readFile 'terraform_output.json'
-                        def jsonSlurper = new groovy.json.JsonSlurper()
-                        def terraformJson = jsonSlurper.parseText(terraformOutputs)
-                        echo "Terraform Output: ${terraformOutputs}"
-                        echo "Ubuntu IP: ${terraformJson.ubuntu_ip?.value}"
-                        echo "Windows IP: ${terraformJson.windows_ip?.value}"
-                        if (terraformJson.windows_ip) {
-                            env.MY_WINDOWS_IP = terraformJson.windows_ip.value
+                        // Ensure the Terraform state is downloaded
+                        sh '''
+                        export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                        export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                        aws s3 cp s3://jenkins-artifacts-bucket-123456/terraform/state/terraform.tfstate terraform.tfstate
+                        unset AWS_ACCESS_KEY_ID
+                        unset AWS_SECRET_ACCESS_KEY
+                        '''
+                        def terraformState = readFile 'terraform.tfstate'
+                        def terraformJson = new groovy.json.JsonSlurper().parseText(terraformState)
+                        def ubuntuIp = terraformJson.resources.find { it.type == 'aws_instance' && it.name == 'my_ubuntu' }.instances[0].attributes.public_ip
+                        def windowsIp = terraformJson.resources.find { it.type == 'aws_instance' && it.name == 'my_windows' }.instances[0].attributes.public_ip
+
+                        echo "Ubuntu IP: ${ubuntuIp}"
+                        echo "Windows IP: ${windowsIp}"
+
+                        if (windowsIp) {
+                            env.MY_WINDOWS_IP = windowsIp
                             sh '''
                             export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
                             export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
@@ -402,7 +420,7 @@ pipeline {
                             unset AWS_SECRET_ACCESS_KEY
                             '''
                         } else {
-                            error("Missing windows_ip in terraform output.")
+                            error("Missing windows_ip in terraform state.")
                         }
                     }
                 }
@@ -430,12 +448,18 @@ pipeline {
                     echo "Verifying deployment"
                     withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
                                      string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')]) {
-                        sh 'terraform output -json > terraform_output.json'
-                        def terraformOutputs = readFile 'terraform_output.json'
-                        def jsonSlurper = new groovy.json.JsonSlurper()
-                        def terraformJson = jsonSlurper.parseText(terraformOutputs)
-                        def ubuntuIp = terraformJson.ubuntu_ip?.value
-                        def windowsIp = terraformJson.windows_ip?.value
+                        // Ensure the Terraform state is downloaded
+                        sh '''
+                        export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                        export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                        aws s3 cp s3://jenkins-artifacts-bucket-123456/terraform/state/terraform.tfstate terraform.tfstate
+                        unset AWS_ACCESS_KEY_ID
+                        unset AWS_SECRET_ACCESS_KEY
+                        '''
+                        def terraformState = readFile 'terraform.tfstate'
+                        def terraformJson = new groovy.json.JsonSlurper().parseText(terraformState)
+                        def ubuntuIp = terraformJson.resources.find { it.type == 'aws_instance' && it.name == 'my_ubuntu' }.instances[0].attributes.public_ip
+                        def windowsIp = terraformJson.resources.find { it.type == 'aws_instance' && it.name == 'my_windows' }.instances[0].attributes.public_ip
 
                         if (ubuntuIp) {
                             // Verify deployment on Ubuntu instance
