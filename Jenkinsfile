@@ -79,6 +79,27 @@ pipeline {
             }
         }
 
+        stage('Force Unlock Terraform State') {
+            when {
+                expression {
+                    return currentBuild.previousBuild != null && currentBuild.previousBuild.result == 'FAILURE'
+                }
+            }
+            steps {
+                script {
+                    withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                                     string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')]) {
+                        sh '''
+                        export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                        export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                        terraform init
+                        terraform force-unlock 877b22dc-1f5e-0d1b-476d-da785ee6ae8d
+                        '''
+                    }
+                }
+            }
+        }
+
         stage('Apply Terraform') {
             steps {
                 script {
