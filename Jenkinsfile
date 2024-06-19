@@ -7,12 +7,7 @@ pipeline {
         DOCKER_IMAGE_BACKEND = 'skudsi/ecommerce-django-react-backend'
         DOCKER_IMAGE_FRONTEND = 'skudsi/ecommerce-django-react-frontend'
         S3_BUCKET = 'jenkins-artifacts-bucket-123456'
-        JIRA_URL = 'https://ecommerce-django-react.atlassian.net/'
-        JIRA_USER = 'skudsi490@gmail.com'
         NODE_OPTIONS = "--openssl-legacy-provider"
-        JIRA_API_TOKEN = credentials('JIRA_API_TOKEN')
-        JIRA_SITE = 'ecommerce-django-react'
-        JIRA_PROJECT_KEY = 'TD'
         DOCKERHUB_CREDENTIALS = credentials('dockerhub')
         AWS_ACCESS_KEY_ID = credentials('aws-access-key-id')
         AWS_SECRET_ACCESS_KEY = credentials('aws-secret-access-key')
@@ -250,10 +245,7 @@ pipeline {
 
         stage('Push Docker Images') {
             when {
-                allOf {
-                    branch 'main'
-                    expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
-                }
+                branch 'main'
             }
             steps {
                 script {
@@ -290,10 +282,7 @@ pipeline {
 
         stage('Deploy to Ubuntu') {
             when {
-                allOf {
-                    branch 'main'
-                    expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
-                }
+                branch 'main'
             }
             steps {
                 script {
@@ -313,10 +302,8 @@ pipeline {
                         def terraformState = readFile 'terraform.tfstate'
                         def terraformJson = new groovy.json.JsonSlurper().parseText(terraformState)
                         def ubuntuIp = terraformJson.resources.find { it.type == 'aws_instance' && it.name == 'my_ubuntu' }.instances[0].attributes.public_ip
-                        def windowsIp = terraformJson.resources.find { it.type == 'aws_instance' && it.name == 'my_windows' }.instances[0].attributes.public_ip
 
                         echo "Ubuntu IP: ${ubuntuIp}"
-                        echo "Windows IP: ${windowsIp}"
 
                         if (ubuntuIp) {
                             env.MY_UBUNTU_IP = ubuntuIp
@@ -367,10 +354,7 @@ pipeline {
 
         stage('Deploy to Windows') {
             when {
-                allOf {
-                    branch 'main'
-                    expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
-                }
+                branch 'main'
             }
             steps {
                 script {
@@ -389,10 +373,8 @@ pipeline {
                         '''
                         def terraformState = readFile 'terraform.tfstate'
                         def terraformJson = new groovy.json.JsonSlurper().parseText(terraformState)
-                        def ubuntuIp = terraformJson.resources.find { it.type == 'aws_instance' && it name == 'my_ubuntu' }.instances[0].attributes.public_ip
                         def windowsIp = terraformJson.resources.find { it.type == 'aws_instance' && it.name == 'my_windows' }.instances[0].attributes.public_ip
 
-                        echo "Ubuntu IP: ${ubuntuIp}"
                         echo "Windows IP: ${windowsIp}"
 
                         if (windowsIp) {
@@ -424,111 +406,6 @@ pipeline {
                         }
                     }
                 }
-            }
-        }
-
-        stage('Post to Jira') {
-            when {
-                allOf {
-                    branch 'main'
-                    expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
-                }
-            }
-            steps {
-                script {
-                    def jiraComment = "Build ${env.JOB_NAME} #${env.BUILD_NUMBER} was successful. See details at ${env.BUILD_URL}"
-                    jiraAddComment site: "${JIRA_SITE}", issueKey: "${JIRA_PROJECT_KEY}", comment: jiraComment
-                }
-            }
-        }
-
-        stage('Verify Deployment on Instances') {
-            steps {
-                script {
-                    echo "Verifying deployment"
-                    withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
-                                     string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')]) {
-                        // Ensure the Terraform state is downloaded
-                        sh '''
-                        export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-                        export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-                        aws s3 cp s3://jenkins-artifacts-bucket-123456/terraform/state/terraform.tfstate terraform.tfstate
-                        unset AWS_ACCESS_KEY_ID
-                        unset AWS_SECRET_ACCESS_KEY
-                        '''
-                        def terraformState = readFile 'terraform.tfstate'
-                        def terraformJson = new groovy.json.JsonSlurper().parseText(terraformState)
-                        def ubuntuIp = terraformJson.resources.find { it.type == 'aws_instance' && it.name == 'my_ubuntu' }.instances[0].attributes.public_ip
-                        def windowsIp = terraformJson.resources.find { it.type == 'aws_instance' && it.name == 'my_windows' }.instances[0].attributes.public_ip
-
-                        if (ubuntuIp) {
-                            // Verify deployment on Ubuntu instance
-                            withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
-                                sh """
-                                ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${ubuntuIp} <<EOF
-                                docker-compose ps
-                                EOF
-                                """
-                            }
-                        } else {
-                            echo "Skipping Ubuntu verification, IP not found."
-                        }
-
-                        if (windowsIp) {
-                            // Verify deployment on Windows instance
-                            sh """
-                            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-                            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-                            powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "
-                            $ErrorActionPreference = 'Stop';
-                            $winrm = Get-WinRmInstance -HostName ${windowsIp} -Username 'Administrator' -Password (Get-Secret -Name 'aws-instance-password')
-                            Invoke-WinRmCommand -WinRm $winrm -Command '
-                            docker-compose ps
-                            '
-                            "
-                            unset AWS_ACCESS_KEY_ID
-                            unset AWS_SECRET_ACCESS_KEY
-                            """
-                        } else {
-                            echo "Skipping Windows verification, IP not found."
-                        }
-                    }
-                }
-            }
-        }
-        
-        stage('Post-Check Instance States') {
-            steps {
-                script {
-                    withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
-                                     string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')]) {
-                        sh '''
-                        export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-                        export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-                        
-                        # Check the state of instances after deployment
-                        INSTANCE_STATES=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].State.Name' --output text)
-                        echo "Instance states after deployment: ${INSTANCE_STATES}"
-                        
-                        unset AWS_ACCESS_KEY_ID
-                        unset AWS_SECRET_ACCESS_KEY
-                        '''
-                    }
-                }
-            }
-        }
-    }
-
-    post {
-        failure {
-            script {
-                emailext (
-                    to: 'skudsi490@gmail.com',
-                    subject: "Build failed in Jenkins: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                    body: "Check Jenkins logs for details."
-                )
-                def jiraComment = "Build ${env.JOB_NAME} #${env.BUILD_NUMBER} failed. Check Jenkins logs for details."
-                jiraAddComment site: "${JIRA_SITE}", issueKey: "${JIRA_PROJECT_KEY}", comment: jiraComment
             }
         }
     }
