@@ -13,7 +13,7 @@ ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@54.93.212.177
 
 ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@18.197.60.165
 ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@18.199.94.168
-ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@18.184.52.5
+ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@18.184.208.168
 
 check if docker and docker compose installed :
 docker ps
@@ -62,8 +62,10 @@ npm start
 
 
 git add Jenkinsfile
-git commit -m "Update Jenkinsfile v47"
+git commit -m "Update Jenkinsfile v52"
 git push origin main
+
+You don't have to write the full code only give me the part/s need to be modified, change or updated
 
 
 docker build -t skudsi/ecommerce-django-react-frontend:latest -f frontend/Dockerfile .
@@ -149,3 +151,33 @@ Jenkins will attempt to connect to the agent using the provided SSH credentials.
 
 sudo systemctl daemon-reload
 sudo systemctl restart jenkins
+
+
+
+To destroy and remove everything properly without creating the S3 bucket again, you need to update your backend configuration to use a local backend temporarily, then destroy all resources. Here are the steps to do that:
+
+Update the Backend to Local:
+
+Change your main.tf to use a local backend instead of the S3 backend.
+
+hcl
+Copy code
+terraform {
+  backend "local" {
+    path = "terraform.tfstate"
+  }
+}
+Reinitialize Terraform with the Local Backend:
+
+Reinitialize Terraform to use the local backend.
+
+bash
+Copy code
+terraform init -reconfigure
+Destroy the Existing Infrastructure:
+
+Destroy all resources using the local backend.
+
+bash
+Copy code
+terraform destroy

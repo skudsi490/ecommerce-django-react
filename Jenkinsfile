@@ -88,12 +88,29 @@ pipeline {
             steps {
                 script {
                     withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
-                                     string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')]) {
+                                    string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')]) {
                         sh '''
                         export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
                         export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+
+                        # Ensure jq is installed
+                        if ! command -v jq &> /dev/null; then
+                            sudo apt-get update -y
+                            sudo apt-get install -y jq
+                        fi
+
+                        # Initialize Terraform
                         terraform init -input=false
-                        terraform force-unlock -force 877b22dc-1f5e-0d1b-476d-da785ee6ae8d || true
+
+                        # Get the current lock ID
+                        LOCK_ID=$(terraform state pull | jq -r '.lock_info.id')
+
+                        # Check if lock ID is present and force unlock if it is
+                        if [ -n "$LOCK_ID" ]; then
+                            terraform force-unlock -force ${LOCK_ID} || true
+                        else
+                            echo "No lock ID found, skipping force unlock."
+                        fi
                         '''
                     }
                 }

@@ -1,3 +1,4 @@
+# main.tf
 terraform {
   backend "s3" {
     bucket         = "jenkins-artifacts-bucket-123456"
@@ -151,6 +152,7 @@ resource "aws_instance" "jenkins" {
   associate_public_ip_address  = true
   vpc_security_group_ids       = [aws_security_group.default_sg.id]
   key_name                     = var.key_name
+  instance_initiated_shutdown_behavior = "stop"
 
   tags = {
     Name = "Jenkins"
@@ -232,6 +234,7 @@ resource "aws_instance" "jenkins_agent" {
   associate_public_ip_address  = true
   vpc_security_group_ids       = [aws_security_group.default_sg.id]
   key_name                     = var.key_name
+  instance_initiated_shutdown_behavior = "stop"
 
   tags = {
     Name = "Jenkins Agent"
@@ -262,6 +265,7 @@ resource "aws_instance" "my_ubuntu" {
   associate_public_ip_address  = true
   vpc_security_group_ids       = [aws_security_group.default_sg.id]
   key_name                     = var.key_name
+  instance_initiated_shutdown_behavior = "stop"
 
   tags = {
     Name = "My Ubuntu"
@@ -292,6 +296,7 @@ resource "aws_instance" "my_windows" {
   associate_public_ip_address  = true
   vpc_security_group_ids       = [aws_security_group.default_sg.id]
   key_name                     = var.key_name
+  instance_initiated_shutdown_behavior = "stop"
 
   tags = {
     Name = "My Windows"
