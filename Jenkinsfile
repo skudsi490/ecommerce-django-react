@@ -244,9 +244,6 @@ pipeline {
         }
 
         stage('Push Docker Images') {
-            when {
-                branch 'main'
-            }
             steps {
                 script {
                     echo "Current build result: ${currentBuild.result}"
@@ -281,9 +278,6 @@ pipeline {
         }
 
         stage('Deploy to Ubuntu') {
-            when {
-                branch 'main'
-            }
             steps {
                 script {
                     echo "Deploying to Ubuntu"
@@ -353,9 +347,6 @@ pipeline {
         }
 
         stage('Deploy to Windows') {
-            when {
-                branch 'main'
-            }
             steps {
                 script {
                     echo "Deploying to Windows"
