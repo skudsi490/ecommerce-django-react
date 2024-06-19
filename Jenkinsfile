@@ -71,7 +71,7 @@ pipeline {
                         sh '''
                         export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
                         export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-                        terraform init
+                        terraform init -input=false
                         terraform state list
                         '''
                     }
@@ -92,8 +92,8 @@ pipeline {
                         sh '''
                         export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
                         export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-                        terraform init
-                        terraform force-unlock 877b22dc-1f5e-0d1b-476d-da785ee6ae8d
+                        terraform init -input=false
+                        terraform force-unlock -force 877b22dc-1f5e-0d1b-476d-da785ee6ae8d
                         '''
                     }
                 }
@@ -108,7 +108,7 @@ pipeline {
                         sh '''
                         export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
                         export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-                        terraform init
+                        terraform init -input=false
                         terraform apply -auto-approve
                         '''
                     }
