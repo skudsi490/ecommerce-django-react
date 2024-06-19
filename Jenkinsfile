@@ -320,41 +320,43 @@ pipeline {
 
                         if (ubuntuIp) {
                             env.MY_UBUNTU_IP = ubuntuIp
-                            sh '''
-                            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-                            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-                            ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${MY_UBUNTU_IP} "mkdir -p /home/ubuntu/ecommerce-django-react"
-                            unset AWS_ACCESS_KEY_ID
-                            unset AWS_SECRET_ACCESS_KEY
-                            '''
-                            sh '''
-                            ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${MY_UBUNTU_IP} <<EOF
-                            set -e
-                            if ! [ -x "$(command -v docker)" ]; then
-                              echo "Docker not found, installing..."
-                              sudo apt update
-                              sudo apt install docker.io -y
-                              sudo systemctl start docker
-                              sudo systemctl enable docker
-                              sudo usermod -aG docker ubuntu
-                            fi
-                            if ! [ -x "$(command -v docker-compose)" ]; then
-                              echo "Docker Compose not found, installing..."
-                              sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-                              sudo chmod +x /usr/local/bin/docker-compose
-                            fi
-                            echo "Downloading artifacts from S3..."
-                            aws s3 sync s3://${S3_BUCKET}/ /home/ubuntu/ecommerce-django-react/
-                            cd /home/ubuntu/ecommerce-django-react
-                            echo "Bringing down existing Docker containers..."
-                            docker-compose down || exit 1
-                            echo "Pulling latest Docker images..."
-                            docker-compose pull || exit 1
-                            echo "Starting Docker containers..."
-                            docker-compose up -d || exit 1
-                            echo "Deployment successful!"
-                            EOF
-                            '''
+                            withCredentials([sshUserPrivateKey(credentialsId: 'ssh-key-credentials', keyFileVariable: 'SSH_KEY')]) {
+                                sh '''
+                                export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                                export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                                ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} "mkdir -p /home/ubuntu/ecommerce-django-react"
+                                unset AWS_ACCESS_KEY_ID
+                                unset AWS_SECRET_ACCESS_KEY
+                                '''
+                                sh '''
+                                ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
+                                set -e
+                                if ! [ -x "$(command -v docker)" ]; then
+                                  echo "Docker not found, installing..."
+                                  sudo apt update
+                                  sudo apt install docker.io -y
+                                  sudo systemctl start docker
+                                  sudo systemctl enable docker
+                                  sudo usermod -aG docker ubuntu
+                                fi
+                                if ! [ -x "$(command -v docker-compose)" ]; then
+                                  echo "Docker Compose not found, installing..."
+                                  sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+                                  sudo chmod +x /usr/local/bin/docker-compose
+                                fi
+                                echo "Downloading artifacts from S3..."
+                                aws s3 sync s3://${S3_BUCKET}/ /home/ubuntu/ecommerce-django-react/
+                                cd /home/ubuntu/ecommerce-django-react
+                                echo "Bringing down existing Docker containers..."
+                                docker-compose down || exit 1
+                                echo "Pulling latest Docker images..."
+                                docker-compose pull || exit 1
+                                echo "Starting Docker containers..."
+                                docker-compose up -d || exit 1
+                                echo "Deployment successful!"
+                                EOF
+                                '''
+                            }
                         } else {
                             error("Missing ubuntu_ip in terraform state.")
                         }
@@ -395,26 +397,28 @@ pipeline {
 
                         if (windowsIp) {
                             env.MY_WINDOWS_IP = windowsIp
-                            sh '''
-                            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-                            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-                            powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "
-                            $ErrorActionPreference = 'Stop';
-                            $winrm = Get-WinRmInstance -HostName ${MY_WINDOWS_IP} -Username 'Administrator' -Password (Get-Secret -Name 'aws-instance-password')
-                            Invoke-WinRmCommand -WinRm $winrm -Command '
-                            if (!(Test-Path -Path C:\\ecommerce-django-react)) {
-                                New-Item -ItemType Directory -Path C:\\ecommerce-django-react
+                            withCredentials([sshUserPrivateKey(credentialsId: 'ssh-key-credentials', keyFileVariable: 'SSH_KEY')]) {
+                                sh '''
+                                export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                                export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                                powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "
+                                $ErrorActionPreference = 'Stop';
+                                $winrm = Get-WinRmInstance -HostName ${MY_WINDOWS_IP} -Username 'Administrator' -Password (Get-Secret -Name 'aws-instance-password')
+                                Invoke-WinRmCommand -WinRm $winrm -Command '
+                                if (!(Test-Path -Path C:\\ecommerce-django-react)) {
+                                    New-Item -ItemType Directory -Path C:\\ecommerce-django-react
+                                }
+                                aws s3 sync s3://${S3_BUCKET}/ C:\\ecommerce-django-react
+                                cd C:\\ecommerce-django-react
+                                docker-compose down
+                                docker-compose pull
+                                docker-compose up -d
+                                '
+                                "
+                                unset AWS_ACCESS_KEY_ID
+                                unset AWS_SECRET_ACCESS_KEY
+                                '''
                             }
-                            aws s3 sync s3://${S3_BUCKET}/ C:\\ecommerce-django-react
-                            cd C:\\ecommerce-django-react
-                            docker-compose down
-                            docker-compose pull
-                            docker-compose up -d
-                            '
-                            "
-                            unset AWS_ACCESS_KEY_ID
-                            unset AWS_SECRET_ACCESS_KEY
-                            '''
                         } else {
                             error("Missing windows_ip in terraform state.")
                         }
@@ -459,11 +463,13 @@ pipeline {
 
                         if (ubuntuIp) {
                             // Verify deployment on Ubuntu instance
-                            sh """
-                            ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${ubuntuIp} <<EOF
-                            docker-compose ps
-                            EOF
-                            """
+                            withCredentials([sshUserPrivateKey(credentialsId: 'ssh-key-credentials', keyFileVariable: 'SSH_KEY')]) {
+                                sh """
+                                ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${ubuntuIp} <<EOF
+                                docker-compose ps
+                                EOF
+                                """
+                            }
                         } else {
                             echo "Skipping Ubuntu verification, IP not found."
                         }
