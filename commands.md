@@ -7,11 +7,13 @@ docker-compose up -d
 To run the end-to-end tests, use the following command:
 
 docker-compose -f docker-compose.e2e.yml up --abort-on-container-exit
+/var/lib/jenkins/secrets/initialAdminPassword
 
 
-ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@54.93.212.177
 
-ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@18.197.60.165
+ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.122.244.91
+
+ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@18.199.89.47
 ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@18.199.94.168
 ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@18.184.208.168
 
@@ -62,7 +64,7 @@ npm start
 
 
 git add Jenkinsfile
-git commit -m "Update Jenkinsfile v52"
+git commit -m "Update Jenkinsfile v57"
 git push origin main
 
 You don't have to write the full code only give me the part/s need to be modified, change or updated
@@ -181,3 +183,103 @@ Destroy all resources using the local backend.
 bash
 Copy code
 terraform destroy
+
+
+
+
+
+
+Since the S3 bucket jenkins-artifacts-bucket-123456 does not exist, you'll need to recreate it before migrating the state back to the S3 backend. Here are the steps to proceed:
+
+Step 1: Recreate the S3 Bucket and DynamoDB Table
+Create the S3 Bucket and DynamoDB Table:
+
+Update your main.tf to include the S3 bucket and DynamoDB table creation, then apply this configuration using the local backend.
+
+
+terraform {
+  backend "local" {
+    path = "terraform.tfstate"
+  }
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
+provider "aws" {
+  region = "eu-central-1"
+}
+
+resource "aws_s3_bucket" "jenkins_artifacts" {
+  bucket = "jenkins-artifacts-bucket-123456"
+
+  tags = {
+    Name        = "Jenkins Artifacts"
+    Environment = "Dev"
+  }
+}
+
+resource "aws_s3_bucket_versioning" "jenkins_artifacts_versioning" {
+  bucket = aws_s3_bucket.jenkins_artifacts.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_dynamodb_table" "terraform_lock" {
+  name         = "terraform-lock-table"
+  billing_mode = "PROVISIONED"
+  read_capacity = 5
+  write_capacity = 5
+  hash_key     = "LockID"
+
+  attribute {
+    name = "LockID"
+    type = "S"
+  }
+}
+
+
+
+terraform init
+terraform apply
+
+
+Step 2: Migrate State to S3 Backend
+Reconfigure Backend to Use S3:
+
+Update your main.tf to revert the backend configuration to use S3 and DynamoDB:
+
+terraform {
+  backend "s3" {
+    bucket         = "jenkins-artifacts-bucket-123456"
+    key            = "terraform/state/terraform.tfstate"
+    region         = "eu-central-1"
+    dynamodb_table = "terraform-lock-table"
+  }
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
+provider "aws" {
+  region = "eu-central-1"
+}
+
+# Your existing resources...
+Reinitialize Terraform with Migration:
+
+Reinitialize Terraform to migrate the state back to S3:
+
+terraform init -migrate-state
+
+
+
+
