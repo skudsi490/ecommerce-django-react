@@ -93,7 +93,7 @@ pipeline {
                         export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
                         export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
                         terraform init -input=false
-                        terraform force-unlock -force 877b22dc-1f5e-0d1b-476d-da785ee6ae8d
+                        terraform force-unlock -force 877b22dc-1f5e-0d1b-476d-da785ee6ae8d || true
                         '''
                     }
                 }
@@ -466,7 +466,7 @@ pipeline {
             steps {
                 script {
                     def jiraComment = "Build ${env.JOB_NAME} #${env.BUILD_NUMBER} was successful. See details at ${env.BUILD_URL}"
-                    jiraAddComment site: "${JIRA_SITE}", issueKey: "${JIRA_PROJECT_KEY}-${env.BUILD_NUMBER}", comment: jiraComment
+                    jiraAddComment site: "${JIRA_SITE}", issueKey: "${JIRA_PROJECT_KEY}", comment: jiraComment
                 }
             }
         }
@@ -530,7 +530,7 @@ pipeline {
                     body: "Check Jenkins logs for details."
                 )
                 def jiraComment = "Build ${env.JOB_NAME} #${env.BUILD_NUMBER} failed. Check Jenkins logs for details."
-                jiraAddComment site: "${JIRA_SITE}", issueKey: "${JIRA_PROJECT_KEY}-${env.BUILD_NUMBER}", comment: jiraComment
+                jiraAddComment site: "${JIRA_SITE}", issueKey: "${JIRA_PROJECT_KEY}", comment: jiraComment
             }
         }
     }
