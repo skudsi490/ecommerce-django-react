@@ -31,7 +31,7 @@ variable "subnet2_cidr" {
 }
 
 variable "instance_type" {
-  default = "t2.micro"
+  default = "t3.medium"
 }
 
 variable "key_name" {
@@ -160,7 +160,6 @@ resource "aws_instance" "jenkins" {
   }
 
   lifecycle {
-    # prevent_destroy = true
     ignore_changes  = [associate_public_ip_address]
   }
 
@@ -228,6 +227,13 @@ resource "aws_instance" "jenkins" {
               echo "Installing jq..."
               retry_command sudo apt-get install -y jq
 
+              echo "Configuring swap space..."
+              retry_command sudo fallocate -l 4G /swapfile
+              retry_command sudo chmod 600 /swapfile
+              retry_command sudo mkswap /swapfile
+              retry_command sudo swapon /swapfile
+              echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+
               echo "Allowing port 8080 through UFW..."
               retry_command sudo ufw allow 8080
 
@@ -256,7 +262,6 @@ resource "aws_instance" "jenkins_agent" {
   }
 
   lifecycle {
-    # prevent_destroy = true
     ignore_changes  = [associate_public_ip_address]
   }
 
@@ -274,6 +279,13 @@ resource "aws_instance" "jenkins_agent" {
               sudo systemctl start docker
               sudo systemctl enable docker
               sudo usermod -aG docker ubuntu
+
+              echo "Configuring swap space..."
+              sudo fallocate -l 4G /swapfile
+              sudo chmod 600 /swapfile
+              sudo mkswap /swapfile
+              sudo swapon /swapfile
+              echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 
               wget -O /home/ubuntu/agent.jar http://<jenkins-server>/jnlpJars/agent.jar
 
@@ -298,7 +310,6 @@ resource "aws_instance" "my_ubuntu" {
   }
 
   lifecycle {
-    # prevent_destroy = true
     ignore_changes  = [associate_public_ip_address]
   }
 
@@ -322,6 +333,13 @@ resource "aws_instance" "my_ubuntu" {
               sudo usermod -aG docker ubuntu
               echo "Installing jq..."
               sudo apt-get install -y jq
+
+              echo "Configuring swap space..."
+              sudo fallocate -l 4G /swapfile
+              sudo chmod 600 /swapfile
+              sudo mkswap /swapfile
+              sudo swapon /swapfile
+              echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
               EOF
 }
 
@@ -342,7 +360,6 @@ resource "aws_instance" "my_windows" {
   }
 
   lifecycle {
-    # prevent_destroy = true
     ignore_changes  = [associate_public_ip_address]
   }
 
