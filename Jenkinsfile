@@ -74,6 +74,16 @@ pipeline {
             }
         }
 
+        stage('Check Jenkins Agent') {
+            steps {
+                script {
+                    echo 'Checking Jenkins agent status...'
+                    sh 'docker info'
+                    sh 'docker ps'
+                }
+            }
+        }
+
         stage('Build and Push Docker Images') {
             parallel {
                 stage('Build Backend') {
