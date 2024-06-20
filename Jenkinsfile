@@ -159,9 +159,9 @@ pipeline {
                     done
                     sudo apt-get update
                     sudo apt-get install -y software-properties-common
-                    sudo add-apt-repository ppa:deadsnakes/ppa
+                    sudo add-apt-repository ppa:deadsnakes/ppa || (wget https://www.python.org/ftp/python/3.9.18/Python-3.9.18.tgz && tar xzf Python-3.9.18.tgz && cd Python-3.9.18 && ./configure --enable-optimizations && make && sudo make altinstall)
                     sudo apt-get update
-                    sudo apt-get install -y python3.9 python3.9-venv python3.9-dev
+                    sudo apt-get install -y python3.9 python3.9-venv python3.9-dev || true
                     '''
                 }
             }
@@ -288,8 +288,8 @@ pipeline {
                     echo "Current branch: ${env.GIT_BRANCH}"
                     echo "Current build result: ${currentBuild.result}"
                     withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
-                                    string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
-                                    sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
+                                     string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
+                                     sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
                         // Ensure the Terraform state is downloaded
                         sh '''
                         export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
@@ -301,9 +301,9 @@ pipeline {
                         // Ensure jq is installed
                         sh '''
                         if ! [ -x "$(command -v jq)" ]; then
-                        echo "jq not found, installing..."
-                        sudo apt-get update -y
-                        sudo apt-get install -y jq
+                          echo "jq not found, installing..."
+                          sudo apt-get update -y
+                          sudo apt-get install -y jq
                         fi
                         '''
                         script {
@@ -320,25 +320,25 @@ pipeline {
                                 ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
                                 set -e
                                 if ! [ -x "$(command -v docker)" ]; then
-                                echo "Docker not found, installing..."
-                                sudo apt update
-                                sudo apt install docker.io -y
-                                sudo systemctl start docker
-                                sudo systemctl enable docker
-                                sudo usermod -aG docker ubuntu
+                                  echo "Docker not found, installing..."
+                                  sudo apt update
+                                  sudo apt install docker.io -y
+                                  sudo systemctl start docker
+                                  sudo systemctl enable docker
+                                  sudo usermod -aG docker ubuntu
                                 fi
                                 if ! [ -x "$(command -v docker-compose)" ]; then
-                                echo "Docker Compose not found, installing..."
-                                sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-                                sudo chmod +x /usr/local/bin/docker-compose
+                                  echo "Docker Compose not found, installing..."
+                                  sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+                                  sudo chmod +x /usr/local/bin/docker-compose
                                 fi
                                 # Ensure AWS CLI is installed
                                 if ! [ -x "$(command -v aws)" ]; then
-                                echo "AWS CLI not found, installing..."
-                                sudo apt-get install -y unzip
-                                curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-                                unzip awscliv2.zip
-                                sudo ./aws/install
+                                  echo "AWS CLI not found, installing..."
+                                  sudo apt-get install -y unzip
+                                  curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+                                  unzip awscliv2.zip
+                                  sudo ./aws/install
                                 fi
                                 # Export AWS credentials
                                 export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
@@ -350,8 +350,8 @@ pipeline {
                                 
                                 # Check if docker-compose.yml exists
                                 if [ ! -f docker-compose.yml ]; then
-                                echo "Error: docker-compose.yml file not found in /home/ubuntu/ecommerce-django-react"
-                                exit 1
+                                  echo "Error: docker-compose.yml file not found in /home/ubuntu/ecommerce-django-react"
+                                  exit 1
                                 fi
 
                                 echo "Bringing down existing Docker containers..."
@@ -379,7 +379,7 @@ pipeline {
                     echo "Current branch: ${env.GIT_BRANCH}"
                     echo "Current build result: ${currentBuild.result}"
                     withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
-                                    string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')]) {
+                                     string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')]) {
                         // Ensure the Terraform state is downloaded
                         sh '''
                         export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
@@ -391,9 +391,9 @@ pipeline {
                         // Ensure jq is installed
                         sh '''
                         if ! [ -x "$(command -v jq)" ]; then
-                        echo "jq not found, installing..."
-                        sudo apt-get update -y
-                        sudo apt-get install -y jq
+                          echo "jq not found, installing..."
+                          sudo apt-get update -y
+                          sudo apt-get install -y jq
                         fi
                         '''
                         script {
