@@ -150,12 +150,20 @@ pipeline {
                 retry(3) {
                     sh '''
                     while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do
-                      echo "Waiting for other apt-get process to release lock..."
-                      sleep 5
+                    echo "Waiting for other apt-get process to release lock..."
+                    sleep 5
                     done
+                    
                     sudo apt-get update
-                    sudo apt-get install -y software-properties-common
-                    sudo add-apt-repository ppa:deadsnakes/ppa
+                    
+                    # Check if the repository is already added to avoid adding it multiple times
+                    if ! grep -q "^deb .*$ppa:deadsnakes/ppa" /etc/apt/sources.list /etc/apt/sources.list.d/*; then
+                    echo "Adding deadsnakes PPA"
+                    sudo add-apt-repository -y ppa:deadsnakes/ppa
+                    else
+                    echo "deadsnakes PPA already added"
+                    fi
+
                     sudo apt-get update
                     sudo apt-get install -y python3.9 python3.9-venv python3.9-dev
                     '''
