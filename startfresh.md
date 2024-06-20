@@ -1,3 +1,36 @@
+Switch to Local Backend: Modify your main.tf file to use a local backend.
+hcl
+Copy code
+terraform {
+  backend "local" {
+    path = "terraform.tfstate"
+  }
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
+provider "aws" {
+  region = "eu-central-1"
+}
+
+# The rest of your configuration
+Reinitialize Terraform: Run the following command to reinitialize Terraform with the local backend.
+sh
+Copy code
+terraform init -reconfigure
+Destroy the Infrastructure: Once Terraform has been reinitialized to use the local backend, you can destroy the infrastructure.
+sh
+Copy code
+terraform destroy
+This should work without requiring the S3 bucket to be available.
+
+
+
+
 Given that you want to start from scratch and avoid creating the S3 bucket and DynamoDB table manually before initializing Terraform, you can follow these steps:
 
 Clean Up Old Terraform Files: Remove existing .terraform directories and state files.
