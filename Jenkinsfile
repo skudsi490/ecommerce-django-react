@@ -13,6 +13,10 @@ pipeline {
         AWS_SECRET_ACCESS_KEY = credentials('aws-secret-access-key')
         DJANGO_SETTINGS_MODULE = 'backend.settings'
         PYTHONPATH = '/app:/app/backend:/app/base'
+        POSTGRES_DB = 'ecommerce'
+        POSTGRES_USER = 'ecommerceuser'
+        POSTGRES_PASSWORD = 'ecommercedbpassword'
+        POSTGRES_HOST = 'db'
     }
 
     stages {

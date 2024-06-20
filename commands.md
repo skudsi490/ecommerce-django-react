@@ -55,6 +55,7 @@ terraform apply -auto-approve
 Destroying one instance only :
 terraform destroy -target="aws_instance.jenkins" -auto-approve
 
+terraform refresh
 
 .\env\Scripts\activate  
 deactivate
@@ -64,7 +65,7 @@ npm start
 
 
 git add Jenkinsfile
-git commit -m "Update Jenkinsfile v66"
+git commit -m "Update Jenkinsfile v73"
 git push origin main
 
 You don't have to write the full code only give me the part/s need to be modified, change or updated
@@ -80,7 +81,7 @@ docker push skudsi/ecommerce-django-react-backend:latest
 
 
 git add .
-git commit -m "Update configuration v2"
+git commit -m "Update configuration v4"
 git push origin main
 
 
