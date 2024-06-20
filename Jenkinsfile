@@ -25,7 +25,7 @@ pipeline {
                 sh '''
                 echo "Disk usage before cleanup:"
                 df -h
-                
+
                 echo "Cleaning up workspace and Docker resources"
                 docker system prune -af --volumes || true
                 sudo rm -rf ${WORKSPACE}/*
@@ -33,13 +33,13 @@ pipeline {
                 sudo apt-get autoremove -y || true
                 sudo rm -rf /var/lib/docker/tmp/*
                 sudo rm -rf /var/lib/apt/lists/*
-                
+
                 if ! [ -x "$(command -v unzip)" ]; then
                     echo "Unzip not found, installing..."
                     sudo apt-get update -y
                     sudo apt-get install -y unzip
                 fi
-                
+
                 echo "Disk usage after cleanup:"
                 df -h
                 '''
@@ -349,7 +349,7 @@ pipeline {
                                 cd /home/ubuntu/ecommerce-django-react
                                 
                                 # Check if docker-compose.yml exists
-                                if [ ! -f docker-compose.yml ]; then
+                                if [ ! -f docker-compose.yml]; then
                                   echo "Error: docker-compose.yml file not found in /home/ubuntu/ecommerce-django-react"
                                   exit 1
                                 fi
@@ -414,7 +414,7 @@ pipeline {
                                 }
                                 aws s3 sync s3://${S3_BUCKET}/ C:\\ecommerce-django-react
                                 cd C:\\ecommerce-django-react
-                                
+
                                 # Check if docker-compose.yml exists
                                 if (!(Test-Path docker-compose.yml)) {
                                     Write-Error \\"Error: docker-compose.yml file not found in C:\\ecommerce-django-react\\"
