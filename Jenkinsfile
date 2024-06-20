@@ -67,26 +67,15 @@ pipeline {
         stage('Test Docker Login') {
             steps {
                 script {
-                    def retryCount = 5
-                    def delay = 15
-                    for (int i = 0; i < retryCount; i++) {
-                        try {
-                            withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-                                sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
-                            }
-                            break
-                        } catch (Exception e) {
-                            if (i == retryCount - 1) {
-                                throw e
-                            }
-                            echo "Docker login failed, retrying in ${delay} seconds..."
-                            sleep delay
+                    retry(3) {
+                        withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                            sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
                         }
                     }
                 }
             }
         }
-
+        
         stage('Build and Push Docker Images') {
             parallel {
                 stage('Build Backend') {
@@ -99,7 +88,10 @@ pipeline {
                 stage('Build Frontend') {
                     steps {
                         script {
-                            docker.build("${DOCKER_IMAGE_FRONTEND}:latest", "-f frontend/Dockerfile .")
+                            sh '''
+                            # Increase memory limit for Docker
+                            docker build --memory 4g -t ${DOCKER_IMAGE_FRONTEND}:latest -f frontend/Dockerfile .
+                            '''
                         }
                     }
                 }
