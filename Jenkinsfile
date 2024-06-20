@@ -74,29 +74,19 @@ pipeline {
             }
         }
 
-        stage('Check Jenkins Agent') {
-            steps {
-                script {
-                    echo 'Checking Jenkins agent status...'
-                    sh 'docker info'
-                    sh 'docker ps'
-                }
-            }
-        }
-
         stage('Build and Push Docker Images') {
             parallel {
                 stage('Build Backend') {
                     steps {
                         script {
-                            docker.build("${DOCKER_IMAGE_BACKEND}:latest", "-f backend/Dockerfile .")
+                            docker.build("${DOCKER_IMAGE_BACKEND}:latest", "-f backend/Dockerfile backend/")
                         }
                     }
                 }
                 stage('Build Frontend') {
                     steps {
                         script {
-                            docker.build("${DOCKER_IMAGE_FRONTEND}:latest", "-f frontend/Dockerfile .")
+                            docker.build("${DOCKER_IMAGE_FRONTEND}:latest", "-f frontend/Dockerfile frontend/")
                         }
                     }
                 }
