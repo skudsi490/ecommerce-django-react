@@ -328,6 +328,13 @@ pipeline {
                                   sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
                                   sudo chmod +x /usr/local/bin/docker-compose
                                 fi
+                                # Ensure AWS CLI is installed
+                                if ! [ -x "$(command -v aws)" ]; then
+                                  echo "AWS CLI not found, installing..."
+                                  curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+                                  unzip awscliv2.zip
+                                  sudo ./aws/install
+                                fi
                                 echo "Downloading artifacts from S3..."
                                 aws s3 sync s3://${S3_BUCKET}/ /home/ubuntu/ecommerce-django-react/
                                 cd /home/ubuntu/ecommerce-django-react
