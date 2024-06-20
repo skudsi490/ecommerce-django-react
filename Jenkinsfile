@@ -79,14 +79,14 @@ pipeline {
                 stage('Build Backend') {
                     steps {
                         script {
-                            docker.build("${DOCKER_IMAGE_BACKEND}:latest", "-f backend/Dockerfile backend/")
+                            docker.build("${DOCKER_IMAGE_BACKEND}:latest", "-f backend/Dockerfile .")
                         }
                     }
                 }
                 stage('Build Frontend') {
                     steps {
                         script {
-                            docker.build("${DOCKER_IMAGE_FRONTEND}:latest", "-f frontend/Dockerfile frontend/")
+                            docker.build("${DOCKER_IMAGE_FRONTEND}:latest", "-f frontend/Dockerfile .")
                         }
                     }
                 }
