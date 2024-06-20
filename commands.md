@@ -11,7 +11,7 @@ docker-compose -f docker-compose.e2e.yml up --abort-on-container-exit
 
 
 
-ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.68.149.163
+ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.71.102.216
 
 ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@18.199.89.47
 ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@18.199.94.168
@@ -64,7 +64,7 @@ npm start
 
 
 git add Jenkinsfile
-git commit -m "Update Jenkinsfile v58"
+git commit -m "Update Jenkinsfile v66"
 git push origin main
 
 You don't have to write the full code only give me the part/s need to be modified, change or updated
@@ -80,7 +80,7 @@ docker push skudsi/ecommerce-django-react-backend:latest
 
 
 git add .
-git commit -m "Update configuration v1"
+git commit -m "Update configuration v2"
 git push origin main
 
 

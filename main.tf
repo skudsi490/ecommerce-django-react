@@ -225,6 +225,9 @@ resource "aws_instance" "jenkins" {
               retry_command sudo chmod +x /usr/local/bin/docker-compose
               retry_command sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
 
+              echo "Installing jq..."
+              retry_command sudo apt-get install -y jq
+
               echo "Allowing port 8080 through UFW..."
               retry_command sudo ufw allow 8080
 
@@ -267,7 +270,7 @@ resource "aws_instance" "jenkins_agent" {
               set -o xtrace
 
               sudo apt-get update -y
-              sudo apt-get install -y openjdk-17-jre docker.io
+              sudo apt-get install -y openjdk-17-jre docker.io jq
               sudo systemctl start docker
               sudo systemctl enable docker
               sudo usermod -aG docker ubuntu
@@ -317,6 +320,8 @@ resource "aws_instance" "my_ubuntu" {
               sudo systemctl enable docker
               echo "Adding user to Docker group..."
               sudo usermod -aG docker ubuntu
+              echo "Installing jq..."
+              sudo apt-get install -y jq
               EOF
 }
 
