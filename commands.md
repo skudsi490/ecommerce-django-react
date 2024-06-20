@@ -11,11 +11,11 @@ docker-compose -f docker-compose.e2e.yml up --abort-on-container-exit
 
 
 
-ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.71.102.216
+ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@35.158.189.243
 
-ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@18.199.89.47
-ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@18.199.94.168
-ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@18.184.208.168
+ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.67.133.182
+ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@54.93.72.27
+ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.79.230.95
 
 check if docker and docker compose installed :
 docker ps
@@ -65,7 +65,7 @@ npm start
 
 
 git add Jenkinsfile
-git commit -m "Update Jenkinsfile v73"
+git commit -m "Update Jenkinsfile v77"
 git push origin main
 
 You don't have to write the full code only give me the part/s need to be modified, change or updated
@@ -81,7 +81,7 @@ docker push skudsi/ecommerce-django-react-backend:latest
 
 
 git add .
-git commit -m "updating requierments.txt"
+git commit -m "Update configuration v6"
 git push origin main
 
 
@@ -187,7 +187,44 @@ terraform destroy
 
 
 
+Complete Commands for PowerShell
 
+Delete the .terraform directory:
+
+
+Remove-Item -Recurse -Force .terraform
+Remove-Item -Force .terraform.lock.hcl
+Remove-Item -Force terraform.tfstate
+
+create the S3 bucket before :
+aws s3api create-bucket --bucket jenkins-artifacts-bucket-123456 --region eu-central-1 --create-bucket-configuration LocationConstraint=eu-central-1
+
+terraform init
+
+create the Table before:
+aws dynamodb create-table --table-name terraform-lock-table --attribute-definitions AttributeName=LockID,AttributeType=S --key-schema AttributeName=LockID,KeyType=HASH --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 --region eu-central-1
+
+terraform import aws_s3_bucket.jenkins_artifacts jenkins-artifacts-bucket-123456
+terraform import aws_dynamodb_table.terraform_lock terraform-lock-table
+
+Download the state file again:
+
+aws s3 cp s3://jenkins-artifacts-bucket-123456/terraform/state/terraform.tfstate ./terraform.tfstate --region eu-central-1
+aws s3 cp s3://jenkins-artifacts-bucket-123456/terraform/state/terraform.tfstate .\downloaded_state\terraform.tfstate --region eu-central-1
+
+Upload the Updated State File to S3:
+
+aws s3 cp ./terraform.tfstate s3://jenkins-artifacts-bucket-123456/terraform/state/terraform.tfstate --region eu-central-1
+
+terraform apply
+
+Destroy the infrastructure:
+
+Delete All Objects and Versions in the S3 Bucket:
+
+aws s3api delete-objects --bucket jenkins-artifacts-bucket-123456 --delete "$(aws s3api list-object-versions --bucket jenkins-artifacts-bucket-123456 --output=json --query='{Objects: Versions[].{Key:Key,VersionId:VersionId}}')"
+
+terraform destroy
 
 
 Since the S3 bucket jenkins-artifacts-bucket-123456 does not exist, you'll need to recreate it before migrating the state back to the S3 backend. Here are the steps to proceed:
