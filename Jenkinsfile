@@ -336,6 +336,9 @@ pipeline {
                                   unzip awscliv2.zip
                                   sudo ./aws/install
                                 fi
+                                # Export AWS credentials
+                                export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                                export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
                                 echo "Downloading artifacts from S3..."
                                 aws s3 sync s3://${S3_BUCKET}/ /home/ubuntu/ecommerce-django-react/
                                 cd /home/ubuntu/ecommerce-django-react
