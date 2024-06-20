@@ -67,9 +67,20 @@ pipeline {
         stage('Test Docker Login') {
             steps {
                 script {
-                    retry(3) {
-                        withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-                            sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
+                    def retryCount = 5
+                    def delay = 15
+                    for (int i = 0; i < retryCount; i++) {
+                        try {
+                            withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                                sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
+                            }
+                            break
+                        } catch (Exception e) {
+                            if (i == retryCount - 1) {
+                                throw e
+                            }
+                            echo "Docker login failed, retrying in ${delay} seconds..."
+                            sleep delay
                         }
                     }
                 }
