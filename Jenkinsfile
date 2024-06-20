@@ -341,7 +341,15 @@ pipeline {
                                 export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
                                 echo "Downloading artifacts from S3..."
                                 aws s3 sync s3://${S3_BUCKET}/ /home/ubuntu/ecommerce-django-react/
+                                
                                 cd /home/ubuntu/ecommerce-django-react
+                                
+                                # Check if docker-compose.yml exists
+                                if [ ! -f docker-compose.yml ]; then
+                                  echo "Error: docker-compose.yml file not found in /home/ubuntu/ecommerce-django-react"
+                                  exit 1
+                                fi
+
                                 echo "Bringing down existing Docker containers..."
                                 docker-compose down || exit 1
                                 echo "Pulling latest Docker images..."
@@ -402,6 +410,13 @@ pipeline {
                                 }
                                 aws s3 sync s3://${S3_BUCKET}/ C:\\ecommerce-django-react
                                 cd C:\\ecommerce-django-react
+                                
+                                # Check if docker-compose.yml exists
+                                if (!(Test-Path docker-compose.yml)) {
+                                    Write-Error \\"Error: docker-compose.yml file not found in C:\\ecommerce-django-react\\"
+                                    exit 1
+                                }
+
                                 docker-compose down
                                 docker-compose pull
                                 docker-compose up -d
