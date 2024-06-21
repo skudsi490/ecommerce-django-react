@@ -132,6 +132,7 @@ pipeline {
                                 set -e
                                 echo "Checking disk space and directory permissions..."
                                 df -h
+                                sudo rm -rf /home/ubuntu/ecommerce-django-react/
                                 mkdir -p /home/ubuntu/ecommerce-django-react/
                                 chmod 755 /home/ubuntu/ecommerce-django-react/
                                 ls -ld /home/ubuntu/ecommerce-django-react/
@@ -140,8 +141,6 @@ EOF
                             echo "Uploading files to remote server..."
                             sh '''
                             scp -v -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.yml ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
-                            '''
-                            sh '''
                             scp -v -o StrictHostKeyChecking=no -i ${SSH_KEY} requirements.txt ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
                             '''
                             sh '''
