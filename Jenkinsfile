@@ -135,14 +135,12 @@ pipeline {
                                 sudo rm -rf /home/ubuntu/ecommerce-django-react/
                                 mkdir -p /home/ubuntu/ecommerce-django-react/
                                 chmod 755 /home/ubuntu/ecommerce-django-react/
-                                ls -ld /home/ubuntu/ecommerce-django-react/
 EOF
                             '''
                             echo "Uploading files to remote server..."
                             sh '''
-                            scp -v -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.yml ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
-                            scp -v -o StrictHostKeyChecking=no -i ${SSH_KEY} requirements.txt ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
-                            scp -v -o StrictHostKeyChecking=no -i ${SSH_KEY} pytest.ini ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
+                            scp -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.yml ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
+                            scp -o StrictHostKeyChecking=no -i ${SSH_KEY} -r backend base frontend manage.py requirements.txt ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
                             '''
                             sh '''
                             ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
