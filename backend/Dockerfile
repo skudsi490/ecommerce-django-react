@@ -7,8 +7,7 @@ ENV PYTHONUNBUFFERED 1
 
 WORKDIR /app
 
-# Adjust the COPY paths based on the Jenkins build context
-COPY ../requirements.txt /app/
+COPY requirements.txt /app/
 RUN pip install -r requirements.txt
 
 COPY ./backend /app/backend
