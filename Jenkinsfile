@@ -64,6 +64,18 @@ pipeline {
             }
         }
 
+        stage('Build Frontend') {
+            steps {
+                script {
+                    sh '''
+                    cd frontend
+                    npm install
+                    npm run build
+                    '''
+                }
+            }
+        }
+
         stage('Prepare Build Context') {
             steps {
                 sh '''
