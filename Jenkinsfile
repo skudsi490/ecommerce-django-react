@@ -128,10 +128,21 @@ pipeline {
                         if (ubuntuIp) {
                             env.MY_UBUNTU_IP = ubuntuIp
                             sh '''
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} "mkdir -p /home/ubuntu/ecommerce-django-react/ && chmod 755 /home/ubuntu/ecommerce-django-react/"
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
+                                set -e
+                                echo "Checking disk space and directory permissions..."
+                                df -h
+                                mkdir -p /home/ubuntu/ecommerce-django-react/
+                                chmod 755 /home/ubuntu/ecommerce-django-react/
+                                ls -ld /home/ubuntu/ecommerce-django-react/
+                            EOF
+                            '''
                             echo "Uploading files to remote server..."
+                            sh '''
                             scp -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.yml ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
                             scp -o StrictHostKeyChecking=no -i ${SSH_KEY} requirements.txt ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
+                            '''
+                            sh '''
                             ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
                             set -e
                             if ! [ -x "$(command -v docker)" ]; then
@@ -144,7 +155,7 @@ pipeline {
                             fi
                             if ! [ -x "$(command -v docker-compose)" ]; then
                               echo "Docker Compose not found, installing..."
-                              sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-\$(uname -s)-\$(uname -m)" -o /usr/local/bin/docker-compose
+                              sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
                               sudo chmod +x /usr/local/bin/docker-compose
                             fi
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml down
