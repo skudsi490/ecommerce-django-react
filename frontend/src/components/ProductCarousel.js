@@ -27,6 +27,8 @@ function ProductCarousel() {
     dispatch(listTopProducts());
   }, [dispatch]);
 
+  console.log('Products in carousel:', products);
+  
   return loading ? (
     <Loader />
   ) : error ? (

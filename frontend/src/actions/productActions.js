@@ -1,5 +1,4 @@
-/* AXIOS */
-import axios from "axios";
+import axiosInstance from '../axiosInstance';
 
 /* ACTION TYPES */
 import {
@@ -35,7 +34,7 @@ export const listProducts =
         type: PRODUCT_LIST_REQUEST,
       });
 
-      const { data } = await axios.get(`/api/products${keyword}`);
+      const { data } = await axiosInstance.get(`/api/products${keyword}`);
 
       dispatch({
         type: PRODUCT_LIST_SUCCESS,
@@ -59,7 +58,7 @@ export const listProductDetails = (id) => async (dispatch) => {
       type: PRODUCT_DETAILS_REQUEST,
     });
 
-    const { data } = await axios.get(`/api/products/${id}`);
+    const { data } = await axiosInstance.get(`/api/products/${id}`);
 
     dispatch({
       type: PRODUCT_DETAILS_SUCCESS,
@@ -97,9 +96,9 @@ export const deleteProduct = (id) => async (dispatch, getState) => {
 
     /* MAKING API CALL TO DELETE PRODUCT */
     // eslint-disable-next-line
-    const { data } = await axios.delete(`/api/products/delete/${id}/`, config);
+    const { data } = await axiosInstance.delete(`/api/products/delete/${id}/`, config);
 
-    /* IF GET REQUEST SUCCESSFULL WE DISPATCH & SEND THE PAYLOAD TO OUR REDUCER */
+    /* IF GET REQUEST SUCCESSFUL WE DISPATCH & SEND THE PAYLOAD TO OUR REDUCER */
     dispatch({
       type: PRODUCT_DELETE_SUCCESS,
     });
@@ -134,9 +133,9 @@ export const createProduct = () => async (dispatch, getState) => {
     };
 
     /* MAKING API CALL TO CREATE PRODUCT */
-    const { data } = await axios.post(`/api/products/create/`, {}, config);
+    const { data } = await axiosInstance.post(`/api/products/create/`, {}, config);
 
-    /* IF POST REQUEST SUCCESSFULL WE DISPATCH & SEND THE PAYLOAD TO OUR REDUCER */
+    /* IF POST REQUEST SUCCESSFUL WE DISPATCH & SEND THE PAYLOAD TO OUR REDUCER */
     dispatch({
       type: PRODUCT_CREATE_SUCCESS,
       payload: data,
@@ -172,13 +171,13 @@ export const updateProduct = (product) => async (dispatch, getState) => {
     };
 
     /* MAKING API CALL TO UPDATE PRODUCT */
-    const { data } = await axios.put(
+    const { data } = await axiosInstance.put(
       `/api/products/update/${product._id}/`,
       product,
       config
     );
 
-    /* IF PUT REQUEST SUCCESSFULL WE DISPATCH & SEND THE PAYLOAD TO OUR REDUCER */
+    /* IF PUT REQUEST SUCCESSFUL WE DISPATCH & SEND THE PAYLOAD TO OUR REDUCER */
     dispatch({
       type: PRODUCT_UPDATE_SUCCESS,
       payload: data,
@@ -221,13 +220,13 @@ export const createProductReview =
       };
 
       /* MAKING API CALL TO CREATE PRODUCT REVIEW */
-      const { data } = await axios.post(
+      const { data } = await axiosInstance.post(
         `/api/products/${productId}/reviews/`,
         review,
         config
       );
 
-      /* IF POST REQUEST SUCCESSFULL WE DISPATCH & SEND THE PAYLOAD TO OUR REDUCER */
+      /* IF POST REQUEST SUCCESSFUL WE DISPATCH & SEND THE PAYLOAD TO OUR REDUCER */
       dispatch({
         type: PRODUCT_CREATE_REVIEW_SUCCESS,
         payload: data,
@@ -250,8 +249,9 @@ export const listTopProducts = () => async (dispatch) => {
       type: PRODUCT_TOP_REQUEST,
     });
 
-    const { data } = await axios.get(`/api/products/top/`);
-
+    const { data } = await axiosInstance.get(`/api/products/top/`);
+    console.log('Top products data:', data);
+    
     dispatch({
       type: PRODUCT_TOP_SUCCESS,
       payload: data,

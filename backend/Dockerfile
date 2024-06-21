@@ -1,3 +1,5 @@
+# E:\DevOps\ecommerce-django-react\backend\Dockerfile
+
 FROM python:3.9-slim
 
 ENV PYTHONDONTWRITEBYTECODE 1
@@ -21,12 +23,16 @@ COPY ./pytest.ini /app/pytest.ini
 COPY ./backend/entrypoint.sh /app/entrypoint.sh
 COPY ./base/migrations /app/base/migrations
 
-RUN apt-get update && apt-get install -y netcat-openbsd
+# Copy the frontend build files
+COPY ./frontend/build /app/frontend/build
+
+RUN apt-get update && apt-get install -y netcat-openbsd procps curl net-tools
 
 RUN chmod +x /app/entrypoint.sh
 
 WORKDIR /app
 
-RUN mkdir -p /app/staticfiles
+RUN mkdir -p /app/staticfiles /var/log/gunicorn
+RUN chmod -R 755 /var/log/gunicorn
 
 ENTRYPOINT ["sh", "/app/entrypoint.sh"]

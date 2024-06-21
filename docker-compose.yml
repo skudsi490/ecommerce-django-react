@@ -1,4 +1,4 @@
-version: '3'
+version: '3.8'
 
 services:
   db:
@@ -10,6 +10,8 @@ services:
       POSTGRES_PASSWORD: ecommercedbpassword
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
 
   backend:
     build:
@@ -39,11 +41,15 @@ services:
       - ./data_dump.json:/tmp/data_dump.json
     depends_on:
       - db
+    ports:
+      - "8000:8000"
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8000/ || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
+    networks:
+      - app-network
 
   frontend:
     build:
@@ -57,7 +63,15 @@ services:
       - ./frontend:/app/frontend
       - ./frontend/reports:/app/reports
       - frontend_build:/usr/share/nginx/html
+    depends_on:
+      - backend
+    networks:
+      - app-network
 
 volumes:
   postgres_data:
   frontend_build:
+
+networks:
+  app-network:
+    driver: bridge

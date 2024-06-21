@@ -18,5 +18,9 @@ fi
 # Collect static files
 python manage.py collectstatic --noinput
 
+# Create log directory for Gunicorn if it doesn't exist
+mkdir -p /var/log/gunicorn
+chmod -R 755 /var/log/gunicorn
+
 # Start Gunicorn
 gunicorn backend.wsgi:application --bind 0.0.0.0:8000 --log-level debug --access-logfile /var/log/gunicorn/access.log --error-logfile /var/log/gunicorn/error.log

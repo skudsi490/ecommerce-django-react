@@ -1,5 +1,4 @@
-/* AXIOS */
-import axios from "axios";
+import axiosInstance from '../axiosInstance';
 
 /* ACTION TYPES */
 import {
@@ -45,13 +44,13 @@ export const login = (email, password) => async (dispatch) => {
       },
     };
 
-    const { data } = await axios.post(
+    const { data } = await axiosInstance.post(
       "/api/users/login/",
       { username: email, password: password },
       config
     );
 
-    /* IF POST REQUEST SUCCESSFULL WE DISPATCH & SEND THE PAYLOAD TO OUR REDUCER */
+    /* IF POST REQUEST SUCCESSFUL WE DISPATCH & SEND THE PAYLOAD TO OUR REDUCER */
     dispatch({
       type: USER_LOGIN_SUCCESS,
       payload: data,
@@ -72,10 +71,10 @@ export const login = (email, password) => async (dispatch) => {
 
 /* ACTION CREATOR USED IN USER LOGOUT IN LoginScreen COMPONENT & HEADER */
 export const logout = () => (dispatch) => {
-  /* REMOVE USER INFO FORM LOCAL STORAGE */
+  /* REMOVE USER INFO FROM LOCAL STORAGE */
   localStorage.removeItem("userInfo");
 
-  /* DISPATCH TO REMOVE USER INFO FORM STORE */
+  /* DISPATCH TO REMOVE USER INFO FROM STORE */
   dispatch({
     type: USER_LOGOUT,
   });
@@ -106,13 +105,13 @@ export const register = (name, email, password) => async (dispatch) => {
       },
     };
 
-    const { data } = await axios.post(
+    const { data } = await axiosInstance.post(
       "/api/users/register/",
       { name: name, email: email, password: password },
       config
     );
 
-    /* IF POST REQUEST SUCCESSFULL WE DISPATCH & SEND THE PAYLOAD TO OUR REDUCER */
+    /* IF POST REQUEST SUCCESSFUL WE DISPATCH & SEND THE PAYLOAD TO OUR REDUCER */
     dispatch({
       type: USER_REGISTER_SUCCESS,
       payload: data,
@@ -153,14 +152,14 @@ export const getUserDetails = (id) => async (dispatch, getState) => {
     const config = {
       headers: {
         "Content-type": "application/json",
-        Authorization: `Bearer ${userInfo.token}` /* PASSING IN USER TOKEN AND IF THE USER IN AUTHORISED HE'LL HAVE FULL ACCESS TO HIS PROFILE INFORMATION */,
+        Authorization: `Bearer ${userInfo.token}` /* PASSING IN USER TOKEN AND IF THE USER IS AUTHORISED HE'LL HAVE FULL ACCESS TO HIS PROFILE INFORMATION */,
       },
     };
 
     // USING ${id} BECAUSE WHILE ACCESSING NORMAL USER WE'LL PASS STRING 'profile' BUT WHILE ACCESSING ADMIN PANEL WE'LL PASS THE 'id' SO LINK HAS TO BE DYNAMIC
-    const { data } = await axios.get(`/api/users/${id}/`, config);
+    const { data } = await axiosInstance.get(`/api/users/${id}/`, config);
 
-    /* IF GET REQUEST SUCCESSFULL WE DISPATCH & SEND THE PAYLOAD TO OUR REDUCER */
+    /* IF GET REQUEST SUCCESSFUL WE DISPATCH & SEND THE PAYLOAD TO OUR REDUCER */
     dispatch({
       type: USER_DETAILS_SUCCESS,
       payload: data,
@@ -188,18 +187,18 @@ export const updateUserProfile = (user) => async (dispatch, getState) => {
       userLogin: { userInfo },
     } = getState();
 
-    /* MAKE PUT REQUEST TO SET THE THE USER DATA */
+    /* MAKE PUT REQUEST TO SET THE USER DATA */
     const config = {
       headers: {
         "Content-type": "application/json",
-        Authorization: `Bearer ${userInfo.token}` /* PASSING IN USER TOKEN AND IF THE USER IN AUTHORISED HE'LL HAVE FULL ACCESS TO HIS PROFILE INFORMATION */,
+        Authorization: `Bearer ${userInfo.token}` /* PASSING IN USER TOKEN AND IF THE USER IS AUTHORISED HE'LL HAVE FULL ACCESS TO HIS PROFILE INFORMATION */,
       },
     };
 
     // USING ${id} BECAUSE WHILE ACCESSING NORMAL USER WE'LL PASS STRING 'profile' BUT WHILE ACCESSING ADMIN PANEL WE'LL PASS THE 'id' SO LINK HAS TO BE DYNAMIC
-    const { data } = await axios.put(`/api/users/profile/update`, user, config);
+    const { data } = await axiosInstance.put(`/api/users/profile/update`, user, config);
 
-    /* IF PUT REQUEST SUCCESSFULL WE DISPATCH & SEND THE PAYLOAD TO OUR REDUCER */
+    /* IF PUT REQUEST SUCCESSFUL WE DISPATCH & SEND THE PAYLOAD TO OUR REDUCER */
     dispatch({
       type: USER_UPDATE_PROFILE_SUCCESS,
       payload: data,
@@ -236,7 +235,7 @@ export const listUsers = () => async (dispatch, getState) => {
       userLogin: { userInfo },
     } = getState();
 
-    /* MAKE GET REQUEST TO SET THE THE USERS LIST */
+    /* MAKE GET REQUEST TO SET THE USERS LIST */
     const config = {
       headers: {
         "Content-type": "application/json",
@@ -244,7 +243,7 @@ export const listUsers = () => async (dispatch, getState) => {
       },
     };
 
-    const { data } = await axios.get(`/api/users/`, config);
+    const { data } = await axiosInstance.get(`/api/users/`, config);
 
     dispatch({
       type: USER_LIST_SUCCESS,
@@ -281,7 +280,7 @@ export const deleteUser = (id) => async (dispatch, getState) => {
       },
     };
 
-    const { data } = await axios.delete(`/api/users/delete/${id}`, config);
+    const { data } = await axiosInstance.delete(`/api/users/delete/${id}`, config);
 
     dispatch({
       type: USER_DELETE_SUCCESS,
@@ -318,7 +317,7 @@ export const updateUser = (user) => async (dispatch, getState) => {
       },
     };
 
-    const { data } = await axios.put(
+    const { data } = await axiosInstance.put(
       `/api/users/update/${user._id}/`,
       user,
       config

@@ -1,5 +1,4 @@
-/* AXIOS */
-import axios from "axios";
+import axiosInstance from '../axiosInstance';
 
 /* ACTION TYPES */
 import {
@@ -45,9 +44,9 @@ export const createOrder = (order) => async (dispatch, getState) => {
     };
 
     /* MAKING API CALL TO SAVE THE ORDER DETAILS */
-    const { data } = await axios.post(`/api/orders/add/`, order, config);
+    const { data } = await axiosInstance.post(`/api/orders/add/`, order, config);
 
-    /* IF PUT REQUEST SUCCESSFULL WE DISPATCH & SEND THE PAYLOAD TO OUR REDUCER */
+    /* IF PUT REQUEST SUCCESSFUL WE DISPATCH & SEND THE PAYLOAD TO OUR REDUCER */
     dispatch({
       type: ORDER_CREATE_SUCCESS,
       payload: data,
@@ -91,9 +90,9 @@ export const getOrderDetails = (id) => async (dispatch, getState) => {
     };
 
     /* MAKING API CALL TO GET THE ORDER DETAILS */
-    const { data } = await axios.get(`/api/orders/${id}/`, config);
+    const { data } = await axiosInstance.get(`/api/orders/${id}/`, config);
 
-    /* IF GET REQUEST SUCCESSFULL WE DISPATCH & SEND THE PAYLOAD TO OUR REDUCER */
+    /* IF GET REQUEST SUCCESSFUL WE DISPATCH & SEND THE PAYLOAD TO OUR REDUCER */
     dispatch({
       type: ORDER_DETAILS_SUCCESS,
       payload: data,
@@ -129,13 +128,13 @@ export const payOrder = (id, paymentResult) => async (dispatch, getState) => {
     };
 
     /* MAKING API CALL TO SAVE THE PAYMENT DETAILS */
-    const { data } = await axios.put(
+    const { data } = await axiosInstance.put(
       `/api/orders/${id}/pay/`,
       paymentResult,
       config
     );
 
-    /* IF PUT REQUEST SUCCESSFULL WE DISPATCH & SEND THE PAYLOAD TO OUR REDUCER */
+    /* IF PUT REQUEST SUCCESSFUL WE DISPATCH & SEND THE PAYLOAD TO OUR REDUCER */
     dispatch({
       type: ORDER_PAY_SUCCESS,
       payload: data,
@@ -171,9 +170,9 @@ export const listMyOrders = () => async (dispatch, getState) => {
     };
 
     /* MAKING API CALL TO GET THE DETAILS OF THE ORDERS MADE BY THE USER */
-    const { data } = await axios.get(`/api/orders/myorders/`, config);
+    const { data } = await axiosInstance.get(`/api/orders/myorders/`, config);
 
-    /* IF GET REQUEST SUCCESSFULL WE DISPATCH & SEND THE PAYLOAD TO OUR REDUCER */
+    /* IF GET REQUEST SUCCESSFUL WE DISPATCH & SEND THE PAYLOAD TO OUR REDUCER */
     dispatch({
       type: ORDER_LIST_MY_SUCCESS,
       payload: data,
@@ -209,9 +208,9 @@ export const listOrders = () => async (dispatch, getState) => {
     };
 
     /* MAKING API CALL TO GET THE DETAILS OF ALL THE ORDERS MADE BY THE ALL THE USERS */
-    const { data } = await axios.get(`/api/orders/`, config);
+    const { data } = await axiosInstance.get(`/api/orders/`, config);
 
-    /* IF GET REQUEST SUCCESSFULL WE DISPATCH & SEND THE PAYLOAD TO OUR REDUCER */
+    /* IF GET REQUEST SUCCESSFUL WE DISPATCH & SEND THE PAYLOAD TO OUR REDUCER */
     dispatch({
       type: ORDER_LIST_SUCCESS,
       payload: data,
@@ -247,13 +246,13 @@ export const deliverOrder = (order) => async (dispatch, getState) => {
     };
 
     /* MAKING API CALL TO UPDATE ORDER DELIVERY STATUS */
-    const { data } = await axios.put(
+    const { data } = await axiosInstance.put(
       `/api/orders/${order._id}/deliver/`,
       {},
       config
     );
 
-    /* IF PUT REQUEST SUCCESSFULL WE DISPATCH & SEND THE PAYLOAD TO OUR REDUCER */
+    /* IF PUT REQUEST SUCCESSFUL WE DISPATCH & SEND THE PAYLOAD TO OUR REDUCER */
     dispatch({
       type: ORDER_DELIVER_SUCCESS,
       payload: data,

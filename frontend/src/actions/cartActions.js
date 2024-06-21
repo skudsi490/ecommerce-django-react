@@ -1,5 +1,4 @@
-/* AXIOS */
-import axios from "axios";
+import axiosInstance from '../axiosInstance';
 
 /* ACTION TYPES */
 import {
@@ -14,7 +13,7 @@ import {
 /* FOR ADDING PRODUCTS TO CART */
 export const addToCart = (id, qty) => async (dispatch, getState) => {
   // FETCHING PRODUCT DATA
-  const { data } = await axios.get(`/api/products/${id}`);
+  const { data } = await axiosInstance.get(`/api/products/${id}`);
 
   dispatch({
     type: CART_ADD_ITEM,
