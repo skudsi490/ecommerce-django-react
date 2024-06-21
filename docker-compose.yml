@@ -35,9 +35,6 @@ services:
       - ./static:/app/static
       - ./media:/app/media
       - ./staticfiles:/app/staticfiles
-      - ./pytest.ini:/app/pytest.ini
-      - ./backend/reports:/app/reports
-      - frontend_build:/app/frontend/build
       - ./data_dump.json:/tmp/data_dump.json
     depends_on:
       - db

@@ -181,7 +181,7 @@ EOF
                         export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
                         aws s3 cp s3://${S3_BUCKET}/terraform/state/terraform.tfstate terraform.tfstate
                         unset AWS_ACCESS_KEY_ID
-                        unset AWS_SECRET_ACCESS_KEY
+                        unset AWS_SECRET ACCESS_KEY
                         '''
                         def terraformState = readFile 'terraform.tfstate'
                         def windowsIp = sh(script: "jq -r '.resources[] | select(.type==\"aws_instance\" and .name==\"my_windows\").instances[0].attributes.public_ip' terraform.tfstate", returnStdout: true).trim()
