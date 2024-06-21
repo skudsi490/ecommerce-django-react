@@ -64,37 +64,6 @@ pipeline {
             }
         }
 
-        stage('Build Frontend') {
-            steps {
-                script {
-                    sh '''
-                    cd frontend
-                    npm install
-                    npm run build
-                    '''
-                }
-            }
-        }
-
-        stage('Prepare Build Context') {
-            steps {
-                sh '''
-                mkdir -p backend_build
-                cp requirements.txt backend_build/
-                cp -r backend backend_build/
-                cp -r base backend_build/
-                cp manage.py backend_build/
-                cp -r static backend_build/
-                cp -r media backend_build/
-                cp pytest.ini backend_build/
-                cp backend/entrypoint.sh backend_build/
-                cp -r base/migrations backend_build/
-                cp -r frontend/build backend_build/
-                cp backend/Dockerfile backend_build/
-                '''
-            }
-        }
-
         stage('Test Docker Login') {
             steps {
                 script {
@@ -112,7 +81,7 @@ pipeline {
                 stage('Build Backend') {
                     steps {
                         script {
-                            docker.build("${DOCKER_IMAGE_BACKEND}:latest", "-f backend_build/Dockerfile backend_build")
+                            docker.build("${DOCKER_IMAGE_BACKEND}:latest", "-f backend/Dockerfile .")
                         }
                     }
                 }
@@ -160,8 +129,8 @@ pipeline {
                             env.MY_UBUNTU_IP = ubuntuIp
                             sh '''
                             ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} "mkdir -p /home/ubuntu/ecommerce-django-react/"
-                            scp -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.yml ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/ || (echo "Failed to copy docker-compose.yml" && exit 1)
-                            scp -o StrictHostKeyChecking=no -i ${SSH_KEY} requirements.txt ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/ || (echo "Failed to copy requirements.txt" && exit 1)
+                            scp -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.yml ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
+                            scp -o StrictHostKeyChecking=no -i ${SSH_KEY} requirements.txt ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
                             ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
                             set -e
                             if ! [ -x "$(command -v docker)" ]; then
