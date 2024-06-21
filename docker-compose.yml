@@ -17,12 +17,6 @@ services:
       dockerfile: backend/Dockerfile
     image: skudsi/ecommerce-django-react-backend:latest
     container_name: backend
-    command: >
-      sh -c "python /app/manage.py collectstatic --noinput &&
-             python /app/manage.py migrate &&
-             gunicorn backend.wsgi:application --bind 0.0.0.0:8000"
-    ports:
-      - "8000:8000"
     environment:
       - DEBUG=1
       - DJANGO_SETTINGS_MODULE=backend.settings
@@ -37,11 +31,19 @@ services:
       - ./requirements.txt:/app/requirements.txt
       - ./manage.py:/app/manage.py
       - ./static:/app/static
+      - ./media:/app/media
       - ./staticfiles:/app/staticfiles
       - ./pytest.ini:/app/pytest.ini
-      - ./backend/reports:/app/reports  
+      - ./backend/reports:/app/reports
+      - frontend_build:/app/frontend/build
+      - ./data_dump.json:/tmp/data_dump.json
     depends_on:
       - db
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   frontend:
     build:
@@ -51,11 +53,11 @@ services:
     container_name: frontend
     ports:
       - "80:80"
-    depends_on:
-      - backend
     volumes:
       - ./frontend:/app/frontend
-      - ./frontend/reports:/app/reports  
+      - ./frontend/reports:/app/reports
+      - frontend_build:/usr/share/nginx/html
 
 volumes:
   postgres_data:
+  frontend_build:

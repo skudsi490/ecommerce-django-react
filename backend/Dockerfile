@@ -1,4 +1,3 @@
-# backend/Dockerfile
 FROM python:3.9-slim
 
 ENV PYTHONDONTWRITEBYTECODE 1
@@ -16,21 +15,18 @@ COPY ./backend/__init__.py /app/backend/__init__.py
 COPY ./backend/settings.py /app/backend/settings.py
 COPY ./backend/wsgi.py /app/backend/wsgi.py
 COPY ./backend/urls.py /app/backend/urls.py
-COPY ./static /app/static  
+COPY ./static /app/static
+COPY ./media /app/media
 COPY ./pytest.ini /app/pytest.ini
+COPY ./backend/entrypoint.sh /app/entrypoint.sh
+COPY ./base/migrations /app/base/migrations
 
-ENV PYTHONPATH /app:/app/backend:/app/base
-ENV DJANGO_SETTINGS_MODULE=backend.settings
+RUN apt-get update && apt-get install -y netcat-openbsd
+
+RUN chmod +x /app/entrypoint.sh
 
 WORKDIR /app
 
-RUN ls -la /app/backend
-RUN echo $DJANGO_SETTINGS_MODULE
-RUN python -c "import os; print(os.environ['DJANGO_SETTINGS_MODULE'])"
-RUN python -c "import backend.settings"
-
 RUN mkdir -p /app/staticfiles
 
-RUN python manage.py collectstatic --noinput
-
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "backend.wsgi:application"]
+ENTRYPOINT ["sh", "/app/entrypoint.sh"]

@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 
 from pathlib import Path
 import os
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -25,7 +26,15 @@ SECRET_KEY = 'django-insecure-i-b2o_4@ru#jr_y)vbhdjng$607jjufk4i8b+*wrk0p&!ae%-e
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost','127.0.0.1','otakuhouse.herokuapp.com']
+ALLOWED_HOSTS = [
+    '*',
+    'localhost',
+    '127.0.0.1',
+    'ec2-3-125-46-239.eu-central-1.compute.amazonaws.com',  # My Ubuntu
+    'ec2-3-68-73-134.eu-central-1.compute.amazonaws.com',   # My Windows
+    '3.68.73.134',  # My Windows IP address
+    '3.125.46.239', # My Ubuntu IP address
+]
 
 
 # Application definition
@@ -106,7 +115,8 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
-            os.path.join(BASE_DIR,"frontend/build")
+            os.path.join(BASE_DIR, 'templates'),
+            os.path.join(BASE_DIR,"frontend/build"),
         ],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -179,8 +189,10 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR ,"media")
 
 STATICFILES_DIRS = [
-    BASE_DIR/'static',
+    BASE_DIR / 'static',
+    BASE_DIR / 'frontend/build/static',
 ]
+
 
 
 
