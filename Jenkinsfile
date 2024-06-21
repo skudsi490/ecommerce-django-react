@@ -118,7 +118,7 @@ pipeline {
                         sh '''
                         export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
                         export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-                        aws s3 cp s3://jenkins-artifacts-bucket-123456/terraform/state/terraform.tfstate terraform.tfstate
+                        aws s3 cp s3://${S3_BUCKET}/terraform/state/terraform.tfstate terraform.tfstate
                         unset AWS_ACCESS_KEY_ID
                         unset AWS_SECRET_ACCESS_KEY
                         '''
@@ -128,7 +128,8 @@ pipeline {
                         if (ubuntuIp) {
                             env.MY_UBUNTU_IP = ubuntuIp
                             sh '''
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} "mkdir -p /home/ubuntu/ecommerce-django-react/"
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} "mkdir -p /home/ubuntu/ecommerce-django-react/ && chmod 755 /home/ubuntu/ecommerce-django-react/"
+                            echo "Uploading files to remote server..."
                             scp -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.yml ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
                             scp -o StrictHostKeyChecking=no -i ${SSH_KEY} requirements.txt ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
                             ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
@@ -143,7 +144,7 @@ pipeline {
                             fi
                             if ! [ -x "$(command -v docker-compose)" ]; then
                               echo "Docker Compose not found, installing..."
-                              sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+                              sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-\$(uname -s)-\$(uname -m)" -o /usr/local/bin/docker-compose
                               sudo chmod +x /usr/local/bin/docker-compose
                             fi
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml down
@@ -167,7 +168,7 @@ pipeline {
                         sh '''
                         export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
                         export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-                        aws s3 cp s3://jenkins-artifacts-bucket-123456/terraform/state/terraform.tfstate terraform.tfstate
+                        aws s3 cp s3://${S3_BUCKET}/terraform/state/terraform.tfstate terraform.tfstate
                         unset AWS_ACCESS_KEY_ID
                         unset AWS_SECRET_ACCESS_KEY
                         '''
