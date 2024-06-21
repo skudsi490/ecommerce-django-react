@@ -140,6 +140,8 @@ EOF
                             echo "Uploading files to remote server..."
                             sh '''
                             scp -v -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.yml ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
+                            '''
+                            sh '''
                             scp -v -o StrictHostKeyChecking=no -i ${SSH_KEY} requirements.txt ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
                             '''
                             sh '''
