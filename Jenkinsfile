@@ -128,14 +128,14 @@ pipeline {
                         if (ubuntuIp) {
                             env.MY_UBUNTU_IP = ubuntuIp
                             sh '''
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                                 set -e
                                 echo "Checking disk space and directory permissions..."
                                 df -h
                                 mkdir -p /home/ubuntu/ecommerce-django-react/
                                 chmod 755 /home/ubuntu/ecommerce-django-react/
                                 ls -ld /home/ubuntu/ecommerce-django-react/
-                            EOF
+EOF
                             '''
                             echo "Uploading files to remote server..."
                             sh '''
@@ -143,7 +143,7 @@ pipeline {
                             scp -o StrictHostKeyChecking=no -i ${SSH_KEY} requirements.txt ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
                             '''
                             sh '''
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                             set -e
                             if ! [ -x "$(command -v docker)" ]; then
                               echo "Docker not found, installing..."
@@ -161,7 +161,7 @@ pipeline {
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml down
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml pull
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml up -d
-                            EOF
+EOF
                             '''
                         } else {
                             error("Missing ubuntu_ip in terraform state.")
