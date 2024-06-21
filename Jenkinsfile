@@ -64,6 +64,25 @@ pipeline {
             }
         }
 
+        stage('Prepare Build Context') {
+            steps {
+                sh '''
+                mkdir -p backend_build
+                cp requirements.txt backend_build/
+                cp -r backend backend_build/
+                cp -r base backend_build/
+                cp manage.py backend_build/
+                cp -r static backend_build/
+                cp -r media backend_build/
+                cp pytest.ini backend_build/
+                cp backend/entrypoint.sh backend_build/
+                cp -r base/migrations backend_build/
+                cp -r frontend/build backend_build/
+                cp backend/Dockerfile backend_build/
+                '''
+            }
+        }
+
         stage('Test Docker Login') {
             steps {
                 script {
@@ -81,7 +100,7 @@ pipeline {
                 stage('Build Backend') {
                     steps {
                         script {
-                            docker.build("${DOCKER_IMAGE_BACKEND}:latest", "-f backend/Dockerfile .")
+                            docker.build("${DOCKER_IMAGE_BACKEND}:latest", "-f backend_build/Dockerfile backend_build")
                         }
                     }
                 }
