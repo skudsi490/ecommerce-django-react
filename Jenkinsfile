@@ -170,44 +170,5 @@ EOF
                 }
             }
         }
-
-        stage('Deploy to Windows') {
-            steps {
-                script {
-                    withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
-                                     string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')]) {
-                        sh '''
-                        export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-                        export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-                        aws s3 cp s3://${S3_BUCKET}/terraform/state/terraform.tfstate terraform.tfstate
-                        unset AWS_ACCESS_KEY_ID
-                        unset AWS_SECRET ACCESS_KEY
-                        '''
-                        def terraformState = readFile 'terraform.tfstate'
-                        def windowsIp = sh(script: "jq -r '.resources[] | select(.type==\"aws_instance\" and .name==\"my_windows\").instances[0].attributes.public_ip' terraform.tfstate", returnStdout: true).trim()
-                        
-                        if (windowsIp) {
-                            env.MY_WINDOWS_IP = windowsIp
-                            sh '''
-                            powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "
-                            $ErrorActionPreference = 'Stop';
-                            $winrm = Get-WinRmInstance -HostName ${MY_WINDOWS_IP} -Username 'Administrator' -Password (Get-Secret -Name 'aws-instance-password')
-                            Invoke-WinRmCommand -WinRm $winrm -Command '
-                            aws s3 sync s3://${S3_BUCKET}/ C:\\ecommerce-django-react
-                            cd C:\\ecommerce-django-react
-                            
-                            docker-compose down
-                            docker-compose pull
-                            docker-compose up -d
-                            '
-                            "
-                            '''
-                        } else {
-                            error("Missing windows_ip in terraform state.")
-                        }
-                    }
-                }
-            }
-        }
     }
 }

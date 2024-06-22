@@ -343,39 +343,6 @@ resource "aws_instance" "my_ubuntu" {
               EOF
 }
 
-# My Windows EC2 Instance
-resource "aws_instance" "my_windows" {
-  ami                          = "ami-034de56da2366e342"
-  instance_type                = var.instance_type
-  subnet_id                    = aws_subnet.subnet2.id
-  associate_public_ip_address  = true
-  vpc_security_group_ids       = [aws_security_group.default_sg.id]
-  key_name                     = var.key_name
-  instance_initiated_shutdown_behavior = "stop"
-
-  ebs_block_device {
-    device_name = "/dev/sdh"
-    volume_size = 30
-    volume_type = "gp2"
-  }
-
-  lifecycle {
-    ignore_changes  = [associate_public_ip_address]
-  }
-
-  tags = {
-    Name = "My Windows"
-  }
-
-  user_data = <<-EOF
-              <powershell>
-              [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-              Invoke-WebRequest -Uri https://download.docker.com/win/stable/Docker%20Desktop%20Installer.exe -OutFile DockerDesktopInstaller.exe
-              Start-Process -FilePath DockerDesktopInstaller.exe -ArgumentList "/install", "/quiet", "/norestart" -NoNewWindow -Wait
-              </powershell>
-              EOF
-}
-
 # S3 Bucket
 resource "aws_s3_bucket" "jenkins_artifacts" {
   bucket = "jenkins-artifacts-bucket-123456"
@@ -405,10 +372,6 @@ output "jenkins_agent_ip" {
 
 output "ubuntu_ip" {
   value = aws_instance.my_ubuntu.public_ip
-}
-
-output "windows_ip" {
-  value = aws_instance.my_windows.public_ip
 }
 
 output "s3_bucket_name" {
