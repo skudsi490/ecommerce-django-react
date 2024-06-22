@@ -15,7 +15,7 @@ ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.73.124.225
 
 ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@35.158.94.80
 ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@54.93.72.27
-ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.79.230.95
+ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.125.46.239
 
 check if docker and docker compose installed :
 docker ps
@@ -81,7 +81,7 @@ docker push skudsi/ecommerce-django-react-backend:latest
 
 
 git add .
-git commit -m "Update configuration v17"
+git commit -m "Update configuration v18"
 git push origin main
 
 

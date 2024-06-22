@@ -36,6 +36,7 @@ services:
       - ./media:/app/media
       - ./staticfiles:/app/staticfiles
       - ./data_dump.json:/tmp/data_dump.json
+      - ./frontend/build:/app/frontend/build  
     depends_on:
       - db
     ports:
