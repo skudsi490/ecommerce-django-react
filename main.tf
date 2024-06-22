@@ -153,8 +153,7 @@ resource "aws_instance" "jenkins" {
   key_name                     = var.key_name
   instance_initiated_shutdown_behavior = "stop"
 
-  ebs_block_device {
-    device_name = "/dev/sdh"
+  root_block_device {
     volume_size = 30
     volume_type = "gp2"
   }
@@ -255,8 +254,7 @@ resource "aws_instance" "jenkins_agent" {
   key_name                     = var.key_name
   instance_initiated_shutdown_behavior = "stop"
 
-  ebs_block_device {
-    device_name = "/dev/sdh"
+  root_block_device {
     volume_size = 30
     volume_type = "gp2"
   }
@@ -290,12 +288,6 @@ resource "aws_instance" "jenkins_agent" {
               wget -O /home/ubuntu/agent.jar http://<jenkins-server>/jnlpJars/agent.jar
 
               nohup java -jar /home/ubuntu/agent.jar -jnlpUrl http://<jenkins-server>/computer/<node-name>/jenkins-agent.jnlp -secret <agent-secret> &
-
-              # Cleanup to free up space
-              sudo apt-get clean
-              sudo docker system prune -a -f
-              sudo rm -rf /var/lib/jenkins/workspace/*
-              sudo rm -rf /var/lib/jenkins/logs/*
               EOF
 }
 
@@ -309,8 +301,7 @@ resource "aws_instance" "my_ubuntu" {
   key_name                     = var.key_name
   instance_initiated_shutdown_behavior = "stop"
 
-  ebs_block_device {
-    device_name = "/dev/sdh"
+  root_block_device {
     volume_size = 30
     volume_type = "gp2"
   }
@@ -324,62 +315,29 @@ resource "aws_instance" "my_ubuntu" {
   }
 
   user_data = <<-EOF
-    #!/bin/bash
-    exec > /var/log/user-data.log 2>&1
-    set -o xtrace
+              #!/bin/bash
+              exec > /var/log/user-data.log 2>&1
+              set -o xtrace
+              
+              echo "Updating apt repository..."
+              sudo apt update -y
+              echo "Installing Docker..."
+              sudo apt install -y docker.io
+              echo "Starting Docker..."
+              sudo systemctl start docker
+              sudo systemctl enable docker
+              echo "Adding user to Docker group..."
+              sudo usermod -aG docker ubuntu
+              echo "Installing jq..."
+              sudo apt-get install -y jq
 
-    echo "Updating apt repository..."
-    sudo apt update -y
-
-    echo "Installing Docker..."
-    sudo apt install -y docker.io
-    echo "Starting Docker..."
-    sudo systemctl start docker
-    sudo systemctl enable docker
-    echo "Adding user to Docker group..."
-    sudo usermod -aG docker ubuntu
-
-    echo "Installing jq..."
-    sudo apt-get install -y jq
-
-    echo "Installing Nginx..."
-    sudo apt install -y nginx
-    echo "Starting Nginx..."
-    sudo systemctl start nginx
-    sudo systemctl enable nginx
-
-    echo "Configuring Nginx for Django application..."
-    sudo bash -c 'cat > /etc/nginx/sites-available/default <<EOL
-    server {
-        listen 80;
-        server_name _;
-
-        location / {
-            root /usr/share/nginx/html;
-            index index.html;
-            try_files $uri /index.html;
-        }
-
-        # Proxy pass for API requests
-        location /api/ {
-            proxy_pass http://localhost:8000;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-        }
-    }
-    EOL'
-    sudo nginx -t
-    sudo systemctl reload nginx
-
-    echo "Configuring swap space..."
-    sudo fallocate -l 4G /swapfile
-    sudo chmod 600 /swapfile
-    sudo mkswap /swapfile
-    sudo swapon /swapfile
-    echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
-  EOF
+              echo "Configuring swap space..."
+              sudo fallocate -l 4G /swapfile
+              sudo chmod 600 /swapfile
+              sudo mkswap /swapfile
+              sudo swapon /swapfile
+              echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+              EOF
 }
 
 # S3 Bucket
@@ -416,3 +374,4 @@ output "ubuntu_ip" {
 output "s3_bucket_name" {
   value = aws_s3_bucket.jenkins_artifacts.bucket
 }
+  

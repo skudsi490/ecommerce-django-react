@@ -11,11 +11,11 @@ docker-compose -f docker-compose.e2e.yml up --abort-on-container-exit
 
 
 
-ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.66.167.71
+ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.79.178.52
 
-ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.67.186.49
-ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.67.186.49
-ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@18.194.197.215
+ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@35.159.108.252
+ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@18.184.167.254
+ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.79.240.158
 
 check if docker and docker compose installed :
 docker ps
@@ -25,6 +25,8 @@ Having logs for the SSH :
 ssh -vvv -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.70.222.92
 
 ping 3.70.222.92
+df -h
+lsblk
 
 Check Resources:
 terraform state list
@@ -81,7 +83,7 @@ docker push skudsi/ecommerce-django-react-backend:latest
 
 
 git add .
-git commit -m "Update configuration v20"
+git commit -m "Update configuration v21"
 git push origin main
 
 

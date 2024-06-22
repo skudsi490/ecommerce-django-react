@@ -19,12 +19,10 @@ provider "aws" {
 
 # The rest of your configuration
 Reinitialize Terraform: Run the following command to reinitialize Terraform with the local backend.
-sh
-Copy code
+
 terraform init -reconfigure
 Destroy the Infrastructure: Once Terraform has been reinitialized to use the local backend, you can destroy the infrastructure.
-sh
-Copy code
+
 terraform destroy
 This should work without requiring the S3 bucket to be available.
 
@@ -46,6 +44,8 @@ Copy code
 Remove-Item -Recurse -Force .terraform
 Remove-Item -Force .terraform.lock.hcl
 Remove-Item -Force terraform.tfstate
+Remove-Item -Force terraform.tfstate.backup
+
 Step 2: Start with Local Backend
 Update your main.tf to use the local backend:
 
@@ -119,8 +119,7 @@ resource "aws_dynamodb_table" "terraform_lock" {
 Step 5: Migrate State to S3 Backend
 Once your resources are created, update main.tf to use the S3 backend:
 
-hcl
-Copy code
+
 terraform {
   backend "s3" {
     bucket         = "jenkins-artifacts-bucket-123456"
