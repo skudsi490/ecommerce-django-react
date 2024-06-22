@@ -11,11 +11,11 @@ docker-compose -f docker-compose.e2e.yml up --abort-on-container-exit
 
 
 
-ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.73.124.225
+ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.66.167.71
 
-ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@35.158.94.80
-ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@54.93.72.27
-ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.125.46.239
+ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.76.42.113
+ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.67.186.49
+ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@18.194.197.215
 
 check if docker and docker compose installed :
 docker ps
@@ -81,7 +81,7 @@ docker push skudsi/ecommerce-django-react-backend:latest
 
 
 git add .
-git commit -m "Update configuration v18"
+git commit -m "Update configuration v19"
 git push origin main
 
 

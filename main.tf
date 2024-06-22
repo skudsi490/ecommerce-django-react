@@ -17,7 +17,6 @@ provider "aws" {
   region = "eu-central-1"
 }
 
-# Variables
 variable "vpc_cidr" {
   default = "10.0.0.0/16"
 }
@@ -39,7 +38,6 @@ variable "key_name" {
   default     = "tesi-aws"
 }
 
-# DynamoDB table for state locking
 resource "aws_dynamodb_table" "terraform_lock" {
   name         = "terraform-lock-table"
   billing_mode = "PROVISIONED"
@@ -53,7 +51,6 @@ resource "aws_dynamodb_table" "terraform_lock" {
   }
 }
 
-# VPC
 resource "aws_vpc" "main" {
   cidr_block = var.vpc_cidr
 
@@ -61,12 +58,10 @@ resource "aws_vpc" "main" {
   enable_dns_hostnames = true
 }
 
-# Internet Gateway
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
 }
 
-# Route Table
 resource "aws_route_table" "main" {
   vpc_id = aws_vpc.main.id
 
@@ -81,7 +76,6 @@ resource "aws_route_table_association" "subnet1" {
   route_table_id = aws_route_table.main.id
 }
 
-# Subnets
 resource "aws_subnet" "subnet1" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = var.subnet1_cidr
@@ -96,7 +90,6 @@ resource "aws_subnet" "subnet2" {
   map_public_ip_on_launch = true
 }
 
-# Security Groups
 resource "aws_security_group" "default_sg" {
   vpc_id = aws_vpc.main.id
 
@@ -143,7 +136,6 @@ resource "aws_security_group" "default_sg" {
   }
 }
 
-# Jenkins EC2 Instance
 resource "aws_instance" "jenkins" {
   ami                          = "ami-01e444924a2233b07"
   instance_type                = var.instance_type
@@ -245,7 +237,6 @@ resource "aws_instance" "jenkins" {
               EOF
 }
 
-# Jenkins Agent EC2 Instance
 resource "aws_instance" "jenkins_agent" {
   ami                          = "ami-01e444924a2233b07"
   instance_type                = var.instance_type
@@ -256,7 +247,7 @@ resource "aws_instance" "jenkins_agent" {
   instance_initiated_shutdown_behavior = "stop"
 
   ebs_block_device {
-    device_name = "/dev/sdh"
+    device_name = "/dev/xvdh"
     volume_size = 30
     volume_type = "gp2"
   }
@@ -270,30 +261,56 @@ resource "aws_instance" "jenkins_agent" {
   }
 
   user_data = <<-EOF
-              #!/bin/bash
-              exec > /var/log/user-data.log 2>&1
-              set -o xtrace
+    #!/bin/bash
+    exec > /var/log/user-data.log 2>&1
+    set -o xtrace
 
-              sudo apt-get update -y
-              sudo apt-get install -y openjdk-17-jre docker.io jq
-              sudo systemctl start docker
-              sudo systemctl enable docker
-              sudo usermod -aG docker ubuntu
+    sudo apt-get update -y
+    sudo apt-get install -y openjdk-17-jre docker.io jq
+    sudo systemctl start docker
+    sudo systemctl enable docker
+    sudo usermod -aG docker ubuntu
 
-              echo "Configuring swap space..."
-              sudo fallocate -l 4G /swapfile
-              sudo chmod 600 /swapfile
-              sudo mkswap /swapfile
-              sudo swapon /swapfile
-              echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+    echo "Configuring swap space..."
+    sudo fallocate -l 4G /swapfile
+    sudo chmod 600 /swapfile
+    sudo mkswap /swapfile
+    sudo swapon /swapfile
+    echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 
-              wget -O /home/ubuntu/agent.jar http://<jenkins-server>/jnlpJars/agent.jar
+    # Wait for the EBS volume to be available
+    while [ ! -e /dev/nvme1n1 ]; do sleep 1; done
 
-              nohup java -jar /home/ubuntu/agent.jar -jnlpUrl http://<jenkins-server>/computer/<node-name>/jenkins-agent.jnlp -secret <agent-secret> &
-              EOF
+    # Format and mount the EBS volume
+    sudo mkfs -t ext4 /dev/nvme1n1
+    sudo mkdir -p /mnt/jenkins
+    sudo mount /dev/nvme1n1 /mnt/jenkins
+
+    # Ensure the mount persists across reboots
+    echo '/dev/nvme1n1 /mnt/jenkins ext4 defaults,nofail 0 2' | sudo tee -a /etc/fstab
+
+    # Move Jenkins data to the new volume
+    sudo rsync -a /var/lib/jenkins/ /mnt/jenkins/
+    sudo mv /var/lib/jenkins /var/lib/jenkins.bak
+    sudo ln -s /mnt/jenkins /var/lib/jenkins
+
+    # Set permissions for Jenkins directory
+    sudo chown -R ubuntu:ubuntu /mnt/jenkins
+    sudo chmod -R 755 /mnt/jenkins
+
+    # Download and configure Jenkins agent
+    wget -O /mnt/jenkins/agent.jar http://${aws_instance.jenkins.public_dns}/jnlpJars/agent.jar
+
+    # Start Jenkins agent
+    nohup java -jar /mnt/jenkins/agent.jar -jnlpUrl http://${aws_instance.jenkins.public_dns}/computer/jenkins-agent/jenkins-agent.jnlp -secret your-agent-secret &
+  EOF
+
+  depends_on = [
+    aws_instance.jenkins
+  ]
 }
 
-# My Ubuntu EC2 Instance
+
 resource "aws_instance" "my_ubuntu" {
   ami                          = "ami-01e444924a2233b07"
   instance_type                = var.instance_type
@@ -318,32 +335,64 @@ resource "aws_instance" "my_ubuntu" {
   }
 
   user_data = <<-EOF
-              #!/bin/bash
-              exec > /var/log/user-data.log 2>&1
-              set -o xtrace
-              
-              echo "Updating apt repository..."
-              sudo apt update -y
-              echo "Installing Docker..."
-              sudo apt install -y docker.io
-              echo "Starting Docker..."
-              sudo systemctl start docker
-              sudo systemctl enable docker
-              echo "Adding user to Docker group..."
-              sudo usermod -aG docker ubuntu
-              echo "Installing jq..."
-              sudo apt-get install -y jq
+    #!/bin/bash
+    exec > /var/log/user-data.log 2>&1
+    set -o xtrace
 
-              echo "Configuring swap space..."
-              sudo fallocate -l 4G /swapfile
-              sudo chmod 600 /swapfile
-              sudo mkswap /swapfile
-              sudo swapon /swapfile
-              echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
-              EOF
+    echo "Updating apt repository..."
+    sudo apt update -y
+
+    echo "Installing Docker..."
+    sudo apt install -y docker.io
+    echo "Starting Docker..."
+    sudo systemctl start docker
+    sudo systemctl enable docker
+    echo "Adding user to Docker group..."
+    sudo usermod -aG docker ubuntu
+
+    echo "Installing jq..."
+    sudo apt-get install -y jq
+
+    echo "Installing Nginx..."
+    sudo apt install -y nginx
+    echo "Starting Nginx..."
+    sudo systemctl start nginx
+    sudo systemctl enable nginx
+
+    echo "Configuring Nginx for Django application..."
+    sudo bash -c 'cat > /etc/nginx/sites-available/default <<EOL
+    server {
+        listen 80;
+        server_name _;
+
+        location / {
+            root /usr/share/nginx/html;
+            index index.html;
+            try_files $uri /index.html;
+        }
+
+        # Proxy pass for API requests
+        location /api/ {
+            proxy_pass http://localhost:8000;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+    }
+    EOL'
+    sudo nginx -t
+    sudo systemctl reload nginx
+
+    echo "Configuring swap space..."
+    sudo fallocate -l 4G /swapfile
+    sudo chmod 600 /swapfile
+    sudo mkswap /swapfile
+    sudo swapon /swapfile
+    echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+  EOF
 }
 
-# S3 Bucket
 resource "aws_s3_bucket" "jenkins_artifacts" {
   bucket = "jenkins-artifacts-bucket-123456"
 
@@ -361,7 +410,6 @@ resource "aws_s3_bucket_versioning" "jenkins_artifacts_versioning" {
   }
 }
 
-# Outputs
 output "jenkins_url" {
   value = aws_instance.jenkins.public_dns
 }

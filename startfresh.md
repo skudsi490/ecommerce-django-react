@@ -71,19 +71,20 @@ provider "aws" {
 Step 3: Initialize Terraform with Local Backend
 Initialize Terraform:
 
-powershell
-Copy code
+
 terraform init
+
 Step 4: Apply Configuration to Create Resources
+
 Create your infrastructure, including the S3 bucket and DynamoDB table:
 
-powershell
-Copy code
 terraform apply
+
+
 Make sure your main.tf includes the resources for the S3 bucket and DynamoDB table:
 
-hcl
-Copy code
+
+
 # S3 Bucket
 resource "aws_s3_bucket" "jenkins_artifacts" {
   bucket = "jenkins-artifacts-bucket-123456"
@@ -142,6 +143,5 @@ provider "aws" {
 # Variables and resources go here
 Reinitialize Terraform with the new backend configuration and migrate the state:
 
-powershell
-Copy code
+
 terraform init -migrate-state
