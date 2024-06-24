@@ -13,12 +13,12 @@ services:
     networks:
       - app-network
 
-  web:  # Renamed from 'backend' to 'web'
+  web:  
     build:
       context: .
       dockerfile: Dockerfile
       args:
-        - REACT_APP_BACKEND_URL=http://localhost:8000  
+        REACT_APP_BACKEND_URL=http://web:8000  
     image: skudsi/ecommerce-django-react-web:latest
     container_name: web
     environment:
