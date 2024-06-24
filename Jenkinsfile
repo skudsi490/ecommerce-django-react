@@ -146,7 +146,6 @@ EOF
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml down --remove-orphans
                             docker network rm ecommerce-django-react_app-network || true
                             docker network prune -f
-                            docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml pull
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml up -d
 EOF
                             '''
