@@ -142,7 +142,8 @@ EOF
                               sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
                               sudo chmod +x /usr/local/bin/docker-compose
                             fi
-                            docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml down
+                            docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml down --remove-orphans
+                            docker network rm ecommerce-django-react_app-network || true
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml pull
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml up -d
 EOF
