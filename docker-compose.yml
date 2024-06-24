@@ -16,7 +16,9 @@ services:
   web:  # Renamed from 'backend' to 'web'
     build:
       context: .
-      dockerfile: Dockerfile 
+      dockerfile: Dockerfile
+      args:
+        - REACT_APP_BACKEND_URL=http://localhost:8000  
     image: skudsi/ecommerce-django-react-web:latest
     container_name: web
     environment:
@@ -39,7 +41,7 @@ services:
     depends_on:
       - db
     ports:
-      - "8000:8000"  
+      - "8000:8000"
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8000/ || exit 1"]
       interval: 30s

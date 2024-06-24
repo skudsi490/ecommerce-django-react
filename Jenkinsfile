@@ -15,6 +15,7 @@ pipeline {
         POSTGRES_USER = 'ecommerceuser'
         POSTGRES_PASSWORD = 'ecommercedbpassword'
         POSTGRES_HOST = 'db'
+        REACT_APP_BACKEND_URL = 'http://localhost:8000' 
     }
 
     stages {
@@ -78,7 +79,7 @@ pipeline {
         stage('Build and Push Docker Image') {
             steps {
                 script {
-                    docker.build("${DOCKER_IMAGE_WEB}:latest", "-f Dockerfile .")
+                    docker.build("${DOCKER_IMAGE_WEB}:latest", "--build-arg REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL} .")
                 }
             }
         }
@@ -124,7 +125,7 @@ EOF
                             echo "Uploading files to remote server..."
                             sh '''
                             scp -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.yml ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
-                            scp -o StrictHostKeyChecking=no -i ${SSH_KEY} -r backend base frontend manage.py requirements.txt ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
+                            scp -o StrictHostKeyChecking=no -i ${SSH_KEY} -r Dockerfile entrypoint.sh backend base frontend manage.py requirements.txt ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
                             '''
                             sh '''
                             ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
