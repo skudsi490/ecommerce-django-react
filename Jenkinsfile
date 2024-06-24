@@ -4,8 +4,7 @@ pipeline {
     }
     environment {
         REPO_URL = 'https://github.com/skudsi490/ecommerce-django-react.git'
-        DOCKER_IMAGE_BACKEND = 'skudsi/ecommerce-django-react-backend'
-        DOCKER_IMAGE_FRONTEND = 'skudsi/ecommerce-django-react-frontend'
+        DOCKER_IMAGE_WEB = 'skudsi/ecommerce-django-react-web'
         DOCKERHUB_CREDENTIALS = credentials('dockerhub')
         AWS_ACCESS_KEY_ID = credentials('aws-access-key-id')
         AWS_SECRET_ACCESS_KEY = credentials('aws-secret-access-key')
@@ -76,34 +75,19 @@ pipeline {
             }
         }
 
-        stage('Build and Push Docker Images') {
-            parallel {
-                stage('Build Backend') {
-                    steps {
-                        script {
-                            docker.build("${DOCKER_IMAGE_BACKEND}:latest", "-f backend/Dockerfile .")
-                        }
-                    }
-                }
-                stage('Build Frontend') {
-                    steps {
-                        script {
-                            sh '''
-                            # Increase memory limit for Docker
-                            docker build --memory 4g -t ${DOCKER_IMAGE_FRONTEND}:latest -f frontend/Dockerfile .
-                            '''
-                        }
-                    }
+        stage('Build and Push Docker Image') {
+            steps {
+                script {
+                    docker.build("${DOCKER_IMAGE_WEB}:latest", "-f Dockerfile .")
                 }
             }
         }
 
-        stage('Push Docker Images') {
+        stage('Push Docker Image') {
             steps {
                 script {
                     docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
-                        docker.image("${DOCKER_IMAGE_BACKEND}:latest").push('latest')
-                        docker.image("${DOCKER_IMAGE_FRONTEND}:latest").push('latest')
+                        docker.image("${DOCKER_IMAGE_WEB}:latest").push('latest')
                     }
                 }
             }

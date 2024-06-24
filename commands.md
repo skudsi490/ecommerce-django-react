@@ -4,6 +4,15 @@ To start your services, use the following command:
 
 docker-compose up -d
 
+docker-compose down
+docker-compose -f docker-compose.yml -f docker-compose.override.yml up --build
+# For production
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml up --build
+
+
+
+
+
 To run the end-to-end tests, use the following command:
 
 docker-compose -f docker-compose.e2e.yml up --abort-on-container-exit
@@ -13,7 +22,7 @@ docker-compose -f docker-compose.e2e.yml up --abort-on-container-exit
 
 ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.79.178.52
 
-ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@35.159.108.252
+ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@35.159.163.80
 ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@18.184.167.254
 ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.79.240.158
 
@@ -83,7 +92,7 @@ docker push skudsi/ecommerce-django-react-backend:latest
 
 
 git add .
-git commit -m "Update configuration v21"
+git commit -m "Update configuration v22"
 git push origin main
 
 

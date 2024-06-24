@@ -272,3 +272,5 @@ Session.vim
 .terraform/providers/registry.terraform.io/hashicorp/aws/5.54.1/windows_amd64/terraform-provider-aws_v5.54.1_x5.exe
 
 /staticfiles/
+
+jenkins_pipeline_automation.py

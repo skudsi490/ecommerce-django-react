@@ -24,16 +24,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-i-b2o_4@ru#jr_y)vbhdjng$607jjufk4i8b+*wrk0p&!ae%-e'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = [
-    '*',
+    '*',  # Allow all hosts for simplicity, adjust as needed
     'localhost',
     '127.0.0.1',
-    'ec2-3-125-46-239.eu-central-1.compute.amazonaws.com',  # My Ubuntu
-    'ec2-3-68-73-134.eu-central-1.compute.amazonaws.com',   # My Windows
-    '3.68.73.134',  # My Windows IP address
-    '3.125.46.239', # My Ubuntu IP address
+    'ec2-3-68-231-51.eu-central-1.compute.amazonaws.com',  # My Ubuntu
+    '3.68.231.51',  # My Ubuntu IP address
 ]
 
 
@@ -202,7 +200,10 @@ STATICFILES_DIRS = [
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:8000",
+    "http://your-frontend-domain.com",  # Add your frontend domain here if needed
+]
 
 CORS_ALLOW_ALL_ORIGINS = True
 
