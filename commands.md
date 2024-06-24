@@ -76,7 +76,7 @@ npm start
 
 
 git add Jenkinsfile
-git commit -m "Update Jenkinsfile 97"
+git commit -m "Update Jenkinsfile 98"
 git push origin main
 
 You don't have to write the full code only give me the part/s need to be modified, change or updated
@@ -92,7 +92,7 @@ docker push skudsi/ecommerce-django-react-backend:latest
 
 
 git add .
-git commit -m "Update configuration v30"
+git commit -m "Update configuration v32"
 git push origin main
 
 
