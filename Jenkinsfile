@@ -167,7 +167,7 @@ EOF
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml up -d
                             docker-compose exec web python manage.py makemigrations
                             docker-compose exec web python manage.py migrate
-                            docker-compose exec web python manage.py loaddata /tmp/data_dump.json
+                            docker-compose exec web python manage.py loaddata /app/data_dump.json
 EOF
                             '''
                         } else {
