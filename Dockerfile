@@ -37,8 +37,8 @@ COPY ./backend/settings.py /app/backend/
 COPY ./backend/wsgi.py /app/backend/
 COPY ./backend/urls.py /app/backend/
 
-# Conditionally copy the static directory
-COPY ./static/ /app/static/
+# Copy static directory
+COPY ./static /app/static/
 COPY ./media/ /app/media/
 COPY ./pytest.ini /app/
 COPY ./entrypoint.sh /app/  
