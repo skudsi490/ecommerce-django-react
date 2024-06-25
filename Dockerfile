@@ -8,7 +8,6 @@ COPY ./frontend/package.json ./frontend/package-lock.json ./
 ARG REACT_APP_BACKEND_URL
 ENV REACT_APP_BACKEND_URL=$REACT_APP_BACKEND_URL
 
-# Print the REACT_APP_BACKEND_URL to verify it's set correctly
 RUN echo "Building frontend with REACT_APP_BACKEND_URL=$REACT_APP_BACKEND_URL"
 
 RUN npm install
@@ -39,6 +38,10 @@ COPY ./backend/urls.py /app/backend/
 
 # Copy static directory
 COPY ./static/ /app/static/
+
+# Debugging step
+RUN ls -la /app/static
+
 COPY ./media/ /app/media/
 COPY ./pytest.ini /app/
 COPY ./entrypoint.sh /app/  
