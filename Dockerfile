@@ -39,8 +39,8 @@ COPY ./backend/urls.py /app/backend/
 # Copy static directory
 COPY ./static/ /app/static/
 
-# Debugging step
-RUN ls -la /app/static
+# Debugging step to ensure static files are copied
+RUN echo "Contents of /app/static:" && ls -la /app/static
 
 COPY ./media/ /app/media/
 COPY ./pytest.ini /app/
