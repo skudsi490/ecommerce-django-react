@@ -196,13 +196,17 @@ EOF
                             echo "Creating media/images directory..."
                             mkdir -p /home/ubuntu/ecommerce-django-react/media/images
                         fi
-                        for image in $(jq -r '.[] | select(.model=="base.product") | .fields.image' data_dump.json); do
+                        EOF
+                        
+                        images=$(jq -r '.[] | select(.model=="base.product") | .fields.image' data_dump.json)
+                        for image in $images; do
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
                             if [ ! -f "/home/ubuntu/ecommerce-django-react/media/$image" ]; then
                                 echo "Uploading missing image: $image"
                                 scp -o StrictHostKeyChecking=no -i ${SSH_KEY} media/$image ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/media/images/
                             fi
+                            EOF
                         done
-EOF
                         '''
                     }
                 }
