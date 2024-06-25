@@ -195,6 +195,7 @@ EOF
                         if [ ! -d "/home/ubuntu/ecommerce-django-react/media/images" ]; then
                             echo "Creating media/images directory..."
                             mkdir -p /home/ubuntu/ecommerce-django-react/media/images
+                            chmod 755 /home/ubuntu/ecommerce-django-react/media/images
                         fi
 EOF
                         '''
