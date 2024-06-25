@@ -197,9 +197,9 @@ EOF
                             mkdir -p /home/ubuntu/ecommerce-django-react/media/images
                         fi
 EOF
-                        
-                        images=$(jq -r '.[] | select(.model=="base.product") | .fields.image' data_dump.json)
-                        for image in $images; do
+                        '''
+                        def images = sh(script: "jq -r '.[] | select(.model==\"base.product\") | .fields.image' data_dump.json", returnStdout: true).trim().split('\n')
+                        for (image in images) {
                             sh """
                             if [ ! -f "media/$image" ]; then
                                 echo "Error: Local image file media/$image not found."
@@ -210,15 +210,14 @@ EOF
                             scp -o StrictHostKeyChecking=no -i ${SSH_KEY} media/$image ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/media/images/
                             """
                             sh """
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << EOF
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                             if [ ! -f "/home/ubuntu/ecommerce-django-react/media/images/$image" ]; then
                                 echo "Error: Failed to upload image $image."
                                 exit 1
                             fi
 EOF
                             """
-                        done
-                        '''
+                        }
                     }
                 }
             }
