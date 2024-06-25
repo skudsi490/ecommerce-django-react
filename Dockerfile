@@ -38,7 +38,7 @@ COPY ./backend/wsgi.py /app/backend/
 COPY ./backend/urls.py /app/backend/
 
 # Copy static directory
-COPY ./static /app/static/
+COPY ./static/ /app/static/
 COPY ./media/ /app/media/
 COPY ./pytest.ini /app/
 COPY ./entrypoint.sh /app/  

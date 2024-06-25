@@ -21,6 +21,8 @@ provider "aws" {
 Reinitialize Terraform: Run the following command to reinitialize Terraform with the local backend.
 
 terraform init -reconfigure
+
+
 Destroy the Infrastructure: Once Terraform has been reinitialized to use the local backend, you can destroy the infrastructure.
 
 terraform destroy
