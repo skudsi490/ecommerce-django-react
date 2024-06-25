@@ -77,11 +77,11 @@ npm start
 
 
 git add Jenkinsfile
-git commit -m "Update Jenkinsfile 102"
+git commit -m "Update Jenkinsfile 135"
 git push origin main
 
 sudo cat /var/log/user-data.log
-
+7
 You don't have to write the full code only give me the part/s need to be modified, change or updated
 
 
