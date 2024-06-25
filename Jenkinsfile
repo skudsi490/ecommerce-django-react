@@ -200,10 +200,19 @@ EOF
                         
                         images=$(jq -r '.[] | select(.model=="base.product") | .fields.image' data_dump.json)
                         for image in $images; do
+                            sh '''
+                            if [ ! -f "media/$image" ]; then
+                                echo "Error: Local image file media/$image not found."
+                                exit 1
+                            fi
+                            '''
+                            sh '''
+                            scp -o StrictHostKeyChecking=no -i ${SSH_KEY} media/$image ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/media/images/
+                            '''
                             ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << EOF
-                            if [ ! -f "/home/ubuntu/ecommerce-django-react/media/$image" ]; then
-                                echo "Uploading missing image: $image"
-                                scp -o StrictHostKeyChecking=no -i ${SSH_KEY} media/$image ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/media/images/
+                            if [ ! -f "/home/ubuntu/ecommerce-django-react/media/images/$image" ]; then
+                                echo "Error: Failed to upload image $image."
+                                exit 1
                             fi
 EOF
                         done
