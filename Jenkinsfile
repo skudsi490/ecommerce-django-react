@@ -64,6 +64,18 @@ pipeline {
             }
         }
 
+        stage('Verify Static Directory') {
+            steps {
+                sh '''
+                echo "Contents of project root directory:"
+                ls -la
+
+                echo "Contents of static directory:"
+                ls -la static
+                '''
+            }
+        }
+
         stage('Test Docker Login') {
             steps {
                 script {
@@ -125,7 +137,7 @@ EOF
                             echo "Uploading files to remote server..."
                             sh '''
                             scp -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.yml ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
-                            scp -o StrictHostKeyChecking=no -i ${SSH_KEY} -r Dockerfile entrypoint.sh backend base frontend manage.py requirements.txt ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
+                            scp -o StrictHostKeyChecking=no -i ${SSH_KEY} -r Dockerfile entrypoint.sh backend base frontend manage.py requirements.txt static media ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
                             '''
                             sh '''
                             ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
