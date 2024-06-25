@@ -131,7 +131,7 @@ pipeline {
                         if (ubuntuIp) {
                             env.MY_UBUNTU_IP = ubuntuIp
                             sh '''
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << EOF
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                                 set -e
                                 echo "Checking disk space and directory permissions..."
                                 df -h
@@ -146,7 +146,7 @@ EOF
                             scp -o StrictHostKeyChecking=no -i ${SSH_KEY} -r Dockerfile entrypoint.sh backend base frontend manage.py requirements.txt static media data_dump.json pytest.ini ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
                             '''
                             sh '''
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << EOF
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                             set -e
                             if ! [ -x "$(command -v docker)" ]; then
                               echo "Docker not found, installing..."
@@ -169,7 +169,7 @@ EOF
                             '''
                             echo "Running Django migrations and loading data..."
                             sh '''
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << EOF
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                             set -e
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py makemigrations
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py migrate
@@ -190,7 +190,7 @@ EOF
                     withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
                         sh '''
                         echo "Verifying media files on the server..."
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << EOF
+                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                         set -e
                         if [ ! -d "/home/ubuntu/ecommerce-django-react/media/images" ]; then
                             echo "Creating media/images directory..."
@@ -200,21 +200,23 @@ EOF
                         
                         images=$(jq -r '.[] | select(.model=="base.product") | .fields.image' data_dump.json)
                         for image in $images; do
-                            sh '''
+                            sh """
                             if [ ! -f "media/$image" ]; then
                                 echo "Error: Local image file media/$image not found."
                                 exit 1
                             fi
-                            '''
-                            sh '''
+                            """
+                            sh """
                             scp -o StrictHostKeyChecking=no -i ${SSH_KEY} media/$image ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/media/images/
-                            '''
+                            """
+                            sh """
                             ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << EOF
                             if [ ! -f "/home/ubuntu/ecommerce-django-react/media/images/$image" ]; then
                                 echo "Error: Failed to upload image $image."
                                 exit 1
                             fi
 EOF
+                            """
                         done
                         '''
                     }
