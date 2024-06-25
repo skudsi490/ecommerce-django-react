@@ -188,11 +188,11 @@ EOF
             steps {
                 sh '''
                 echo "Verifying media files on the server..."
-                ssh -o StrictHostKeyChecking=no -T -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                ssh -o StrictHostKeyChecking=no -T -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
                 set -e
                 echo "Checking media directory contents..."
                 ls -la /home/ubuntu/ecommerce-django-react/media/images
-                EOF
+EOF
                 '''
             }
         }
