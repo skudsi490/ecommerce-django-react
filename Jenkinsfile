@@ -201,19 +201,20 @@ EOF
                         '''
                         def images = sh(script: "jq -r '.[] | select(.model==\"base.product\") | .fields.image' data_dump.json", returnStdout: true).trim().split('\n')
                         for (image in images) {
+                            def imagePath = "media/$image".trim()
                             sh """
-                            if [ ! -f "media/images/$image" ]; then
-                                echo "Error: Local image file media/images/$image not found."
+                            if [ ! -f "${imagePath}" ]; then
+                                echo "Error: Local image file ${imagePath} not found."
                                 exit 1
                             fi
                             """
                             sh """
-                            scp -o StrictHostKeyChecking=no -i ${SSH_KEY} media/images/$image ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/media/images/
+                            scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ${imagePath} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/${imagePath}
                             """
                             sh """
                             ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
-                            if [ ! -f "/home/ubuntu/ecommerce-django-react/media/images/$image" ]; then
-                                echo "Error: Failed to upload image $image."
+                            if [ ! -f "/home/ubuntu/ecommerce-django-react/${imagePath}" ]; then
+                                echo "Error: Failed to upload image ${imagePath}."
                                 exit 1
                             fi
 EOF
