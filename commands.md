@@ -77,7 +77,7 @@ npm start
 
 
 git add Jenkinsfile
-git commit -m "Update Jenkinsfile 99"
+git commit -m "Update Jenkinsfile 101"
 git push origin main
 
 sudo cat /var/log/user-data.log
@@ -95,7 +95,7 @@ docker push skudsi/ecommerce-django-react-backend:latest
 
 
 git add .
-git commit -m "Update configuration v35"
+git commit -m "Update configuration v36"
 git push origin main
 
 

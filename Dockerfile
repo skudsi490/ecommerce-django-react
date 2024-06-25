@@ -1,5 +1,3 @@
-# Dockerfile
-
 # Stage 1: Build React frontend
 FROM node:20-buster as build
 
@@ -31,18 +29,20 @@ WORKDIR /app
 COPY requirements.txt /app/
 RUN pip install -r requirements.txt
 
-COPY ./backend /app/backend
-COPY ./base /app/base
-COPY ./manage.py /app/manage.py
-COPY ./backend/__init__.py /app/backend/__init__.py
-COPY ./backend/settings.py /app/backend/settings.py
-COPY ./backend/wsgi.py /app/backend/wsgi.py
-COPY ./backend/urls.py /app/backend/urls.py
-COPY ./static /app/static
-COPY ./media /app/media
-COPY ./pytest.ini /app/pytest.ini
-COPY ./entrypoint.sh /app/entrypoint.sh  
-COPY ./base/migrations /app/base/migrations
+COPY ./backend/ /app/backend/
+COPY ./base/ /app/base/
+COPY ./manage.py /app/
+COPY ./backend/__init__.py /app/backend/
+COPY ./backend/settings.py /app/backend/
+COPY ./backend/wsgi.py /app/backend/
+COPY ./backend/urls.py /app/backend/
+
+# Conditionally copy the static directory
+COPY ./static/ /app/static/
+COPY ./media/ /app/media/
+COPY ./pytest.ini /app/
+COPY ./entrypoint.sh /app/  
+COPY ./base/migrations/ /app/base/migrations/
 
 # Copy the frontend build files
 COPY --from=build /app/build /app/frontend/build
