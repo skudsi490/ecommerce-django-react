@@ -184,16 +184,24 @@ EOF
             }
         }
 
-        stage('Verify Media Files') {
+        stage('Verify and Upload Media Files') {
             steps {
                 script {
                     withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
                         sh '''
                         echo "Verifying media files on the server..."
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
                         set -e
-                        echo "Checking media directory contents..."
-                        ls -la /home/ubuntu/ecommerce-django-react/media/images
+                        if [ ! -d "/home/ubuntu/ecommerce-django-react/media/images" ]; then
+                            echo "Creating media/images directory..."
+                            mkdir -p /home/ubuntu/ecommerce-django-react/media/images
+                        fi
+                        for image in $(jq -r '.[] | select(.model=="base.product") | .fields.image' data_dump.json); do
+                            if [ ! -f "/home/ubuntu/ecommerce-django-react/media/$image" ]; then
+                                echo "Uploading missing image: $image"
+                                scp -o StrictHostKeyChecking=no -i ${SSH_KEY} media/$image ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/media/images/
+                            fi
+                        done
 EOF
                         '''
                     }
