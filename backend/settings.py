@@ -204,8 +204,9 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",
     "http://3.67.70.116:8000",
-    "3.67.70.116",
+    "http://ec2-3-67-70-116.eu-central-1.compute.amazonaws.com",
 ]
+
 
 CORS_ALLOW_ALL_ORIGINS = True
 

@@ -23,7 +23,7 @@ docker-compose -f docker-compose.e2e.yml up --abort-on-container-exit
 ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ec2-user@3.70.126.98
 ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ec2-user@18.195.65.211
 
-ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.68.231.51
+ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.67.70.116
 ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@18.184.167.254
 ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.79.240.158
 
@@ -77,7 +77,7 @@ npm start
 
 
 git add Jenkinsfile
-git commit -m "Update Jenkinsfile 101"
+git commit -m "Update Jenkinsfile 102"
 git push origin main
 
 sudo cat /var/log/user-data.log
@@ -95,7 +95,7 @@ docker push skudsi/ecommerce-django-react-backend:latest
 
 
 git add .
-git commit -m "Update configuration v37"
+git commit -m "Update configuration v38"
 git push origin main
 
 
