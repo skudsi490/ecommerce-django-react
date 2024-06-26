@@ -142,7 +142,7 @@ pipeline {
                                 echo "Checking disk space and directory permissions..."
                                 df -h
                                 sudo rm -rf /home/ubuntu/ecommerce-django-react/
-                                mkdir -p /home/ubuntu/ecommerce-django-react/
+                                mkdir -p /home/ubuntu/ecommerce-django-react/config
                                 chmod 755 /home/ubuntu/ecommerce-django-react/
 EOF
                             '''
@@ -231,8 +231,7 @@ EOF
                         echo "Configuring Nginx on the server..."
                         ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                         set -e
-                        sudo cp /home/ubuntu/ecommerce-django-react/config/nginx.conf /etc/nginx/sites-available/default
-                        sudo ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default || true
+                        sudo cp /home/ubuntu/ecommerce-django-react/config/nginx.conf /etc/nginx/nginx.conf
                         sudo systemctl restart nginx
 EOF
                         '''
