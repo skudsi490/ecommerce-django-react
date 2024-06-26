@@ -79,7 +79,7 @@ npm start
 
 
 git add Jenkinsfile
-git commit -m "Update Jenkinsfile 144"
+git commit -m "Update Jenkinsfile 145"
 git push origin main
 
 sudo cat /var/log/user-data.log
@@ -97,7 +97,7 @@ docker push skudsi/ecommerce-django-react-backend:latest
 
 
 git add .
-git commit -m "Update configuration v47"
+git commit -m "Update configuration v48"
 git push origin main
 
 
@@ -337,3 +337,8 @@ terraform init -migrate-state
 
 
 
+// email
+                emailext body: """The build status is ${currentBuild.currentResult}, on project ${env.JOB_NAME} find test report in this url: ${BUILD_URL}/My_20Contacts/""",
+                subject: """You got a faild build/job ${env.JOB_NAME} - ${env.BUILD_NUMBER} from jenkins""", 
+                to: 'gagi.shmagi@gmail.com'
+                
