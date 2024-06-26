@@ -136,6 +136,9 @@ pipeline {
                             sh '''
                             ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                                 set -e
+                                echo "Stopping existing Nginx service..."
+                                sudo systemctl stop nginx || true
+
                                 echo "Checking disk space and directory permissions..."
                                 df -h
                                 sudo rm -rf /home/ubuntu/ecommerce-django-react/
