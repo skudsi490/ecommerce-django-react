@@ -79,7 +79,7 @@ npm start
 
 
 git add Jenkinsfile
-git commit -m "Update Jenkinsfile 159"
+git commit -m "Update Jenkinsfile 162"
 git push origin main
 
 sudo cat /var/log/user-data.log
@@ -97,9 +97,10 @@ docker push skudsi/ecommerce-django-react-backend:latest
 
 
 git add .
-git commit -m "Update configuration v63"
+git commit -m "Update configuration v64"
 git push origin main
 
+Please dont use StrictHostKeyChecking-no and use StrictHostKeyChecking=no instead
 
 
 Update Jenkins Configuration
