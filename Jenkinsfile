@@ -81,6 +81,12 @@ pipeline {
 
                 echo "Contents of pytest.ini:"
                 cat pytest.ini || echo "pytest.ini file not found"
+
+                # Verify nginx.conf file exists
+                if [ ! -f config/nginx.conf ]; then
+                    echo "Error: nginx.conf file not found in config directory"
+                    exit 1
+                fi
                 '''
             }
         }
