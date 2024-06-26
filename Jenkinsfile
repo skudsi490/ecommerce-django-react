@@ -266,6 +266,51 @@ EOF
             }
         }
 
+        stage('Inspect Docker Network') {
+            steps {
+                script {
+                    withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
+                        sh '''
+                        echo "Inspecting Docker network..."
+                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << EOF
+                        docker network inspect app-network
+EOF
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Test DNS Resolution') {
+            steps {
+                script {
+                    withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
+                        sh '''
+                        echo "Testing DNS resolution inside Nginx container..."
+                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << EOF
+                        docker exec -it nginx ping -c 4 web
+EOF
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Get Web Container IP') {
+            steps {
+                script {
+                    withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
+                        def webContainerIP = sh(script: '''
+                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << EOF
+                        docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' web
+EOF
+                        ''', returnStdout: true).trim()
+                        env.WEB_CONTAINER_IP = webContainerIP
+                    }
+                }
+            }
+        }
+
         stage('Configure Nginx') {
             steps {
                 script {
