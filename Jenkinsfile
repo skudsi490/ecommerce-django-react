@@ -180,8 +180,9 @@ EOF
                               echo "Error: web container not found."
                               exit 1
                             fi
+                            echo "Web container name: $WEB_CONTAINER_NAME"
                             WEB_CONTAINER_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $WEB_CONTAINER_NAME)
-                            echo $WEB_CONTAINER_IP
+                            echo "Web container IP: $WEB_CONTAINER_IP"
                             if [ -z "$WEB_CONTAINER_IP" ]; then
                               echo "Error: Failed to get IP address of the web container."
                               exit 1
