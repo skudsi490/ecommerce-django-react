@@ -169,7 +169,7 @@ EOF
                             '''
                             echo "Running Django migrations and loading data..."
                             sh '''
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                            ssh -o StrictHostKeyChecking-no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                             set -e
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py makemigrations
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py migrate
@@ -190,7 +190,7 @@ EOF
                     withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
                         sh '''
                         echo "Verifying media files on the server..."
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                        ssh -o StrictHostKeyChecking-no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                         set -e
                         if [ ! -d "/home/ubuntu/ecommerce-django-react/media/images" ]; then
                             echo "Creating media/images directory..."
@@ -202,7 +202,7 @@ EOF
                         def images = sh(script: "jq -r '.[] | select(.model==\"base.product\") | .fields.image' data_dump.json", returnStdout: true).trim().split('\n')
                         echo "Images to be verified and uploaded: ${images}"
                         for (image in images) {
-                            def imagePath = "media/${image}".trim() // Correct the path here
+                            def imagePath = "media/${image}".trim()
                             sh """
                             if [ ! -f "${imagePath}" ]; then
                                 echo "Error: Local image file ${imagePath} not found."
@@ -210,10 +210,10 @@ EOF
                             fi
                             """
                             sh """
-                            scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ${imagePath} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/${imagePath}
+                            scp -o StrictHostKeyChecking-no -i ${SSH_KEY} ${imagePath} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/${imagePath}
                             """
                             sh """
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                            ssh -o StrictHostKeyChecking-no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                             if [ ! -f "/home/ubuntu/ecommerce-django-react/${imagePath}" ]; then
                                 echo "Error: Failed to upload image ${imagePath}."
                                 exit 1
@@ -223,7 +223,7 @@ EOF
                         }
                         sh '''
                         echo "Configuring Nginx on the server..."
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                        ssh -o StrictHostKeyChecking-no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                         set -e
                         sudo cp /home/ubuntu/ecommerce-django-react/config/nginx.conf /etc/nginx/sites-available/default
                         sudo ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default || true
