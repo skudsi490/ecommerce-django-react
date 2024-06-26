@@ -18,6 +18,8 @@ To run the end-to-end tests, use the following command:
 docker-compose -f docker-compose.e2e.yml up --abort-on-container-exit
 /var/lib/jenkins/secrets/initialAdminPassword
 
+cd /home/ubuntu/ecommerce-django-react
+ls -la media/images
 
 
 ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ec2-user@3.70.126.98
@@ -77,7 +79,7 @@ npm start
 
 
 git add Jenkinsfile
-git commit -m "Update Jenkinsfile 137"
+git commit -m "Update Jenkinsfile 138"
 git push origin main
 
 sudo cat /var/log/user-data.log
@@ -95,7 +97,7 @@ docker push skudsi/ecommerce-django-react-backend:latest
 
 
 git add .
-git commit -m "Update configuration v41"
+git commit -m "Update configuration v42"
 git push origin main
 
 
