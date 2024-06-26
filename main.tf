@@ -367,7 +367,9 @@ resource "aws_instance" "my_ubuntu" {
               sudo usermod -aG docker ubuntu
               echo "Installing jq..."
               sudo apt-get install -y jq
-
+              echo "Installing Nginx..."
+              sudo apt-get install -y nginx
+              
               echo "Configuring swap space..."
               sudo fallocate -l 4G /swapfile
               sudo chmod 600 /swapfile
