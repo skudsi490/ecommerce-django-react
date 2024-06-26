@@ -164,6 +164,9 @@ EOF
                             echo "Verifying and logging remote nginx.conf file"
                             sh '''
                             ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                                echo "Listing contents of /home/ubuntu/ecommerce-django-react/config directory:"
+                                ls -la /home/ubuntu/ecommerce-django-react/config
+                                
                                 if [ ! -f /home/ubuntu/ecommerce-django-react/config/nginx.conf ]; then
                                     echo "Error: nginx.conf file not found on remote server"
                                     exit 1
