@@ -149,6 +149,13 @@ EOF
                             scp -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.yml ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
                             scp -o StrictHostKeyChecking=no -i ${SSH_KEY} -r Dockerfile entrypoint.sh backend base frontend manage.py requirements.txt static media data_dump.json pytest.ini nginx.conf ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/
                             '''
+                            echo "Verifying uploaded files on the server..."
+                            sh '''
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                            ls -la /home/ubuntu/ecommerce-django-react/
+                            ls -la /home/ubuntu/
+EOF
+                            '''
                             sh '''
                             ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                             set -e
@@ -170,10 +177,6 @@ EOF
                             docker network prune -f
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml up -d
 EOF
-                            '''
-                            echo "Verifying nginx.conf on the server..."
-                            sh '''
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} 'ls -la /home/ubuntu/nginx.conf'
                             '''
                             echo "Running Django migrations and loading data..."
                             sh '''
