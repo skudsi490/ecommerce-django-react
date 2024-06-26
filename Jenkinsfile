@@ -78,6 +78,9 @@ pipeline {
 
                 echo "Contents of pytest.ini:"
                 cat pytest.ini || echo "pytest.ini file not found"
+
+                echo "Contents of config directory:"
+                ls -la config
                 '''
             }
         }
@@ -143,7 +146,7 @@ EOF
                             echo "Uploading files to remote server..."
                             sh '''
                             scp -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.yml ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
-                            scp -o StrictHostKeyChecking=no -i ${SSH_KEY} -r Dockerfile entrypoint.sh backend base frontend manage.py requirements.txt static media data_dump.json pytest.ini config/nginx.conf ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
+                            scp -o StrictHostKeyChecking=no -i ${SSH_KEY} -r Dockerfile entrypoint.sh backend base frontend manage.py requirements.txt static media data_dump.json pytest.ini config/nginx.conf ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/
                             '''
                             sh '''
                             ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
@@ -165,11 +168,11 @@ EOF
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml down --remove-orphans
                             docker network prune -f
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml up -d
-                            EOF
+EOF
                             '''
                             echo "Verifying nginx.conf on the server..."
                             sh '''
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} 'ls -l /home/ubuntu/ecommerce-django-react/config/nginx.conf'
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} 'ls -la /home/ubuntu/nginx.conf'
                             '''
                             echo "Running Django migrations and loading data..."
                             sh '''
@@ -206,7 +209,7 @@ EOF
                         def images = sh(script: "jq -r '.[] | select(.model==\"base.product\") | .fields.image' data_dump.json", returnStdout: true).trim().split('\n')
                         echo "Images to be verified and uploaded: ${images}"
                         for (image in images) {
-                            def imagePath = "media/${image}".trim() // Correct the path here
+                            def imagePath = "media/${image}".trim()
                             sh """
                             if [ ! -f "${imagePath}" ]; then
                                 echo "Error: Local image file ${imagePath} not found."
@@ -214,10 +217,10 @@ EOF
                             fi
                             """
                             sh """
-                            scp -o StrictHostKeyChecking-no -i ${SSH_KEY} ${imagePath} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/${imagePath}
+                            scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ${imagePath} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/${imagePath}
                             """
                             sh """
-                            ssh -o StrictHostKeyChecking-no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                             if [ ! -f "/home/ubuntu/ecommerce-django-react/${imagePath}" ]; then
                                 echo "Error: Failed to upload image ${imagePath}."
                                 exit 1
@@ -238,7 +241,7 @@ EOF
                         echo "Configuring Nginx on the server..."
                         ssh -o StrictHostKeyChecking-no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                         set -e
-                        sudo cp /home/ubuntu/ecommerce-django-react/config/nginx.conf /etc/nginx/nginx.conf
+                        sudo cp /home/ubuntu/nginx.conf /etc/nginx/nginx.conf
                         sudo systemctl restart nginx
                         EOF
                         '''
