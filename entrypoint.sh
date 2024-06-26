@@ -28,5 +28,5 @@ if [ "$DEBUG" = "1" ]; then
   python manage.py runserver 0.0.0.0:8000
 else
   echo "Starting Gunicorn server"
-  gunicorn backend.wsgi:application --bind 0.0.0.0:8000 --log-level debug --access-logfile /var/log/gunicorn/access.log --error-logfile /var/log/gunicorn/error.log
+  python manage.py runserver 0.0.0.0:8000
 fi
