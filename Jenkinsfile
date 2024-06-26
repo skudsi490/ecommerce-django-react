@@ -232,7 +232,7 @@ EOF
                         echo "Configuring Nginx on the server..."
                         ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                         set -e
-                        sudo cp /home/ubuntu/ecommerce-django-react/config/nginx.conf /etc/nginx/conf.d/default.conf
+                        sudo cp /home/ubuntu/ecommerce-django-react/config/nginx.conf /etc/nginx/nginx.conf
                         sudo systemctl restart nginx
 EOF
                         '''
