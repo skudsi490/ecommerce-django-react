@@ -161,6 +161,7 @@ EOF
                             scp -v -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.yml ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
                             scp -v -o StrictHostKeyChecking=no -i ${SSH_KEY} -r Dockerfile entrypoint.sh backend base frontend manage.py requirements.txt static media data_dump.json pytest.ini config/nginx.conf ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
                             '''
+
                             echo "Verifying and logging remote nginx.conf file"
                             sh '''
                             ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
@@ -168,13 +169,30 @@ EOF
                                 ls -la /home/ubuntu/ecommerce-django-react/config
                                 
                                 if [ ! -f /home/ubuntu/ecommerce-django-react/config/nginx.conf ]; then
-                                    echo "Error: nginx.conf file not found on remote server"
+                                    echo "Error: nginx.conf file not found on remote server, attempting re-upload..."
                                     exit 1
+                                else
+                                    echo "Contents of remote /home/ubuntu/ecommerce-django-react/config/nginx.conf:"
+                                    cat /home/ubuntu/ecommerce-django-react/config/nginx.conf
                                 fi
-                                echo "Contents of remote /home/ubuntu/ecommerce-django-react/config/nginx.conf:"
-                                cat /home/ubuntu/ecommerce-django-react/config/nginx.conf
 EOF
                             '''
+
+                            if (currentBuild.result == 'FAILURE') {
+                                echo "Retrying upload of nginx.conf..."
+                                sh '''
+                                scp -v -o StrictHostKeyChecking=no -i ${SSH_KEY} config/nginx.conf ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/config/
+                                ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                                    if [ ! -f /home/ubuntu/ecommerce-django-react/config/nginx.conf ]; then
+                                        echo "Error: nginx.conf file not found on remote server after retry"
+                                        exit 1
+                                    else
+                                        echo "Successfully re-uploaded nginx.conf"
+                                    fi
+EOF
+                                '''
+                            }
+
                             sh '''
                             ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                             set -e
