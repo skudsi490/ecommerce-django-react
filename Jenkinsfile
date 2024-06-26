@@ -181,8 +181,10 @@ EOF
                             if (currentBuild.result == 'FAILURE') {
                                 echo "Retrying upload of nginx.conf..."
                                 sh '''
-                                scp -v -o StrictHostKeyChecking=no -i ${SSH_KEY} config/nginx.conf ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/config/
-                                ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                                scp -v -o StrictHostKeyChecking-no -i ${SSH_KEY} config/nginx.conf ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/config/
+                                ssh -o StrictHostKeyChecking-no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                                    echo "Verifying the second upload attempt for nginx.conf:"
+                                    ls -la /home/ubuntu/ecommerce-django-react/config
                                     if [ ! -f /home/ubuntu/ecommerce-django-react/config/nginx.conf ]; then
                                         echo "Error: nginx.conf file not found on remote server after retry"
                                         exit 1
@@ -192,6 +194,15 @@ EOF
 EOF
                                 '''
                             }
+
+                            echo "Ensuring correct permissions and ownership"
+                            sh '''
+                            ssh -o StrictHostKeyChecking-no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                                sudo chown -R ubuntu:ubuntu /home/ubuntu/ecommerce-django-react/
+                                sudo chmod -R 755 /home/ubuntu/ecommerce-django-react/
+                                echo "Permissions and ownership set for /home/ubuntu/ecommerce-django-react/"
+EOF
+                            '''
 
                             sh '''
                             ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
