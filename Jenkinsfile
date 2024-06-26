@@ -275,8 +275,12 @@ EOF
                         echo "Configuring Nginx on the server..."
                         ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                         set -e
+                        if [ ! -f /home/ubuntu/ecommerce-django-react/ecommerce-django-react.conf ]; then
+                            echo "ecommerce-django-react.conf not found!"
+                            exit 1
+                        fi
                         sudo cp /home/ubuntu/ecommerce-django-react/nginx.conf /etc/nginx/nginx.conf
-                        sudo cp /home/ubuntu/ecommerce-django-react/ecommerce-django-react.conf /etc/nginx/conf.d/
+                        sudo cp /home/ubuntu/ecommerce-django-react/ecommerce-django-react.conf /etc/nginx/conf.d/ecommerce-django-react.conf
                         sudo systemctl restart nginx || (sudo systemctl status nginx.service && sudo journalctl -xeu nginx.service && exit 1)
                         EOF
                         '''
