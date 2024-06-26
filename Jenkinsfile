@@ -175,8 +175,17 @@ EOF
                             '''
                             echo "Configuring Nginx"
                             sh '''
-                            WEB_CONTAINER_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' web)
+                            WEB_CONTAINER_NAME=$(docker ps --format '{{.Names}}' | grep web)
+                            if [ -z "$WEB_CONTAINER_NAME" ]; then
+                              echo "Error: web container not found."
+                              exit 1
+                            fi
+                            WEB_CONTAINER_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $WEB_CONTAINER_NAME)
                             echo $WEB_CONTAINER_IP
+                            if [ -z "$WEB_CONTAINER_IP" ]; then
+                              echo "Error: Failed to get IP address of the web container."
+                              exit 1
+                            fi
                             sudo sed -i "s|proxy_pass http://web:8000;|proxy_pass http://$WEB_CONTAINER_IP:8000;|g" /home/ubuntu/ecommerce-django-react/ecommerce-django-react.conf
                             sudo cp /home/ubuntu/ecommerce-django-react/nginx.conf /etc/nginx/nginx.conf
                             sudo cp /home/ubuntu/ecommerce-django-react/ecommerce-django-react.conf /etc/nginx/conf.d/ecommerce-django-react.conf
