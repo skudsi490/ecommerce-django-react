@@ -146,6 +146,21 @@ pipeline {
             }
         }
 
+        stage('Create Docker Network') {
+            steps {
+                script {
+                    withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
+                        sh '''
+                        echo "Creating Docker network..."
+                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << EOF
+                        docker network create app-network || true
+EOF
+                        '''
+                    }
+                }
+            }
+        }
+
         stage('Deploy to Ubuntu') {
             steps {
                 script {
@@ -201,7 +216,6 @@ EOF
                               sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
                               sudo chmod +x /usr/local/bin/docker-compose
                             fi
-                            docker network create app-network || true
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml down --remove-orphans
                             docker network prune -f
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml up -d
@@ -323,6 +337,7 @@ EOF
                             echo "ecommerce-django-react.conf not found!"
                             exit 1
                         fi
+                        sed -i 's|proxy_pass http://web:8000;|proxy_pass http://${WEB_CONTAINER_IP}:8000;|g' /home/ubuntu/ecommerce-django-react/ecommerce-django-react.conf
                         sudo cp /home/ubuntu/ecommerce-django-react/nginx.conf /etc/nginx/nginx.conf
                         sudo cp /home/ubuntu/ecommerce-django-react/ecommerce-django-react.conf /etc/nginx/conf.d/ecommerce-django-react.conf
                         sudo systemctl restart nginx || (sudo systemctl status nginx.service && sudo journalctl -xeu nginx.service && exit 1)
