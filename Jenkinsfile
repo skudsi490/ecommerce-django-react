@@ -119,64 +119,66 @@ pipeline {
                     
                     if (ubuntuIp) {
                         env.MY_UBUNTU_IP = ubuntuIp
-                        sh '''
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
+                        withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
+                            sh '''
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
+                                set -e
+                                echo "Checking disk space and directory permissions..."
+                                df -h
+                                sudo rm -rf /home/ubuntu/ecommerce-django-react/
+                                mkdir -p /home/ubuntu/ecommerce-django-react/
+                                chmod 755 /home/ubuntu/ecommerce-django-react/
+EOF
+                            '''
+                            echo "Uploading files to remote server..."
+                            sh '''
+                            scp -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.yml ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
+                            scp -o StrictHostKeyChecking=no -i ${SSH_KEY} -r Dockerfile entrypoint.sh backend base frontend manage.py requirements.txt static media data_dump.json pytest.ini nginx.conf ecommerce-django-react.conf ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
+                            '''
+                            echo "Verifying uploaded files on the server..."
+                            sh '''
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
+                            ls -la /home/ubuntu/ecommerce-django-react/
+EOF
+                            '''
+                            sh '''
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
                             set -e
-                            echo "Checking disk space and directory permissions..."
-                            df -h
-                            sudo rm -rf /home/ubuntu/ecommerce-django-react/
-                            mkdir -p /home/ubuntu/ecommerce-django-react/
-                            chmod 755 /home/ubuntu/ecommerce-django-react/
+                            if ! [ -x "$(command -v docker)" ]; then
+                              echo "Docker not found, installing..."
+                              sudo apt update
+                              sudo apt install docker.io -y
+                              sudo systemctl start docker
+                              sudo systemctl enable docker
+                              sudo usermod -aG docker ubuntu
+                            fi
+                            if ! [ -x "$(command -v docker-compose)" ]; then
+                              echo "Docker Compose not found, installing..."
+                              sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+                              sudo chmod +x /usr/local/bin/docker-compose
+                            fi
+                            sudo fuser -k 80/tcp || true
+                            docker network create app-network || true
+                            docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml down --remove-orphans
+                            docker network prune -f
+                            docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml up -d
 EOF
-                        '''
-                        echo "Uploading files to remote server..."
-                        sh '''
-                        scp -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.yml ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
-                        scp -o StrictHostKeyChecking=no -i ${SSH_KEY} -r Dockerfile entrypoint.sh backend base frontend manage.py requirements.txt static media data_dump.json pytest.ini nginx.conf ecommerce-django-react.conf ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
-                        '''
-                        echo "Verifying uploaded files on the server..."
-                        sh '''
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
-                        ls -la /home/ubuntu/ecommerce-django-react/
+                            '''
+                            echo "Running Django migrations and loading data..."
+                            sh '''
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
+                            set -e
+                            docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py makemigrations
+                            docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py migrate
+                            docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py loaddata /app/data_dump.json
+                            WEB_CONTAINER_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' web)
+                            sudo sed -i "s|proxy_pass http://web:8000;|proxy_pass http://$WEB_CONTAINER_IP:8000;|g" /home/ubuntu/ecommerce-django-react/ecommerce-django-react.conf
+                            sudo cp /home/ubuntu/ecommerce-django-react/nginx.conf /etc/nginx/nginx.conf
+                            sudo cp /home/ubuntu/ecommerce-django-react/ecommerce-django-react.conf /etc/nginx/conf.d/ecommerce-django-react.conf
+                            sudo systemctl restart nginx || (sudo systemctl status nginx.service && sudo journalctl -xeu nginx.service && exit 1)
 EOF
-                        '''
-                        sh '''
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
-                        set -e
-                        if ! [ -x "$(command -v docker)" ]; then
-                          echo "Docker not found, installing..."
-                          sudo apt update
-                          sudo apt install docker.io -y
-                          sudo systemctl start docker
-                          sudo systemctl enable docker
-                          sudo usermod -aG docker ubuntu
-                        fi
-                        if ! [ -x "$(command -v docker-compose)" ]; then
-                          echo "Docker Compose not found, installing..."
-                          sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-                          sudo chmod +x /usr/local/bin/docker-compose
-                        fi
-                        sudo fuser -k 80/tcp || true
-                        docker network create app-network || true
-                        docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml down --remove-orphans
-                        docker network prune -f
-                        docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml up -d
-EOF
-                        '''
-                        echo "Running Django migrations and loading data..."
-                        sh '''
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
-                        set -e
-                        docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py makemigrations
-                        docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py migrate
-                        docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py loaddata /app/data_dump.json
-                        WEB_CONTAINER_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' web)
-                        sudo sed -i "s|proxy_pass http://web:8000;|proxy_pass http://$WEB_CONTAINER_IP:8000;|g" /home/ubuntu/ecommerce-django-react/ecommerce-django-react.conf
-                        sudo cp /home/ubuntu/ecommerce-django-react/nginx.conf /etc/nginx/nginx.conf
-                        sudo cp /home/ubuntu/ecommerce-django-react/ecommerce-django-react.conf /etc/nginx/conf.d/ecommerce-django-react.conf
-                        sudo systemctl restart nginx || (sudo systemctl status nginx.service && sudo journalctl -xeu nginx.service && exit 1)
-EOF
-                        '''
+                            '''
+                        }
                     } else {
                         error("Missing ubuntu_ip in terraform state.")
                     }
