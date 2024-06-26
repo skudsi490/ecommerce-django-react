@@ -82,6 +82,36 @@ pipeline {
                 echo "Contents of nginx.conf file:"
                 ls -la nginx.conf || echo "nginx.conf file not found"
                 cat nginx.conf || echo "Failed to read nginx.conf"
+
+                echo "Verifying necessary files exist and are the correct type..."
+                if [ ! -f manage.py ]; then
+                    echo "Error: manage.py does not exist or is not a file."
+                    exit 1
+                fi
+                if [ ! -d backend ]; then
+                    echo "Error: backend directory does not exist."
+                    exit 1
+                fi
+                if [ ! -d base ]; then
+                    echo "Error: base directory does not exist."
+                    exit 1
+                fi
+                if [ ! -f requirements.txt ]; then
+                    echo "Error: requirements.txt does not exist or is not a file."
+                    exit 1
+                fi
+                if [ ! -d static ]; then
+                    echo "Error: static directory does not exist."
+                    exit 1
+                fi
+                if [ ! -d media ]; then
+                    echo "Error: media directory does not exist."
+                    exit 1
+                fi
+                if [ ! -f data_dump.json ]; then
+                    echo "Error: data_dump.json does not exist or is not a file."
+                    exit 1
+                fi
                 '''
             }
         }
@@ -180,7 +210,7 @@ EOF
                             '''
                             echo "Running Django migrations and loading data..."
                             sh '''
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                            ssh -o StrictHostKeyChecking-no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                             set -e
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py makemigrations
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py migrate
@@ -201,7 +231,7 @@ EOF
                     withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
                         sh '''
                         echo "Verifying media files on the server..."
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                        ssh -o StrictHostKeyChecking-no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                         set -e
                         if [ ! -d "/home/ubuntu/ecommerce-django-react/media/images" ]; then
                             echo "Creating media/images directory..."
@@ -221,10 +251,10 @@ EOF
                             fi
                             """
                             sh """
-                            scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ${imagePath} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/${imagePath}
+                            scp -o StrictHostKeyChecking-no -i ${SSH_KEY} ${imagePath} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/${imagePath}
                             """
                             sh """
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                            ssh -o StrictHostKeyChecking-no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                             if [ ! -f "/home/ubuntu/ecommerce-django-react/${imagePath}" ]; then
                                 echo "Error: Failed to upload image ${imagePath}."
                                 exit 1
@@ -243,7 +273,7 @@ EOF
                     withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
                         sh '''
                         echo "Configuring Nginx on the server..."
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                        ssh -o StrictHostKeyChecking-no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                         set -e
                         sudo cp /home/ubuntu/nginx.conf /etc/nginx/nginx.conf
                         sudo systemctl restart nginx

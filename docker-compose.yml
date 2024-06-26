@@ -31,14 +31,14 @@ services:
       - POSTGRES_HOST=db
       - REACT_APP_BACKEND_URL=http://3.72.75.83:8000
     volumes:
-      - ./backend:/app/backend
-      - ./base:/app/base
-      - ./requirements.txt:/app/requirements.txt
-      - ./manage.py:/app/manage.py
-      - ./static:/app/static
-      - ./media:/app/media
-      - ./staticfiles:/app/staticfiles
-      - ./data_dump.json:/tmp/data_dump.json
+      - /home/ubuntu/ecommerce-django-react/backend:/app/backend
+      - /home/ubuntu/ecommerce-django-react/base:/app/base
+      - /home/ubuntu/ecommerce-django-react/requirements.txt:/app/requirements.txt
+      - /home/ubuntu/ecommerce-django-react/manage.py:/app/manage.py
+      - /home/ubuntu/ecommerce-django-react/static:/app/static
+      - /home/ubuntu/ecommerce-django-react/media:/app/media
+      - /home/ubuntu/ecommerce-django-react/staticfiles:/app/staticfiles
+      - /home/ubuntu/ecommerce-django-react/data_dump.json:/tmp/data_dump.json
     depends_on:
       - db
     networks:
@@ -51,8 +51,8 @@ services:
       - "80:80"
     volumes:
       - /home/ubuntu/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./static:/usr/share/nginx/html/static
-      - ./media:/usr/share/nginx/html/media
+      - /home/ubuntu/ecommerce-django-react/static:/usr/share/nginx/html/static
+      - /home/ubuntu/ecommerce-django-react/media:/usr/share/nginx/html/media
     depends_on:
       - web
     networks:

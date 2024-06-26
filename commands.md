@@ -97,7 +97,7 @@ docker push skudsi/ecommerce-django-react-backend:latest
 
 
 git add .
-git commit -m "Update configuration v54"
+git commit -m "Update configuration v55"
 git push origin main
 
 
