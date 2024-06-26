@@ -76,6 +76,9 @@ pipeline {
                 echo "Contents of media directory:"
                 ls -la media || echo "No media directory found"
 
+                echo "Contents of config directory:"
+                ls -la config || echo "No config directory found"
+
                 echo "Contents of pytest.ini:"
                 cat pytest.ini || echo "pytest.ini file not found"
                 '''
