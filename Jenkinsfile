@@ -162,6 +162,11 @@ EOF
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py makemigrations
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py migrate
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py loaddata /app/data_dump.json
+                            WEB_CONTAINER_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' web)
+                            sudo sed -i "s|proxy_pass http://web:8000;|proxy_pass http://$WEB_CONTAINER_IP:8000;|g" /home/ubuntu/ecommerce-django-react/ecommerce-django-react.conf
+                            sudo cp /home/ubuntu/ecommerce-django-react/nginx.conf /etc/nginx/nginx.conf
+                            sudo cp /home/ubuntu/ecommerce-django-react/ecommerce-django-react.conf /etc/nginx/conf.d/ecommerce-django-react.conf
+                            sudo systemctl restart nginx || (sudo systemctl status nginx.service && sudo journalctl -xeu nginx.service && exit 1)
 EOF
                             '''
                         } else {
@@ -192,7 +197,7 @@ EOF
                         for (image in images) {
                             def imagePath = "media/${image}".trim()
                             sh """
-                            if [ ! -f "${imagePath}" ];then
+                            if [ ! -f "${imagePath}" ]; then
                                 echo "Error: Local image file ${imagePath} not found."
                                 exit 1
                             fi
