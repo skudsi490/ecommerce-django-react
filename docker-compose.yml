@@ -51,6 +51,7 @@ services:
       - "80:80"
     volumes:
       - /home/ubuntu/ecommerce-django-react/nginx.conf:/etc/nginx/nginx.conf:ro
+      - /home/ubuntu/ecommerce-django-react/ecommerce-django-react.conf:/etc/nginx/conf.d/ecommerce-django-react.conf:ro
       - /home/ubuntu/ecommerce-django-react/static:/usr/share/nginx/html/static
       - /home/ubuntu/ecommerce-django-react/media:/usr/share/nginx/html/media
     depends_on:
