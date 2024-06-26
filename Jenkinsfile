@@ -64,58 +64,6 @@ pipeline {
             }
         }
 
-        stage('Verify Required Files') {
-            steps {
-                sh '''
-                echo "Contents of project root directory:"
-                ls -la
-
-                echo "Contents of static directory:"
-                ls -la static || echo "No static directory found"
-
-                echo "Contents of media directory:"
-                ls -la media || echo "No media directory found"
-
-                echo "Contents of pytest.ini:"
-                cat pytest.ini || echo "pytest.ini file not found"
-
-                echo "Contents of nginx.conf file:"
-                ls -la nginx.conf || echo "nginx.conf file not found"
-                cat nginx.conf || echo "Failed to read nginx.conf"
-
-                echo "Verifying necessary files exist and are the correct type..."
-                if [ ! -f manage.py ]; then
-                    echo "Error: manage.py does not exist or is not a file."
-                    exit 1
-                fi
-                if [ ! -d backend ]; then
-                    echo "Error: backend directory does not exist."
-                    exit 1
-                fi
-                if [ ! -d base ]; then
-                    echo "Error: base directory does not exist."
-                    exit 1
-                fi
-                if [ ! -f requirements.txt ]; then
-                    echo "Error: requirements.txt does not exist or is not a file."
-                    exit 1
-                fi
-                if [ ! -d static ]; then
-                    echo "Error: static directory does not exist."
-                    exit 1
-                fi
-                if [ ! -d media ]; then
-                    echo "Error: media directory does not exist."
-                    exit 1
-                fi
-                if [ ! -f data_dump.json ]; then
-                    echo "Error: data_dump.json does not exist or is not a file."
-                    exit 1
-                fi
-                '''
-            }
-        }
-
         stage('Test Docker Login') {
             steps {
                 script {
@@ -141,21 +89,6 @@ pipeline {
                 script {
                     docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
                         docker.image("${DOCKER_IMAGE_WEB}:latest").push('latest')
-                    }
-                }
-            }
-        }
-
-        stage('Create Docker Network') {
-            steps {
-                script {
-                    withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
-                        sh '''
-                        echo "Creating Docker network..."
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
-                        docker network create app-network || true
-EOF
-                        '''
                     }
                 }
             }
@@ -198,7 +131,7 @@ EOF
                             sh '''
                             ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                             ls -la /home/ubuntu/ecommerce-django-react/
-EOF
+                            EOF
                             '''
                             sh '''
                             ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
@@ -216,6 +149,7 @@ EOF
                               sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
                               sudo chmod +x /usr/local/bin/docker-compose
                             fi
+                            docker network create app-network || true
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml down --remove-orphans
                             docker network prune -f
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml up -d
@@ -275,74 +209,6 @@ EOF
 EOF
                             """
                         }
-                    }
-                }
-            }
-        }
-
-        stage('Inspect Docker Network') {
-            steps {
-                script {
-                    withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
-                        sh '''
-                        echo "Inspecting Docker network..."
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
-                        docker network inspect app-network
-EOF
-                        '''
-                    }
-                }
-            }
-        }
-
-        stage('Test DNS Resolution') {
-            steps {
-                script {
-                    withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
-                        sh '''
-                        echo "Testing DNS resolution inside Nginx container..."
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
-                        docker exec -it nginx ping -c 4 web
-EOF
-                        '''
-                    }
-                }
-            }
-        }
-
-        stage('Get Web Container IP') {
-            steps {
-                script {
-                    withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
-                        def webContainerIP = sh(script: '''
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
-                        docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' web
-EOF
-                        ''', returnStdout: true).trim()
-                        env.WEB_CONTAINER_IP = webContainerIP
-                    }
-                }
-            }
-        }
-
-        stage('Configure Nginx') {
-            steps {
-                script {
-                    withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
-                        sh '''
-                        echo "Configuring Nginx on the server..."
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
-                        set -e
-                        if [ ! -f /home/ubuntu/ecommerce-django-react/ecommerce-django-react.conf ]; then
-                            echo "ecommerce-django-react.conf not found!"
-                            exit 1
-                        fi
-                        sed -i 's|proxy_pass http://web:8000;|proxy_pass http://${WEB_CONTAINER_IP}:8000;|g' /home/ubuntu/ecommerce-django-react/ecommerce-django-react.conf
-                        sudo cp /home/ubuntu/ecommerce-django-react/nginx.conf /etc/nginx/nginx.conf
-                        sudo cp /home/ubuntu/ecommerce-django-react/ecommerce-django-react.conf /etc/nginx/conf.d/ecommerce-django-react.conf
-                        sudo systemctl restart nginx || (sudo systemctl status nginx.service && sudo journalctl -xeu nginx.service && exit 1)
-EOF
-                        '''
                     }
                 }
             }
