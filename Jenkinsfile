@@ -187,7 +187,7 @@ EOF
 EOF
                             '''
                             sh '''
-                            ssh -o StrictHostKeyChecking-no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                             set -e
                             if ! [ -x "$(command -v docker)" ]; then
                               echo "Docker not found, installing..."
