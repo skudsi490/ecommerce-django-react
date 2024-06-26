@@ -87,6 +87,10 @@ pipeline {
                     echo "Error: nginx.conf file not found in config directory"
                     exit 1
                 fi
+
+                # Log contents of nginx.conf to ensure it's correct
+                echo "Contents of config/nginx.conf:"
+                cat config/nginx.conf
                 '''
             }
         }
@@ -156,6 +160,17 @@ EOF
                             sh '''
                             scp -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.yml ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
                             scp -o StrictHostKeyChecking=no -i ${SSH_KEY} -r Dockerfile entrypoint.sh backend base frontend manage.py requirements.txt static media data_dump.json pytest.ini config/nginx.conf ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
+                            '''
+                            echo "Verifying and logging remote nginx.conf file"
+                            sh '''
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                                if [ ! -f /home/ubuntu/ecommerce-django-react/config/nginx.conf ]; then
+                                    echo "Error: nginx.conf file not found on remote server"
+                                    exit 1
+                                fi
+                                echo "Contents of remote /home/ubuntu/ecommerce-django-react/config/nginx.conf:"
+                                cat /home/ubuntu/ecommerce-django-react/config/nginx.conf
+EOF
                             '''
                             sh '''
                             ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
