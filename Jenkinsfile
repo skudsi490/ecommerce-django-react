@@ -165,7 +165,11 @@ EOF
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml down --remove-orphans
                             docker network prune -f
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml up -d
-EOF
+                            EOF
+                            '''
+                            echo "Verifying nginx.conf on the server..."
+                            sh '''
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} 'ls -l /home/ubuntu/ecommerce-django-react/config/nginx.conf'
                             '''
                             echo "Running Django migrations and loading data..."
                             sh '''
@@ -210,10 +214,10 @@ EOF
                             fi
                             """
                             sh """
-                            scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ${imagePath} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/${imagePath}
+                            scp -o StrictHostKeyChecking-no -i ${SSH_KEY} ${imagePath} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/${imagePath}
                             """
                             sh """
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                            ssh -o StrictHostKeyChecking-no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                             if [ ! -f "/home/ubuntu/ecommerce-django-react/${imagePath}" ]; then
                                 echo "Error: Failed to upload image ${imagePath}."
                                 exit 1
@@ -232,7 +236,7 @@ EOF
                     withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
                         sh '''
                         echo "Configuring Nginx on the server..."
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                        ssh -o StrictHostKeyChecking-no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                         set -e
                         sudo cp /home/ubuntu/ecommerce-django-react/config/nginx.conf /etc/nginx/nginx.conf
                         sudo systemctl restart nginx
