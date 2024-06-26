@@ -165,7 +165,7 @@ pipeline {
                         if (ubuntuIp) {
                             env.MY_UBUNTU_IP = ubuntuIp
                             sh '''
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << EOF
                                 set -e
                                 echo "Checking disk space and directory permissions..."
                                 df -h
@@ -181,12 +181,12 @@ EOF
                             '''
                             echo "Verifying uploaded files on the server..."
                             sh '''
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << EOF
                             ls -la /home/ubuntu/ecommerce-django-react/
-                            EOF
+EOF
                             '''
                             sh '''
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << EOF
                             set -e
                             if ! [ -x "$(command -v docker)" ]; then
                               echo "Docker not found, installing..."
@@ -209,7 +209,7 @@ EOF
                             '''
                             echo "Running Django migrations and loading data..."
                             sh '''
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << EOF
                             set -e
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py makemigrations
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py migrate
@@ -230,7 +230,7 @@ EOF
                     withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
                         sh '''
                         echo "Verifying media files on the server..."
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                        ssh -o StrictHostKeyChecking-no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << EOF
                         set -e
                         if [ ! -d "/home/ubuntu/ecommerce-django-react/media/images" ]; then
                             echo "Creating media/images directory..."
@@ -250,10 +250,10 @@ EOF
                             fi
                             """
                             sh """
-                            scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ${imagePath} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/${imagePath}
+                            scp -o StrictHostKeyChecking-no -i ${SSH_KEY} ${imagePath} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/${imagePath}
                             """
                             sh """
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                            ssh -o StrictHostKeyChecking-no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << EOF
                             if [ ! -f "/home/ubuntu/ecommerce-django-react/${imagePath}" ]; then
                                 echo "Error: Failed to upload image ${imagePath}."
                                 exit 1
@@ -272,7 +272,7 @@ EOF
                     withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
                         sh '''
                         echo "Configuring Nginx on the server..."
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                        ssh -o StrictHostKeyChecking-no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << EOF
                         set -e
                         if [ ! -f /home/ubuntu/ecommerce-django-react/ecommerce-django-react.conf ]; then
                             echo "ecommerce-django-react.conf not found!"
@@ -281,7 +281,7 @@ EOF
                         sudo cp /home/ubuntu/ecommerce-django-react/nginx.conf /etc/nginx/nginx.conf
                         sudo cp /home/ubuntu/ecommerce-django-react/ecommerce-django-react.conf /etc/nginx/conf.d/ecommerce-django-react.conf
                         sudo systemctl restart nginx || (sudo systemctl status nginx.service && sudo journalctl -xeu nginx.service && exit 1)
-                        EOF
+EOF
                         '''
                     }
                 }
