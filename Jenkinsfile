@@ -171,12 +171,16 @@ EOF
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py makemigrations
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py migrate
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py loaddata /app/data_dump.json
+EOF
+                            '''
+                            echo "Configuring Nginx"
+                            sh '''
                             WEB_CONTAINER_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' web)
+                            echo $WEB_CONTAINER_IP
                             sudo sed -i "s|proxy_pass http://web:8000;|proxy_pass http://$WEB_CONTAINER_IP:8000;|g" /home/ubuntu/ecommerce-django-react/ecommerce-django-react.conf
                             sudo cp /home/ubuntu/ecommerce-django-react/nginx.conf /etc/nginx/nginx.conf
                             sudo cp /home/ubuntu/ecommerce-django-react/ecommerce-django-react.conf /etc/nginx/conf.d/ecommerce-django-react.conf
-                            sudo systemctl restart nginx || (sudo systemctl status nginx.service && sudo journalctl -xeu nginx.service && exit 1)
-EOF
+                            sudo systemctl restart nginx
                             '''
                         }
                     } else {
