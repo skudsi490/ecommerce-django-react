@@ -149,24 +149,6 @@ EOF
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml up -d
 EOF
                             '''
-                            echo "Running Django migrations and loading data..."
-                            sh '''
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
-                            set -e
-                            # Adding a sleep to ensure the container is fully ready
-                            sleep 10
-                            echo "Running makemigrations..."
-                            docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py makemigrations
-                            echo "Running migrate..."
-                            docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py migrate
-                            echo "Loading data from data_dump.json..."
-                            docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py loaddata /app/data_dump.json
-                            echo "Collecting static files..."
-                            docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py collectstatic --noinput
-                            echo "Checking static files directory..."
-                            ls -la /home/ubuntu/ecommerce-django-react/staticfiles/
-EOF
-                            '''
                         } else {
                             error("Missing ubuntu_ip in terraform state.")
                         }

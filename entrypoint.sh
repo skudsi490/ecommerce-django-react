@@ -8,6 +8,10 @@ while ! nc -z $POSTGRES_HOST 5432; do
   sleep 1
 done
 
+echo "Making database migrations..."
+# Create new migrations
+python manage.py makemigrations
+
 echo "Applying database migrations..."
 # Apply database migrations
 python manage.py migrate
