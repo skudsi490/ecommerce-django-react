@@ -178,11 +178,6 @@ EOF
                         echo "Configuring Nginx on the server..."
                         ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                         set -e
-                        echo "Setting correct permissions..."
-                        sudo chown -R www-data:www-data /home/ubuntu/ecommerce-django-react/staticfiles
-                        sudo chown -R www-data:www-data /home/ubuntu/ecommerce-django-react/media
-                        sudo chmod -R 755 /home/ubuntu/ecommerce-django-react/staticfiles
-                        sudo chmod -R 755 /home/ubuntu/ecommerce-django-react/media
                         echo "Creating Nginx configuration file template..."
                         cat <<EOT > /home/ubuntu/ecommerce-django-react/nginx-template.conf
 server {
@@ -199,10 +194,10 @@ server {
 
     location / {
         proxy_pass http://127.0.0.1:8000;
-        proxy_set_header Host "\$host";
-        proxy_set_header X-Real-IP "\$remote_addr";
-        proxy_set_header X-Forwarded-For "\$proxy_add_x_forwarded_for";
-        proxy_set_header X-Forwarded-Proto "\$scheme";
+        proxy_set_header Host "\\$host";
+        proxy_set_header X-Real-IP "\\$remote_addr";
+        proxy_set_header X-Forwarded-For "\\$proxy_add_x_forwarded_for";
+        proxy_set_header X-Forwarded-Proto "\\$scheme";
     }
 }
 EOT
