@@ -180,6 +180,23 @@ EOF
                 ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                 set -e
 
+                # Ensure correct package sources
+                sudo tee /etc/apt/sources.list <<EOL
+deb http://archive.ubuntu.com/ubuntu/ noble main restricted universe multiverse
+deb http://archive.ubuntu.com/ubuntu/ noble-updates main restricted universe multiverse
+deb http://archive.ubuntu.com/ubuntu/ noble-backports main restricted universe multiverse
+deb http://security.ubuntu.com/ubuntu/ noble-security main restricted universe multiverse
+EOL
+
+                # Update and upgrade all packages
+                sudo apt-get update
+                sudo apt-get upgrade -y
+                sudo apt-get dist-upgrade -y
+
+                # Fix broken packages
+                sudo apt-get --fix-broken install
+                sudo dpkg --configure -a
+
                 # Remove and reinstall necessary libraries and Nginx
                 sudo apt-get remove --purge nginx libcrypt1 libcrypt-dev libssl-dev
                 sudo apt-get update
