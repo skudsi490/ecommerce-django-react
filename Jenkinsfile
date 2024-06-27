@@ -183,6 +183,9 @@ EOF
                         sudo apt-get update
                         sudo apt-get install -y libcrypt1 libcrypt-dev
 
+                        # Create symbolic link for libcrypt.so.1
+                        sudo ln -sf /lib/x86_64-linux-gnu/libcrypt.so.1 /usr/lib/libcrypt.so.1
+
                         sudo mv /home/ubuntu/ecommerce-django-react/nginx.conf /etc/nginx/sites-available/ecommerce-django-react
                         sudo ln -sf /etc/nginx/sites-available/ecommerce-django-react /etc/nginx/sites-enabled/ecommerce-django-react
 
