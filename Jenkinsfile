@@ -178,7 +178,7 @@ EOF
                             echo "Docker containers:"
                             docker ps --format '{{.Names}}'
                             
-                            CONTAINER_LOG=$(docker ps --format '{{.Names}}')
+                            CONTAINER_LOG=$(docker ps --format '{{.Names}}' | tee)
                             echo "Container log: $CONTAINER_LOG"
 
                             WEB_CONTAINER_NAME=$(echo "$CONTAINER_LOG" | grep web)
