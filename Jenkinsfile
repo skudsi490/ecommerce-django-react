@@ -179,6 +179,7 @@ EOF
                         scp -o StrictHostKeyChecking=no -i ${SSH_KEY} config/nginx.conf ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/nginx.conf
                         ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                         set -e
+
                         # Install necessary libraries
                         sudo apt-get update
                         sudo apt-get install -y libcrypt1 libcrypt-dev libssl-dev
@@ -205,7 +206,16 @@ EOF
                         sudo ln -sf /etc/nginx/sites-available/ecommerce-django-react /etc/nginx/sites-enabled/ecommerce-django-react
 
                         # Diagnostic step to check library paths
-                        ldd $(which nginx)
+                        ldd $(which nginx) || true
+
+                        # AppArmor adjustments
+                        echo 'Creating AppArmor profile for Nginx...'
+                        sudo touch /etc/apparmor.d/usr.sbin.nginx
+                        echo -e '#include <tunables/global>\\n/usr/sbin/nginx {\\n  /home/ubuntu/ecommerce-django-react/staticfiles/** r,\\n  /usr/lib/** r,\\n  /lib/x86_64-linux-gnu/** r,\\n}' | sudo tee /etc/apparmor.d/usr.sbin.nginx
+                        sudo apparmor_parser -r /etc/apparmor.d/usr.sbin.nginx
+
+                        # Reload AppArmor profiles
+                        sudo systemctl restart apparmor
 
                         echo "Testing Nginx configuration..."
                         sudo nginx -t || (sudo ldconfig && sudo nginx -t)
@@ -218,13 +228,6 @@ EOF
                         sudo chmod 755 /home/ubuntu
                         sudo chmod 755 /home/ubuntu/ecommerce-django-react
                         sudo chmod 755 /home/ubuntu/ecommerce-django-react/staticfiles
-
-                        # Adjust AppArmor profile for Nginx
-                        echo 'Creating AppArmor profile for Nginx...'
-                        sudo touch /etc/apparmor.d/usr.sbin.nginx
-                        echo -e '#include <tunables/global>\\n/usr/sbin/nginx {\\n  /home/ubuntu/ecommerce-django-react/staticfiles/** r,\\n}' | sudo tee /etc/apparmor.d/usr.sbin.nginx
-
-                        sudo apparmor_parser -r /etc/apparmor.d/usr.sbin.nginx
 EOF
                         '''
                     }
