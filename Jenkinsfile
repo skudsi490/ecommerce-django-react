@@ -207,6 +207,13 @@ EOF
                 # Debug: Check linker cache
                 sudo ldconfig -p | grep libcrypt
 
+                # Set LD_LIBRARY_PATH
+                export LD_LIBRARY_PATH=/usr/lib:/lib/x86_64-linux-gnu:/usr/local/lib:/usr/local/lib64:/usr/lib64:/lib64
+                echo "LD_LIBRARY_PATH set to: $LD_LIBRARY_PATH"
+
+                # Reinstall libraries if needed
+                sudo apt-get install --reinstall -y libcrypt1 libcrypt-dev libssl-dev
+
                 # Move and enable Nginx configuration
                 sudo mv /home/ubuntu/ecommerce-django-react/nginx.conf /etc/nginx/sites-available/ecommerce-django-react
                 sudo ln -sf /etc/nginx/sites-available/ecommerce-django-react /etc/nginx/sites-enabled/ecommerce-django-react
