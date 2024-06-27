@@ -28,15 +28,15 @@ pipeline {
                 echo "Cleaning up workspace and Docker resources"
                 docker system prune -af --volumes || true
                 sudo rm -rf ${WORKSPACE}/*
-                sudo apt-get clean || true
-                sudo apt-get autoremove -y || true
+                sudo yum clean all || true
+                sudo yum autoremove -y || true
                 sudo rm -rf /var/lib/docker/tmp/*
-                sudo rm -rf /var/lib/apt/lists/*
+                sudo rm -rf /var/cache/yum
 
                 if ! [ -x "$(command -v unzip)" ]; then
                     echo "Unzip not found, installing..."
-                    sudo apt-get update -y
-                    sudo apt-get install -y unzip
+                    sudo yum update -y
+                    sudo yum install -y unzip
                 fi
 
                 echo "Disk usage after cleanup:"
@@ -99,8 +99,8 @@ pipeline {
                 sh '''
                 if ! [ -x "$(command -v docker-compose)" ]; then
                   echo "Docker Compose not found, installing..."
-                  sudo apt-get update -y
-                  sudo apt-get install -y libcrypt1
+                  sudo yum update -y
+                  sudo yum install -y libxcrypt-compat
                   sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
                   sudo chmod +x /usr/local/bin/docker-compose
                 else
