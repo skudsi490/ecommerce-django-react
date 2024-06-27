@@ -174,67 +174,66 @@ EOF
             steps {
                 script {
                     withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
-                        sh '''
-                        echo "Configuring Nginx on the server..."
-                        scp -o StrictHostKeyChecking=no -i ${SSH_KEY} config/nginx.conf ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/nginx.conf
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
-                        set -e
-                        # Install necessary libraries
-                        sudo apt-get update
-                        sudo apt-get install -y libcrypt1 libcrypt-dev libssl-dev
+                sh '''
+                echo "Configuring Nginx on the server..."
+                scp -o StrictHostKeyChecking=no -i ${SSH_KEY} config/nginx.conf ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/nginx.conf
+                ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                set -e
+                # Install necessary libraries
+                sudo apt-get update
+                sudo apt-get install -y libcrypt1 libcrypt-dev libssl-dev
 
-                        # Check Library Path and Permissions
-                        sudo find / -iname "libcrypt.so*"
+                # Check Library Path and Permissions
+                sudo find / -iname "libcrypt.so*"
 
-                        # Debug: List the found libraries
-                        echo "Libraries found:"
-                        sudo find / -iname "libcrypt.so*" -exec ls -l {} \;
+                # Debug: List the found libraries
+                echo "Libraries found:"
+                sudo find / -iname "libcrypt.so*" -exec ls -l {} \\;
 
-                        # Create symbolic link for libcrypt.so.1 if not exists
-                        if [ ! -f /usr/lib/libcrypt.so.1 ]; then
-                        sudo ln -s /lib/x86_64-linux-gnu/libcrypt.so.1 /usr/lib/libcrypt.so.1
-                        fi
+                # Create symbolic link for libcrypt.so.1 if not exists
+                if [ ! -f /usr/lib/libcrypt.so.1 ]; then
+                  sudo ln -s /lib/x86_64-linux-gnu/libcrypt.so.1 /usr/lib/libcrypt.so.1
+                fi
 
-                        # Ensure the symbolic link has correct permissions
-                        sudo chmod 755 /lib/x86_64-linux-gnu/libcrypt.so.1
-                        sudo chmod 755 /usr/lib/libcrypt.so.1
+                # Ensure the symbolic link has correct permissions
+                sudo chmod 755 /lib/x86_64-linux-gnu/libcrypt.so.1
+                sudo chmod 755 /usr/lib/libcrypt.so.1
 
-                        # Update Library Configuration
-                        echo "/lib/x86_64-linux-gnu" | sudo tee -a /etc/ld.so.conf.d/libc.conf
-                        echo "/usr/lib" | sudo tee -a /etc/ld.so.conf.d/libc.conf
-                        sudo ldconfig
+                # Update Library Configuration
+                echo "/lib/x86_64-linux-gnu" | sudo tee -a /etc/ld.so.conf.d/libc.conf
+                echo "/usr/lib" | sudo tee -a /etc/ld.so.conf.d/libc.conf
+                sudo ldconfig
 
-                        # Debug: Check linker cache
-                        sudo ldconfig -p | grep libcrypt
+                # Debug: Check linker cache
+                sudo ldconfig -p | grep libcrypt
 
-                        # Move and enable Nginx configuration
-                        sudo mv /home/ubuntu/ecommerce-django-react/nginx.conf /etc/nginx/sites-available/ecommerce-django-react
-                        sudo ln -sf /etc/nginx/sites-available/ecommerce-django-react /etc/nginx/sites-enabled/ecommerce-django-react
+                # Move and enable Nginx configuration
+                sudo mv /home/ubuntu/ecommerce-django-react/nginx.conf /etc/nginx/sites-available/ecommerce-django-react
+                sudo ln -sf /etc/nginx/sites-available/ecommerce-django-react /etc/nginx/sites-enabled/ecommerce-django-react
 
-                        echo "Testing Nginx configuration..."
-                        sudo nginx -t || (echo "Nginx configuration test failed" && exit 1)
+                echo "Testing Nginx configuration..."
+                sudo nginx -t || (echo "Nginx configuration test failed" && exit 1)
 
-                        echo "Restarting Nginx..."
-                        sudo systemctl restart nginx
+                echo "Restarting Nginx..."
+                sudo systemctl restart nginx
 
-                        # Ensure directory permissions
-                        sudo chmod 755 /home
-                        sudo chmod 755 /home/ubuntu
-                        sudo chmod 755 /home/ubuntu/ecommerce-django-react
-                        sudo chmod 755 /home/ubuntu/ecommerce-django-react/staticfiles
+                # Ensure directory permissions
+                sudo chmod 755 /home
+                sudo chmod 755 /home/ubuntu
+                sudo chmod 755 /home/ubuntu/ecommerce-django-react
+                sudo chmod 755 /home/ubuntu/ecommerce-django-react/staticfiles
 
-                        # Adjust AppArmor profile for Nginx
-                        echo 'Creating AppArmor profile for Nginx...'
-                        sudo touch /etc/apparmor.d/usr.sbin.nginx
-                        echo -e '#include <tunables/global>\\n/usr/sbin/nginx {\\n  /home/ubuntu/ecommerce-django-react/staticfiles/** r,\\n}' | sudo tee /etc/apparmor.d/usr.sbin.nginx
+                # Adjust AppArmor profile for Nginx
+                echo 'Creating AppArmor profile for Nginx...'
+                sudo touch /etc/apparmor.d/usr.sbin.nginx
+                echo -e '#include <tunables/global>\\n/usr/sbin/nginx {\\n  /home/ubuntu/ecommerce-django-react/staticfiles/** r,\\n}' | sudo tee /etc/apparmor.d/usr.sbin.nginx
 
-                        sudo apparmor_parser -r /etc/apparmor.d/usr.sbin.nginx
+                sudo apparmor_parser -r /etc/apparmor.d/usr.sbin.nginx
 EOF
-                        '''
+                '''
                     }
                 }
             }
         }
-
     }
 }
