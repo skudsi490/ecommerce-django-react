@@ -170,43 +170,6 @@ EOF
     }
 }
 
-        stage('Install libcrypt.so') {
-            steps {
-                script {
-                    withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
-                        sh '''
-                        echo "Installing libcrypt on the server..."
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
-                        set -e
-
-                        # Ensure libcrypt1 and libcrypt-dev are installed and up to date
-                        sudo apt-get update
-                        sudo apt-get install -y libcrypt1 libcrypt-dev
-
-                        # Locate libcrypt.so.1 and ensure it's in a standard path
-                        libcrypt_path=$(sudo find /usr /lib -type f -name "libcrypt.so.1")
-                        echo "libcrypt.so.1 found at: $libcrypt_path"
-
-                        # If not found in /usr/lib, link it
-                        if [[ ! "$libcrypt_path" == "/usr/lib/libcrypt.so.1" ]]; then
-                            sudo ln -sf $libcrypt_path /usr/lib/libcrypt.so.1
-                        fi
-
-                        # Ensure permissions are correct
-                        sudo chmod 755 /usr/lib/libcrypt.so.1
-
-                        # Update library cache
-                        echo "/usr/lib" | sudo tee -a /etc/ld.so.conf.d/libc.conf
-                        sudo ldconfig
-
-                        echo "libcrypt installation and configuration complete."
-EOF
-                        '''
-                    }
-                }
-            }
-        }
-
         stage('Configure Nginx') {
             steps {
                 script {
@@ -216,6 +179,28 @@ EOF
                         scp -o StrictHostKeyChecking=no -i ${SSH_KEY} config/nginx.conf ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/nginx.conf
                         ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                         set -e
+                        # Install necessary libraries
+                        sudo apt-get update
+                        sudo apt-get install -y libcrypt1 libcrypt-dev libssl-dev
+
+                        # Check Library Path and Permissions
+                        sudo find / -iname "libcrypt.so*"
+
+                        # Create symbolic link for libcrypt.so.1 if not exists
+                        if [ ! -f /usr/lib/libcrypt.so.1 ]; then
+                        sudo ln -s /lib/x86_64-linux-gnu/libcrypt.so.1 /usr/lib/libcrypt.so.1
+                        fi
+
+                        # Ensure the symbolic link has correct permissions
+                        sudo chmod 755 /lib/x86_64-linux-gnu/libcrypt.so.1
+                        sudo chmod 755 /usr/lib/libcrypt.so.1
+
+                        # Update Library Configuration
+                        echo "/lib/x86_64-linux-gnu" | sudo tee -a /etc/ld.so.conf.d/libc.conf
+                        echo "/usr/lib" | sudo tee -a /etc/ld.so.conf.d/libc.conf
+                        sudo ldconfig
+
+                        # Move and enable Nginx configuration
                         sudo mv /home/ubuntu/ecommerce-django-react/nginx.conf /etc/nginx/sites-available/ecommerce-django-react
                         sudo ln -sf /etc/nginx/sites-available/ecommerce-django-react /etc/nginx/sites-enabled/ecommerce-django-react
 
