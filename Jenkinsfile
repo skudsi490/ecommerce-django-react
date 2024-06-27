@@ -121,8 +121,6 @@ pipeline {
                         export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
                         export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
                         aws s3 cp s3://${AWS_STORAGE_BUCKET_NAME}/terraform/state/terraform.tfstate terraform.tfstate
-                        unset AWS_ACCESS_KEY_ID
-                        unset AWS_SECRET_ACCESS_KEY
                         '''
                     }
                 }
@@ -132,76 +130,55 @@ pipeline {
         stage('Deploy to Ubuntu') {
             steps {
                 script {
-                    def terraformState = readFile 'terraform.tfstate'
-                    def ubuntuIp = sh(script: "jq -r '.resources[] | select(.type==\"aws_instance\" and .name==\"my_ubuntu\").instances[0].attributes.public_ip' terraform.tfstate", returnStdout: true).trim()
-                    
-                    if (ubuntuIp) {
-                        env.MY_UBUNTU_IP = ubuntuIp
-                        withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
-                            sh '''
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
-                                set -e
-                                echo "Checking disk space and directory permissions..."
-                                df -h
-                                sudo rm -rf /home/ubuntu/ecommerce-django-react/
-                                mkdir -p /home/ubuntu/ecommerce-django-react/
-                                chmod 755 /home/ubuntu/ecommerce-django-react/
-EOF
-                            '''
-                            echo "Uploading files to remote server..."
-                            sh '''
-                            scp -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.yml ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
-                            scp -o StrictHostKeyChecking=no -i ${SSH_KEY} -r Dockerfile entrypoint.sh backend base frontend manage.py requirements.txt static media data_dump.json pytest.ini ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
-                            '''
-                            echo "Verifying uploaded files on the server..."
-                            sh '''
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
-                            ls -la /home/ubuntu/ecommerce-django-react/
-EOF
-                            '''
-                            sh '''
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
-                            set -e
-                            if ! [ -x "$(command -v docker)" ]; then
-                              echo "Docker not found, installing..."
-                              sudo apt update
-                              sudo apt install docker.io -y
-                              sudo systemctl start docker
-                              sudo systemctl enable docker
-                              sudo usermod -aG docker ubuntu
-                            fi
-                            if ! [ -x "$(command -v docker-compose)" ]; then
-                              echo "Docker Compose not found, installing..."
-                              sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-                              sudo chmod +x /usr/local/bin/docker-compose
-                              sudo ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
-                            fi
-                            sudo fuser -k 80/tcp || true
-                            docker network create app-network || true
-                            docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml down --remove-orphans
-                            docker network prune -f
-                            docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml up -d
-EOF
-                            '''
-                            echo "Running Django migrations and loading data..."
-                            sh '''
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
-                            set -e
-                            docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py makemigrations
-                            docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py migrate
-                            docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py loaddata /app/data_dump.json
-EOF
-                            '''
-                            echo "Collecting static files and uploading to S3..."
-                            sh '''
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
-                            set -e
-                            docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py collectstatic --noinput
-EOF
-                            '''
-                        }
-                    } else {
-                        error("Missing ubuntu_ip in terraform state.")
+                    def publicIp = sh(script: "jq -r '.resources[] | select(.type==\"aws_instance\" and .name==\"my_ubuntu\").instances[0].attributes.public_ip' terraform.tfstate", returnStdout: true).trim()
+                    withCredentials([sshUserPrivateKey(credentialsId: 'ssh-key', keyFileVariable: 'SSH_KEY')]) {
+                        sh """
+                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${publicIp} << 'EOF'
+                        echo "Checking disk space and directory permissions..."
+                        df -h
+                        ls -la /home/ubuntu/ecommerce-django-react/
+                        EOF
+
+                        echo "Uploading files to remote server..."
+                        scp -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.yml ubuntu@${publicIp}:/home/ubuntu/ecommerce-django-react/
+                        scp -o StrictHostKeyChecking=no -i ${SSH_KEY} -r Dockerfile entrypoint.sh backend base frontend manage.py requirements.txt static media data_dump.json pytest.ini ubuntu@${publicIp}:/home/ubuntu/ecommerce-django-react/
+
+                        echo "Verifying uploaded files on the server..."
+                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${publicIp} << 'EOF'
+                        ls -la /home/ubuntu/ecommerce-django-react/
+                        EOF
+
+                        echo "Running Docker Compose..."
+                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${publicIp} << 'EOF'
+                        if ! [ -x "$(command -v docker-compose)" ]; then
+                            echo "Docker Compose not found, installing..."
+                            sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+                            sudo chmod +x /usr/local/bin/docker-compose
+                        fi
+
+                        cd /home/ubuntu/ecommerce-django-react/
+                        docker-compose down || true
+                        docker-compose up -d --build
+                        EOF
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Run Django Migrations and Load Data') {
+            steps {
+                script {
+                    def publicIp = sh(script: "jq -r '.resources[] | select(.type==\"aws_instance\" and .name==\"my_ubuntu\").instances[0].attributes.public_ip' terraform.tfstate", returnStdout: true).trim()
+                    withCredentials([sshUserPrivateKey(credentialsId: 'ssh-key', keyFileVariable: 'SSH_KEY')]) {
+                        sh """
+                        echo "Running Django migrations and loading data..."
+                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${publicIp} << 'EOF'
+                        cd /home/ubuntu/ecommerce-django-react/
+                        docker-compose exec web python manage.py migrate
+                        docker-compose exec web python manage.py loaddata data_dump.json
+                        EOF
+                        """
                     }
                 }
             }
@@ -210,40 +187,22 @@ EOF
         stage('Verify and Upload Media Files') {
             steps {
                 script {
-                    withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
-                        sh '''
+                    def publicIp = sh(script: "jq -r '.resources[] | select(.type==\"aws_instance\" and .name==\"my_ubuntu\").instances[0].attributes.public_ip' terraform.tfstate", returnStdout: true).trim()
+                    withCredentials([sshUserPrivateKey(credentialsId: 'ssh-key', keyFileVariable: 'SSH_KEY')]) {
+                        sh """
+                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${publicIp} << 'EOF'
                         echo "Verifying media files on the server..."
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
-                        set -e
-                        if [ ! -d "/home/ubuntu/ecommerce-django-react/media/images" ]; then
-                            echo "Creating media/images directory..."
-                            mkdir -p /home/ubuntu/ecommerce-django-react/media/images
-                            chmod 755 /home/ubuntu/ecommerce-django-react/media/images
-                        fi
-EOF
-                        '''
-                        def images = sh(script: "jq -r '.[] | select(.model==\"base.product\") | .fields.image' data_dump.json", returnStdout: true).trim().split('\n')
-                        echo "Images to be verified and uploaded: ${images}"
-                        for (image in images) {
-                            def imagePath = "media/${image}".trim() // Correct the path here
-                            sh """
-                            if [ ! -f "${imagePath}" ]; then
-                                echo "Error: Local image file ${imagePath} not found."
-                                exit 1
-                            fi
-                            """
-                            sh """
-                            scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ${imagePath} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/${imagePath}
-                            """
-                            sh """
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
-                            if [ ! -f "/home/ubuntu/ecommerce-django-react/${imagePath}" ]; then
-                                echo "Error: Failed to upload image ${imagePath}."
-                                exit 1
-                            fi
-EOF
-                            """
-                        }
+                        ls -la /home/ubuntu/ecommerce-django-react/media/
+                        EOF
+
+                        echo "Uploading media files to remote server..."
+                        scp -o StrictHostKeyChecking=no -i ${SSH_KEY} -r media/* ubuntu@${publicIp}:/home/ubuntu/ecommerce-django-react/media/
+
+                        echo "Verifying uploaded media files on the server..."
+                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${publicIp} << 'EOF'
+                        ls -la /home/ubuntu/ecommerce-django-react/media/
+                        EOF
+                        """
                     }
                 }
             }
