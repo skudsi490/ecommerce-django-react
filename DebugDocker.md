@@ -6,3 +6,6 @@ ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.76.217.10
 ls -la /home/ubuntu/ecommerce-django-react/media/static/
 
 cd /home/ubuntu/ecommerce-django-react
+
+sudo nano /etc/nginx/sites-available/ecommerce-django-react
+sudo vim /etc/nginx/sites-available/ecommerce-django-react
