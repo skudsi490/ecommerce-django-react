@@ -202,7 +202,7 @@ EOF
                         def images = sh(script: "jq -r '.[] | select(.model==\"base.product\") | .fields.image' data_dump.json", returnStdout: true).trim().split('\n')
                         echo "Images to be verified and uploaded: ${images}"
                         for (image in images) {
-                            def imagePath = "media/${image}".trim() // Correct the path here
+                            def imagePath = "media/${image}".trim()
                             sh """
                             if [ ! -f "${imagePath}" ]; then
                                 echo "Error: Local image file ${imagePath} not found."
@@ -257,6 +257,9 @@ server {
     }
 }
 EOT
+
+                        echo "Removing existing Nginx configuration link if it exists..."
+                        sudo rm -f /etc/nginx/sites-enabled/ecommerce-django-react
 
                         echo "Enabling Nginx configuration..."
                         sudo ln -s /etc/nginx/sites-available/ecommerce-django-react /etc/nginx/sites-enabled
