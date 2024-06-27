@@ -199,9 +199,9 @@ EOF
                 sudo chmod 755 /lib/x86_64-linux-gnu/libcrypt.so.1
                 sudo chmod 755 /usr/lib/libcrypt.so.1
 
-                # Update Library Configuration
-                echo "/lib/x86_64-linux-gnu" | sudo tee -a /etc/ld.so.conf.d/libc.conf
-                echo "/usr/lib" | sudo tee -a /etc/ld.so.conf.d/libc.conf
+                # Add library paths to ld.so.conf
+                echo "/lib/x86_64-linux-gnu" | sudo tee -a /etc/ld.so.conf
+                echo "/usr/lib" | sudo tee -a /etc/ld.so.conf
                 sudo ldconfig
 
                 # Debug: Check linker cache
@@ -219,7 +219,7 @@ EOF
                 sudo ln -sf /etc/nginx/sites-available/ecommerce-django-react /etc/nginx/sites-enabled/ecommerce-django-react
 
                 echo "Testing Nginx configuration..."
-                sudo nginx -t || (echo "Nginx configuration test failed" && exit 1)
+                sudo LD_PRELOAD=/usr/lib/libcrypt.so.1 nginx -t || (echo "Nginx configuration test failed" && exit 1)
 
                 echo "Restarting Nginx..."
                 sudo systemctl restart nginx
