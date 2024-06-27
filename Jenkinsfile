@@ -238,7 +238,7 @@ EOF
                         cat <<EOT | sudo tee /etc/nginx/sites-available/ecommerce-django-react
 server {
     listen 80;
-    server_name ${MY_UBUNTU_IP};
+    server_name 3.76.217.10;
 
     location /static/ {
         alias /home/ubuntu/ecommerce-django-react/staticfiles/;
