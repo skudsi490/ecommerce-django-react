@@ -155,7 +155,7 @@ EOF
                             '''
                             echo "Running Django migrations and loading data..."
                             sh '''
-                            ssh -o StrictHostKeyChecking-no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                             set -e
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py makemigrations
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py migrate
@@ -196,10 +196,10 @@ EOF
                             fi
                             """
                             sh """
-                            scp -o StrictHostKeyChecking-no -i ${SSH_KEY} ${imagePath} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/${imagePath}
+                            scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ${imagePath} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/${imagePath}
                             """
                             sh """
-                            ssh -o StrictHostKeyChecking-no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                             if [ ! -f "/home/ubuntu/ecommerce-django-react/${imagePath}" ]; then
                                 echo "Error: Failed to upload image ${imagePath}."
                                 exit 1
