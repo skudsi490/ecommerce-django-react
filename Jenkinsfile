@@ -187,6 +187,13 @@ EOF
                     withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
                         sh '''
                         ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
+                        echo "Ensuring docker-compose is installed..."
+                        if ! [ -x "$(command -v docker-compose)" ]; then
+                          echo "Docker Compose not found, installing..."
+                          sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+                          sudo chmod +x /usr/local/bin/docker-compose
+                        fi
+
                         echo "Extracting web container IP address"
                         WEB_CONTAINER_ID=$(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web)
                         if [ -z "$WEB_CONTAINER_ID" ]; then
