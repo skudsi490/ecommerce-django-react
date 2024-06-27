@@ -22,7 +22,7 @@ services:
     image: skudsi/ecommerce-django-react-web:latest
     container_name: web
     environment:
-      - DEBUG=1
+      - DEBUG=0
       - DJANGO_SETTINGS_MODULE=backend.settings
       - PYTHONPATH=/app:/app/backend:/app/base
       - POSTGRES_DB=ecommerce

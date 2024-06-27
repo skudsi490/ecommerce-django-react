@@ -155,7 +155,7 @@ EOF
                             '''
                             echo "Running Django migrations and loading data..."
                             sh '''
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                            ssh -o StrictHostKeyChecking-no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                             set -e
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py makemigrations
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py migrate
@@ -196,10 +196,10 @@ EOF
                             fi
                             """
                             sh """
-                            scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ${imagePath} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/${imagePath}
+                            scp -o StrictHostKeyChecking-no -i ${SSH_KEY} ${imagePath} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/${imagePath}
                             """
                             sh """
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                            ssh -o StrictHostKeyChecking-no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                             if [ ! -f "/home/ubuntu/ecommerce-django-react/${imagePath}" ]; then
                                 echo "Error: Failed to upload image ${imagePath}."
                                 exit 1
@@ -224,18 +224,20 @@ EOF
                         export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
                         export AWS_STORAGE_BUCKET_NAME=${AWS_STORAGE_BUCKET_NAME}
 
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << EOF
+                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                         cd /home/ubuntu/ecommerce-django-react
                         docker-compose run --rm web python manage.py collectstatic --noinput
-                        EOF
+EOF
 
                         unset AWS_ACCESS_KEY_ID
                         unset AWS_SECRET_ACCESS_KEY
                         unset AWS_STORAGE_BUCKET_NAME
 
                         # Sync collected static files to S3
-                        aws s3 sync /home/ubuntu/ecommerce-django-react/static s3://${AWS_STORAGE_BUCKET_NAME}/static
-                        aws s3 sync /home/ubuntu/ecommerce-django-react/media s3://${AWS_STORAGE_BUCKET_NAME}/media
+                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                        aws s3 sync /home/ubuntu/ecommerce-django-react/static s3://${AWS_STORAGE_BUCKET_NAME}/static --acl public-read
+                        aws s3 sync /home/ubuntu/ecommerce-django-react/media s3://${AWS_STORAGE_BUCKET_NAME}/media --acl public-read
+EOF
                         '''
                     }
                 }
