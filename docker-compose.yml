@@ -30,14 +30,15 @@ services:
       - POSTGRES_PASSWORD=ecommercedbpassword
       - POSTGRES_HOST=db
       - REACT_APP_BACKEND_URL=http://3.76.217.10:8000
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_STORAGE_BUCKET_NAME=jenkins-artifacts-bucket-123456
     volumes:
       - /home/ubuntu/ecommerce-django-react/backend:/app/backend
       - /home/ubuntu/ecommerce-django-react/base:/app/base
       - /home/ubuntu/ecommerce-django-react/requirements.txt:/app/requirements.txt
       - /home/ubuntu/ecommerce-django-react/manage.py:/app/manage.py
-      - /home/ubuntu/ecommerce-django-react/static:/app/static
       - /home/ubuntu/ecommerce-django-react/media:/app/media
-      - /home/ubuntu/ecommerce-django-react/staticfiles:/app/staticfiles
       - /home/ubuntu/ecommerce-django-react/data_dump.json:/tmp/data_dump.json
     depends_on:
       - db

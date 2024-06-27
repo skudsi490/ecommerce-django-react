@@ -8,7 +8,7 @@ pipeline {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub')
         AWS_ACCESS_KEY_ID = credentials('aws-access-key-id')
         AWS_SECRET_ACCESS_KEY = credentials('aws-secret-access-key')
-        S3_BUCKET = 'jenkins-artifacts-bucket-123456'
+        AWS_STORAGE_BUCKET_NAME = 'jenkins-artifacts-bucket-123456' // Added bucket name directly
         DJANGO_SETTINGS_MODULE = 'backend.settings'
         PYTHONPATH = '/app:/app/backend:/app/base'
         POSTGRES_DB = 'ecommerce'
@@ -121,7 +121,7 @@ pipeline {
                         sh '''
                         export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
                         export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-                        aws s3 cp s3://${S3_BUCKET}/terraform/state/terraform.tfstate terraform.tfstate
+                        aws s3 cp s3://${AWS_STORAGE_BUCKET_NAME}/terraform/state/terraform.tfstate terraform.tfstate
                         unset AWS_ACCESS_KEY_ID
                         unset AWS_SECRET_ACCESS_KEY
                         '''

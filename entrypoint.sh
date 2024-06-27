@@ -21,10 +21,6 @@ else
   echo "data_dump.json not found."
 fi
 
-echo "Collecting static files..."
-# Collect static files
-python manage.py collectstatic --noinput
-
 echo "Creating log directory for Gunicorn if it doesn't exist..."
 # Create log directory for Gunicorn if it doesn't exist
 mkdir -p /var/log/gunicorn
