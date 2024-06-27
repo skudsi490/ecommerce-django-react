@@ -182,7 +182,7 @@ EOF
                 
                 # Install necessary libraries
                 sudo apt-get update
-                sudo apt-get install -y libcrypt1 libcrypt-dev libssl-dev libxcrypt-compat
+                sudo apt-get install -y libcrypt1 libcrypt-dev libssl-dev
 
                 # Check Library Path and Permissions
                 sudo find / -iname "libcrypt.so*"
