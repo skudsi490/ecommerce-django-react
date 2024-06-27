@@ -184,10 +184,15 @@ EOF
                         sudo apt-get install -y libcrypt1 libcrypt-dev
 
                         # Create symbolic link for libcrypt.so.1
-                        sudo ln -sf /lib/x86_64-linux-gnu/libcrypt.so.1 /usr/lib/libcrypt.so.1
+                        if [ ! -f /usr/lib/libcrypt.so.1 ]; then
+                        sudo ln -s /lib/x86_64-linux-gnu/libcrypt.so.1 /usr/lib/libcrypt.so.1
+                        fi
+
+                        # Ensure the symbolic link has correct permissions
                         sudo chmod 755 /lib/x86_64-linux-gnu/libcrypt.so.1
                         sudo chmod 755 /usr/lib/libcrypt.so.1
 
+                        # Move and enable Nginx configuration
                         sudo mv /home/ubuntu/ecommerce-django-react/nginx.conf /etc/nginx/sites-available/ecommerce-django-react
                         sudo ln -sf /etc/nginx/sites-available/ecommerce-django-react /etc/nginx/sites-enabled/ecommerce-django-react
 
@@ -209,7 +214,7 @@ EOF
                         echo -e '#include <tunables/global>\\n/usr/sbin/nginx {\\n  /home/ubuntu/ecommerce-django-react/staticfiles/** r,\\n}' | sudo tee /etc/apparmor.d/usr.sbin.nginx
 
                         sudo apparmor_parser -r /etc/apparmor.d/usr.sbin.nginx
-EOF
+        EOF
                         '''
                     }
                 }
