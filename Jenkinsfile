@@ -187,6 +187,24 @@ EOF
 
                         echo "Restarting Nginx..."
                         sudo systemctl restart nginx
+
+                        # Ensure directory permissions
+                        sudo chmod 755 /home
+                        sudo chmod 755 /home/ubuntu
+                        sudo chmod 755 /home/ubuntu/ecommerce-django-react
+                        sudo chmod 755 /home/ubuntu/ecommerce-django-react/staticfiles
+
+                        # Adjust AppArmor profile for Nginx
+                        if [ ! -f /etc/apparmor.d/usr.sbin.nginx ]; then
+                            echo 'Creating AppArmor profile for Nginx...'
+                            sudo touch /etc/apparmor.d/usr.sbin.nginx
+                            echo '#include <tunables/global>' | sudo tee -a /etc/apparmor.d/usr.sbin.nginx
+                            echo '/usr/sbin/nginx {' | sudo tee -a /etc/apparmor.d/usr.sbin.nginx
+                            echo '  /home/ubuntu/ecommerce-django-react/staticfiles/** r,' | sudo tee -a /etc/apparmor.d/usr.sbin.nginx
+                            echo '}' | sudo tee -a /etc/apparmor.d/usr.sbin.nginx
+                        fi
+
+                        sudo apparmor_parser -r /etc/apparmor.d/usr.sbin.nginx
 EOF
                         '''
                     }
