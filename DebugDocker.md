@@ -4,3 +4,5 @@ ls -la /home/ubuntu/ecommerce-django-react/staticfiles/
 ls -la /home/ubuntu/ecommerce-django-react/media/images/
 ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.76.217.10
 ls -la /home/ubuntu/ecommerce-django-react/media/static/
+
+cd /home/ubuntu/ecommerce-django-react

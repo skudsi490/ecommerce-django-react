@@ -11,7 +11,7 @@ done
 echo "Applying database migrations..."
 # Apply database migrations
 python manage.py makemigrations
-python.manage.py migrate
+python manage.py migrate
 
 echo "Checking for data_dump.json..."
 # Load data into PostgreSQL
@@ -22,9 +22,18 @@ else
   echo "data_dump.json not found."
 fi
 
+echo "Setting permissions for staticfiles directory..."
+# Ensure permissions for staticfiles directory
+mkdir -p /app/staticfiles
+chmod -R 755 /app/staticfiles
+
 echo "Collecting static files..."
 # Collect static files
 python manage.py collectstatic --noinput
+if [ $? -ne 0 ]; then
+  echo "Failed to collect static files"
+  exit 1
+fi
 
 echo "Creating log directory for Gunicorn if it doesn't exist..."
 # Create log directory for Gunicorn if it doesn't exist
