@@ -8,7 +8,7 @@ pipeline {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub')
         AWS_ACCESS_KEY_ID = credentials('aws-access-key-id')
         AWS_SECRET_ACCESS_KEY = credentials('aws-secret-access-key')
-        AWS_STORAGE_BUCKET_NAME = credentials('aws-storage-bucket-name')
+        S3_BUCKET = 'jenkins-artifacts-bucket-123456'
         DJANGO_SETTINGS_MODULE = 'backend.settings'
         PYTHONPATH = '/app:/app/backend:/app/base'
         POSTGRES_DB = 'ecommerce'
@@ -28,15 +28,15 @@ pipeline {
                 echo "Cleaning up workspace and Docker resources"
                 docker system prune -af --volumes || true
                 sudo rm -rf ${WORKSPACE}/*
-                sudo yum clean all || true
-                sudo yum autoremove -y || true
+                sudo apt-get clean || true
+                sudo apt-get autoremove -y || true
                 sudo rm -rf /var/lib/docker/tmp/*
-                sudo rm -rf /var/cache/yum
+                sudo rm -rf /var/lib/apt/lists/*
 
                 if ! [ -x "$(command -v unzip)" ]; then
                     echo "Unzip not found, installing..."
-                    sudo yum update -y
-                    sudo yum install -y unzip
+                    sudo apt-get update -y
+                    sudo apt-get install -y unzip
                 fi
 
                 echo "Disk usage after cleanup:"
@@ -61,6 +61,24 @@ pipeline {
         stage('Checkout') {
             steps {
                 git url: "${REPO_URL}", branch: 'main'
+            }
+        }
+
+        stage('Verify Required Files') {
+            steps {
+                sh '''
+                echo "Contents of project root directory:"
+                ls -la
+
+                echo "Contents of static directory:"
+                ls -la static || echo "No static directory found"
+
+                echo "Contents of media directory:"
+                ls -la media || echo "No media directory found"
+
+                echo "Contents of pytest.ini:"
+                cat pytest.ini || echo "pytest.ini file not found"
+                '''
             }
         }
 
@@ -99,16 +117,13 @@ pipeline {
                 script {
                     withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
                                      string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
-                                     string(credentialsId: 'aws-storage-bucket-name', variable: 'AWS_STORAGE_BUCKET_NAME'),
                                      sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
                         sh '''
                         export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
                         export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-                        export AWS_STORAGE_BUCKET_NAME=${AWS_STORAGE_BUCKET_NAME}
-                        aws s3 cp s3://${AWS_STORAGE_BUCKET_NAME}/terraform/state/terraform.tfstate terraform.tfstate
+                        aws s3 cp s3://${S3_BUCKET}/terraform/state/terraform.tfstate terraform.tfstate
                         unset AWS_ACCESS_KEY_ID
                         unset AWS_SECRET_ACCESS_KEY
-                        unset AWS_STORAGE_BUCKET_NAME
                         '''
                         def terraformState = readFile 'terraform.tfstate'
                         def ubuntuIp = sh(script: "jq -r '.resources[] | select(.type==\"aws_instance\" and .name==\"my_ubuntu\").instances[0].attributes.public_ip' terraform.tfstate", returnStdout: true).trim()
@@ -149,7 +164,6 @@ EOF
                             docker network create app-network || true
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml down --remove-orphans
                             docker network prune -f
-                            docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml build --no-cache
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml up -d
 EOF
                             '''
@@ -207,38 +221,6 @@ EOF
 EOF
                             """
                         }
-                    }
-                }
-            }
-        }
-
-        stage('Collect and Upload Static Files to S3') {
-            steps {
-                script {
-                    withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
-                                     string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
-                                     string(credentialsId: 'aws-storage-bucket-name', variable: 'AWS_STORAGE_BUCKET_NAME'),
-                                     sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
-                        sh '''
-                        export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-                        export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-                        export AWS_STORAGE_BUCKET_NAME=${AWS_STORAGE_BUCKET_NAME}
-
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
-                        cd /home/ubuntu/ecommerce-django-react
-                        docker-compose run --rm web python manage.py collectstatic --noinput
-EOF
-
-                        unset AWS_ACCESS_KEY_ID
-                        unset AWS_SECRET_ACCESS_KEY
-                        unset AWS_STORAGE_BUCKET_NAME
-
-                        # Sync collected static files to S3
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
-                        aws s3 sync /home/ubuntu/ecommerce-django-react/static s3://${AWS_STORAGE_BUCKET_NAME}/static --acl public-read
-                        aws s3 sync /home/ubuntu/ecommerce-django-react/media s3://${AWS_STORAGE_BUCKET_NAME}/media --acl public-read
-EOF
-                        '''
                     }
                 }
             }

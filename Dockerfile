@@ -26,10 +26,7 @@ ENV PYTHONUNBUFFERED 1
 WORKDIR /app
 
 COPY requirements.txt /app/
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Verify django-storages installation
-RUN pip show django-storages
+RUN pip install -r requirements.txt
 
 COPY ./backend/ /app/backend/
 COPY ./base/ /app/base/
@@ -47,16 +44,13 @@ RUN echo "Contents of /app/static:" && ls -la /app/static
 
 COPY ./media/ /app/media/
 COPY ./pytest.ini /app/
-COPY ./entrypoint.sh /app/
+COPY ./entrypoint.sh /app/  
 COPY ./base/migrations/ /app/base/migrations/
 
 # Copy the frontend build files
 COPY --from=build /app/build /app/frontend/build
 
 RUN apt-get update && apt-get install -y netcat-openbsd procps curl net-tools
-
-# Debugging step to list installed packages
-RUN pip list
 
 RUN chmod +x /app/entrypoint.sh
 

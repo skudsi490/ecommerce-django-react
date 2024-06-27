@@ -30,16 +30,15 @@ services:
       - POSTGRES_PASSWORD=ecommercedbpassword
       - POSTGRES_HOST=db
       - REACT_APP_BACKEND_URL=http://3.76.217.10:8000
-      - AWS_ACCESS_KEY_ID
-      - AWS_SECRET_ACCESS_KEY
-      - AWS_STORAGE_BUCKET_NAME
     volumes:
-      - /home/ubuntu/ecommerce-django-react/backend:/app/backend
-      - /home/ubuntu/ecommerce-django-react/base:/app/base
-      - /home/ubuntu/ecommerce-django-react/requirements.txt:/app/requirements.txt
-      - /home/ubuntu/ecommerce-django-react/manage.py:/app/manage.py
-      - /home/ubuntu/ecommerce-django-react/media:/app/media
-      - /home/ubuntu/ecommerce-django-react/data_dump.json:/tmp/data_dump.json
+      - ./backend:/app/backend
+      - ./base:/app/base
+      - ./requirements.txt:/app/requirements.txt
+      - ./manage.py:/app/manage.py
+      - ./static:/app/static
+      - ./media:/app/media
+      - ./staticfiles:/app/staticfiles
+      - ./data_dump.json:/tmp/data_dump.json
     depends_on:
       - db
     ports:
