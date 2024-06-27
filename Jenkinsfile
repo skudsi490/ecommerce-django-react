@@ -156,7 +156,7 @@ EOF
                               echo "Docker Compose not found, installing..."
                               sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
                               sudo chmod +x /usr/local/bin/docker-compose
-                              sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+                              sudo ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
                             fi
                             sudo fuser -k 80/tcp || true
                             docker network create app-network || true
@@ -193,19 +193,19 @@ EOF
                           echo "Docker Compose not found, installing..."
                           sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
                           sudo chmod +x /usr/local/bin/docker-compose
-                          sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+                          sudo ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
                         fi
 
                         echo "Extracting web container IP address"
                         WEB_CONTAINER_ID=$(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web)
-                        if [ -z "$WEB_CONTAINER_ID" ]; then
+                        if [ -z "$WEB_CONTAINER_ID" ];then
                           echo "Error: web container not found."
                           exit 1
                         fi
 
                         WEB_CONTAINER_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $WEB_CONTAINER_ID)
                         echo "Web container IP: $WEB_CONTAINER_IP"
-                        if [ -z "$WEB_CONTAINER_IP" ]; then
+                        if [ -z "$WEB_CONTAINER_IP" ];then
                           echo "Error: Failed to get IP address of the web container."
                           exit 1
                         fi
@@ -235,7 +235,7 @@ EOF
                         echo "Verifying media files on the server..."
                         ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
                         set -e
-                        if [ ! -d "/home/ubuntu/ecommerce-django-react/media/images" ]; then
+                        if [ ! -d "/home/ubuntu/ecommerce-django-react/media/images" ];then
                             echo "Creating media/images directory..."
                             mkdir -p /home/ubuntu/ecommerce-django-react/media/images
                             chmod 755 /home/ubuntu/ecommerce-django-react/media/images
@@ -247,7 +247,7 @@ EOF
                         for (image in images) {
                             def imagePath = "media/${image}".trim()
                             sh """
-                            if [ ! -f "${imagePath}" ]; then
+                            if [ ! -f "${imagePath}" ];then
                                 echo "Error: Local image file ${imagePath} not found."
                                 exit 1
                             fi
@@ -257,7 +257,7 @@ EOF
                             """
                             sh """
                             ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
-                            if [ ! -f "/home/ubuntu/ecommerce-django-react/${imagePath}" ]; then
+                            if [ ! -f "/home/ubuntu/ecommerce-django-react/${imagePath}" ];then
                                 echo "Error: Failed to upload image ${imagePath}."
                                 exit 1
                             fi
