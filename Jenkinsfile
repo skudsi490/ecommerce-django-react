@@ -193,14 +193,18 @@ EOL
                 sudo apt-get upgrade -y
                 sudo apt-get dist-upgrade -y
 
+                # Unhold any held packages
+                sudo apt-mark unhold libcrypt1 libcrypt-dev libssl-dev systemd-sysv libpam-runtime libpam-modules grub-efi-amd64-signed grub2-common mokutil
+
                 # Fix broken packages
                 sudo apt-get --fix-broken install
                 sudo dpkg --configure -a
 
-                # Remove and reinstall necessary libraries and Nginx
-                sudo apt-get remove --purge nginx libcrypt1 libcrypt-dev libssl-dev
-                sudo apt-get update
-                sudo apt-get install -y nginx libcrypt1 libcrypt-dev libssl-dev
+                # Manually install dependencies
+                sudo apt-get install -y libcrypt1 libcrypt-dev libssl-dev systemd-sysv libpam-runtime libpam-modules grub-efi-amd64-signed grub2-common mokutil
+
+                # Reboot system to apply kernel updates
+                sudo reboot
 
                 # Check File System Type
                 df -Th /usr /lib /lib/x86_64-linux-gnu
