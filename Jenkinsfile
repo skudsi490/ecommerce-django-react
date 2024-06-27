@@ -94,6 +94,20 @@ pipeline {
             }
         }
 
+        stage('Install Docker Compose') {
+            steps {
+                sh '''
+                if ! [ -x "$(command -v docker-compose)" ]; then
+                  echo "Docker Compose not found, installing..."
+                  sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+                  sudo chmod +x /usr/local/bin/docker-compose
+                else
+                  echo "Docker Compose is already installed."
+                fi
+                '''
+            }
+        }
+
         stage('Build and Push Docker Image') {
             steps {
                 script {
@@ -158,11 +172,6 @@ EOF
                               sudo systemctl start docker
                               sudo systemctl enable docker
                               sudo usermod -aG docker ubuntu
-                            fi
-                            if ! [ -x "$(command -v docker-compose)" ]; then
-                              echo "Docker Compose not found, installing..."
-                              sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-                              sudo chmod +x /usr/local/bin/docker-compose
                             fi
                             docker network create app-network || true
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml down --remove-orphans
