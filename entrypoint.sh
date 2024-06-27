@@ -2,9 +2,6 @@
 
 echo "Starting entrypoint script..."
 
-# Install dependencies
-pip install --no-cache-dir -r /app/requirements.txt
-
 # Wait for PostgreSQL to be ready
 while ! nc -z $POSTGRES_HOST 5432; do
   echo "Waiting for PostgreSQL..."
