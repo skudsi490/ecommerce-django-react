@@ -180,28 +180,28 @@ EOF
                 ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                 set -e
 
-                # Ensure correct package sources
+                # Clean up /etc/apt/sources.list and /etc/apt/sources.list.d/
+                sudo cp /etc/apt/sources.list /etc/apt/sources.list.backup
                 sudo tee /etc/apt/sources.list <<EOL
 deb http://archive.ubuntu.com/ubuntu/ noble main restricted universe multiverse
 deb http://archive.ubuntu.com/ubuntu/ noble-updates main restricted universe multiverse
 deb http://archive.ubuntu.com/ubuntu/ noble-backports main restricted universe multiverse
 deb http://security.ubuntu.com/ubuntu/ noble-security main restricted universe multiverse
 EOL
+                sudo rm /etc/apt/sources.list.d/*
 
                 # Update and upgrade all packages
                 sudo apt-get update
                 sudo apt-get upgrade -y
                 sudo apt-get dist-upgrade -y
 
-                # Unhold any held packages
-                sudo apt-mark unhold libcrypt1 libcrypt-dev libssl-dev systemd-sysv libpam-runtime libpam-modules grub-efi-amd64-signed grub2-common mokutil
-
                 # Fix broken packages
                 sudo apt-get --fix-broken install
                 sudo dpkg --configure -a
 
-                # Manually install dependencies
-                sudo apt-get install -y libcrypt1 libcrypt-dev libssl-dev systemd-sysv libpam-runtime libpam-modules grub-efi-amd64-signed grub2-common mokutil
+                # Remove and reinstall necessary libraries and Nginx
+                sudo apt-get remove --purge nginx libcrypt1 libcrypt-dev libssl-dev
+                sudo apt-get install -y nginx libcrypt1 libcrypt-dev libssl-dev
 
                 # Check File System Type
                 df -Th /usr /lib /lib/x86_64-linux-gnu
@@ -214,9 +214,7 @@ EOL
                 file /lib/x86_64-linux-gnu/libcrypt.so.1
 
                 # Create symbolic link for libcrypt.so.1 if not exists
-                if [ ! -f /usr/lib/libcrypt.so.1 ]; then
-                  sudo ln -s /lib/x86_64-linux-gnu/libcrypt.so.1 /usr/lib/libcrypt.so.1
-                fi
+                sudo ln -sf /lib/x86_64-linux-gnu/libcrypt.so.1 /usr/lib/libcrypt.so.1
 
                 # Ensure the symbolic link has correct permissions
                 sudo chmod 755 /lib/x86_64-linux-gnu/libcrypt.so.1
@@ -224,14 +222,12 @@ EOL
                 sudo chown root:root /lib/x86_64-linux-gnu/libcrypt.so.1
                 sudo chown root:root /usr/lib/libcrypt.so.1
 
-                # Add library paths to ld.so.conf and run ldconfig
-                echo "/lib/x86_64-linux-gnu" | sudo tee -a /etc/ld.so.conf
-                echo "/usr/lib" | sudo tee -a /etc/ld.so.conf
-                sudo ldconfig
-
-                # Set LD_LIBRARY_PATH
-                export LD_LIBRARY_PATH=/usr/lib:/lib/x86_64-linux-gnu:/usr/local/lib:/usr/local/lib64:/usr/lib64:/lib64
-                echo "LD_LIBRARY_PATH set to: $LD_LIBRARY_PATH"
+                # Clean up /etc/ld.so.conf and included files
+                sudo tee /etc/ld.so.conf <<EOL
+/lib/x86_64-linux-gnu
+/usr/lib
+EOL
+                sudo rm /etc/ld.so.conf.d/*
 
                 # Rebuild library cache
                 sudo ldconfig -v
