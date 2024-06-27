@@ -214,7 +214,7 @@ EOF
                         echo -e '#include <tunables/global>\\n/usr/sbin/nginx {\\n  /home/ubuntu/ecommerce-django-react/staticfiles/** r,\\n}' | sudo tee /etc/apparmor.d/usr.sbin.nginx
 
                         sudo apparmor_parser -r /etc/apparmor.d/usr.sbin.nginx
-        EOF
+EOF
                         '''
                     }
                 }
