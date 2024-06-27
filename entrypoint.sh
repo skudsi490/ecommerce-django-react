@@ -8,12 +8,9 @@ while ! nc -z $POSTGRES_HOST 5432; do
   sleep 1
 done
 
-echo "Making database migrations..."
-# Create new migrations
-python manage.py makemigrations
-
 echo "Applying database migrations..."
 # Apply database migrations
+python manage.py makemigrations
 python manage.py migrate
 
 echo "Checking for data_dump.json..."
@@ -33,6 +30,9 @@ echo "Creating log directory for Gunicorn if it doesn't exist..."
 # Create log directory for Gunicorn if it doesn't exist
 mkdir -p /var/log/gunicorn
 chmod -R 755 /var/log/gunicorn
+
+# Force DEBUG=0 to ensure Gunicorn is used
+export DEBUG=0
 
 # Start the appropriate server based on the DEBUG environment variable
 if [ "$DEBUG" = "1" ]; then
