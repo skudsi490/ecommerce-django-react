@@ -64,24 +64,6 @@ pipeline {
             }
         }
 
-        stage('Verify Required Files') {
-            steps {
-                sh '''
-                echo "Contents of project root directory:"
-                ls -la
-
-                echo "Contents of static directory:"
-                ls -la static || echo "No static directory found"
-
-                echo "Contents of media directory:"
-                ls -la media || echo "No media directory found"
-
-                echo "Contents of pytest.ini:"
-                cat pytest.ini || echo "pytest.ini file not found"
-                '''
-            }
-        }
-
         stage('Test Docker Login') {
             steps {
                 script {
@@ -94,40 +76,10 @@ pipeline {
             }
         }
 
-        stage('Install Docker Compose') {
-            steps {
-                sh '''
-                if ! [ -x "$(command -v docker-compose)" ]; then
-                  echo "Docker Compose not found, installing..."
-                  sudo yum update -y
-                  sudo yum install -y libxcrypt-compat
-                  sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-                  sudo chmod +x /usr/local/bin/docker-compose
-                else
-                  echo "Docker Compose is already installed."
-                fi
-                '''
-            }
-        }
-
-        stage('Verify libcrypt.so.1') {
-            steps {
-                sh '''
-                echo "Verifying libcrypt.so.1..."
-                if [ ! -f /usr/lib64/libcrypt.so.1 ]; then
-                  echo "libcrypt.so.1 not found, installing libxcrypt-compat..."
-                  sudo yum install -y libxcrypt-compat
-                else
-                  echo "libcrypt.so.1 found."
-                fi
-                '''
-            }
-        }
-
         stage('Build and Push Docker Image') {
             steps {
                 script {
-                    sh 'docker-compose build --no-cache'
+                    docker.build("${DOCKER_IMAGE_WEB}:latest", "--build-arg REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL} .")
                 }
             }
         }
@@ -138,17 +90,6 @@ pipeline {
                     docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
                         docker.image("${DOCKER_IMAGE_WEB}:latest").push('latest')
                     }
-                }
-            }
-        }
-
-        stage('Verify django-storages Installation') {
-            steps {
-                script {
-                    sh '''
-                    docker run --rm --entrypoint "" ${DOCKER_IMAGE_WEB}:latest python -c "import storages; print('django-storages is installed')"
-                    docker run --rm --entrypoint "" ${DOCKER_IMAGE_WEB}:latest pip list
-                    '''
                 }
             }
         }
@@ -203,65 +144,12 @@ EOF
                             docker network create app-network || true
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml down --remove-orphans
                             docker network prune -f
+                            docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml build --no-cache
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml up -d
-EOF
-                            '''
-                            echo "Running Django migrations and loading data..."
-                            sh '''
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
-                            set -e
-                            docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web env | grep DJANGO_SETTINGS_MODULE
-                            docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python -c "import storages; print('django-storages is installed')"
-                            docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python -m pip freeze
-                            docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py makemigrations
-                            docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py migrate
-                            docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py loaddata /app/data_dump.json
 EOF
                             '''
                         } else {
                             error("Missing ubuntu_ip in terraform state.")
-                        }
-                    }
-                }
-            }
-        }
-
-        stage('Verify and Upload Media Files') {
-            steps {
-                script {
-                    withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
-                        sh '''
-                        echo "Verifying media files on the server..."
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
-                        set -e
-                        if [ ! -d "/home/ubuntu/ecommerce-django-react/media/images" ]; then
-                            echo "Creating media/images directory..."
-                            mkdir -p /home/ubuntu/ecommerce-django-react/media/images
-                            chmod 755 /home/ubuntu/ecommerce-django-react/media/images
-                        fi
-EOF
-                        '''
-                        def images = sh(script: "jq -r '.[] | select(.model==\"base.product\") | .fields.image' data_dump.json", returnStdout: true).trim().split('\n')
-                        echo "Images to be verified and uploaded: ${images}"
-                        for (image in images) {
-                            def imagePath = "media/${image}".trim()
-                            sh """
-                            if [ ! -f "${imagePath}" ]; then
-                                echo "Error: Local image file ${imagePath} not found."
-                                exit 1
-                            fi
-                            """
-                            sh """
-                            scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ${imagePath} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/${imagePath}
-                            """
-                            sh """
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
-                            if [ ! -f "/home/ubuntu/ecommerce-django-react/${imagePath}" ]; then
-                                echo "Error: Failed to upload image ${imagePath}."
-                                exit 1
-                            fi
-EOF
-                            """
                         }
                     }
                 }
