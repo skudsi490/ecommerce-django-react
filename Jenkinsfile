@@ -177,9 +177,14 @@ EOF
                             sh '''
                             echo "Docker containers:"
                             docker ps --format '{{.Names}}'
-                            
-                            CONTAINER_LOG=$(docker ps --format '{{.Names}}' | tee)
                             echo "Container log: $CONTAINER_LOG"
+
+                            if [ -z "$CONTAINER_LOG" ]; then
+                              echo "No containers found. Retrying..."
+                              sleep 5
+                              CONTAINER_LOG=$(docker ps --format '{{.Names}}')
+                              echo "Container log after retry: $CONTAINER_LOG"
+                            fi
 
                             WEB_CONTAINER_NAME=$(echo "$CONTAINER_LOG" | grep web)
                             if [ -z "$WEB_CONTAINER_NAME" ]; then
