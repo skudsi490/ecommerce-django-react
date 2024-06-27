@@ -195,14 +195,9 @@ EOF
                         sudo chmod 755 /home/ubuntu/ecommerce-django-react/staticfiles
 
                         # Adjust AppArmor profile for Nginx
-                        if [ ! -f /etc/apparmor.d/usr.sbin.nginx ]; then
-                            echo 'Creating AppArmor profile for Nginx...'
-                            sudo touch /etc/apparmor.d/usr.sbin.nginx
-                            echo '#include <tunables/global>' | sudo tee -a /etc/apparmor.d/usr.sbin.nginx
-                            echo '/usr/sbin/nginx {' | sudo tee -a /etc/apparmor.d/usr.sbin.nginx
-                            echo '  /home/ubuntu/ecommerce-django-react/staticfiles/** r,' | sudo tee -a /etc/apparmor.d/usr.sbin.nginx
-                            echo '}' | sudo tee -a /etc/apparmor.d/usr.sbin.nginx
-                        fi
+                        echo 'Creating AppArmor profile for Nginx...'
+                        sudo touch /etc/apparmor.d/usr.sbin.nginx
+                        echo -e '#include <tunables/global>\\n/usr/sbin/nginx {\\n  /home/ubuntu/ecommerce-django-react/staticfiles/** r,\\n}' | sudo tee /etc/apparmor.d/usr.sbin.nginx
 
                         sudo apparmor_parser -r /etc/apparmor.d/usr.sbin.nginx
 EOF
