@@ -2,6 +2,9 @@
 
 echo "Starting entrypoint script..."
 
+# Install dependencies
+pip install --no-cache-dir -r /app/requirements.txt
+
 # Wait for PostgreSQL to be ready
 while ! nc -z $POSTGRES_HOST 5432; do
   echo "Waiting for PostgreSQL..."
@@ -20,6 +23,10 @@ if [ -f /tmp/data_dump.json ]; then
 else
   echo "data_dump.json not found."
 fi
+
+echo "Collecting static files..."
+# Collect static files
+python manage.py collectstatic --noinput
 
 echo "Creating log directory for Gunicorn if it doesn't exist..."
 # Create log directory for Gunicorn if it doesn't exist
