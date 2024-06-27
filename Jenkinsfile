@@ -99,6 +99,8 @@ pipeline {
                 sh '''
                 if ! [ -x "$(command -v docker-compose)" ]; then
                   echo "Docker Compose not found, installing..."
+                  sudo apt-get update -y
+                  sudo apt-get install -y libcrypt1
                   sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
                   sudo chmod +x /usr/local/bin/docker-compose
                 else
