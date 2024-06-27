@@ -32,7 +32,7 @@ services:
       - REACT_APP_BACKEND_URL=http://3.76.217.10:8000
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      - AWS_STORAGE_BUCKET_NAME=jenkins-artifacts-bucket-123456
+      - AWS_STORAGE_BUCKET_NAME=jenkins-artifacts-bucket-123456 
     volumes:
       - /home/ubuntu/ecommerce-django-react/backend:/app/backend
       - /home/ubuntu/ecommerce-django-react/base:/app/base

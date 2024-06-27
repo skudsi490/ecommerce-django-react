@@ -8,7 +8,7 @@ pipeline {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub')
         AWS_ACCESS_KEY_ID = credentials('aws-access-key-id')
         AWS_SECRET_ACCESS_KEY = credentials('aws-secret-access-key')
-        AWS_STORAGE_BUCKET_NAME = 'jenkins-artifacts-bucket-123456' // Added bucket name directly
+        AWS_STORAGE_BUCKET_NAME = 'jenkins-artifacts-bucket-123456'
         DJANGO_SETTINGS_MODULE = 'backend.settings'
         PYTHONPATH = '/app:/app/backend:/app/base'
         POSTGRES_DB = 'ecommerce'
