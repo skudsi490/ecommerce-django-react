@@ -17,7 +17,6 @@ pipeline {
         POSTGRES_HOST = 'db'
         REACT_APP_BACKEND_URL = 'http://3.76.217.10:8000'
     }
-
     stages {
         stage('Pre-Cleanup') {
             steps {
