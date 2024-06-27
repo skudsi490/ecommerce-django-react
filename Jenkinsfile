@@ -187,31 +187,14 @@ EOF
                     withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
                         sh '''
                         ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
-                        echo "Docker containers:"
-                        docker ps --all
-                        docker ps --format '{{.Names}}'
-                        CONTAINER_LOG=$(docker ps --format '{{.Names}}')
-                        echo "Container log: $CONTAINER_LOG"
-
-                        # Check if CONTAINER_LOG is empty
-                        if [ -z "$CONTAINER_LOG" ]; then
-                          echo "No containers found. Retrying..."
-                          sleep 5
-                          docker ps --all
-                          CONTAINER_LOG=$(docker ps --format '{{.Names}}')
-                          echo "Container log after retry: $CONTAINER_LOG"
-                        fi
-
-                        # Extract web container name
-                        WEB_CONTAINER_NAME=$(echo "$CONTAINER_LOG" | grep web)
-                        if [ -z "$WEB_CONTAINER_NAME" ]; then
+                        echo "Extracting web container IP address"
+                        WEB_CONTAINER_ID=$(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web)
+                        if [ -z "$WEB_CONTAINER_ID" ]; then
                           echo "Error: web container not found."
-                          docker ps --format '{{.Names}}'
                           exit 1
                         fi
-                        echo "Web container name: $WEB_CONTAINER_NAME"
 
-                        WEB_CONTAINER_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $WEB_CONTAINER_NAME)
+                        WEB_CONTAINER_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $WEB_CONTAINER_ID)
                         echo "Web container IP: $WEB_CONTAINER_IP"
                         if [ -z "$WEB_CONTAINER_IP" ]; then
                           echo "Error: Failed to get IP address of the web container."
