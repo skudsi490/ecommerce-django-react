@@ -258,6 +258,9 @@ server {
 }
 EOT
 
+                        echo "Verifying Nginx configuration file content..."
+                        cat /etc/nginx/sites-available/ecommerce-django-react
+
                         echo "Removing existing Nginx configuration link if it exists..."
                         sudo rm -f /etc/nginx/sites-enabled/ecommerce-django-react
 
