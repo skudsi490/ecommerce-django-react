@@ -179,16 +179,13 @@ EOF
                 scp -o StrictHostKeyChecking=no -i ${SSH_KEY} config/nginx.conf ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/nginx.conf
                 ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                 set -e
+                
                 # Install necessary libraries
                 sudo apt-get update
-                sudo apt-get install -y libcrypt1 libcrypt-dev libssl-dev
+                sudo apt-get install -y libcrypt1 libcrypt-dev libssl-dev libxcrypt-compat
 
                 # Check Library Path and Permissions
                 sudo find / -iname "libcrypt.so*"
-
-                # Debug: List the found libraries
-                echo "Libraries found:"
-                sudo find / -iname "libcrypt.so*" -exec ls -l {} \\;
 
                 # Create symbolic link for libcrypt.so.1 if not exists
                 if [ ! -f /usr/lib/libcrypt.so.1 ]; then
@@ -199,27 +196,21 @@ EOF
                 sudo chmod 755 /lib/x86_64-linux-gnu/libcrypt.so.1
                 sudo chmod 755 /usr/lib/libcrypt.so.1
 
-                # Add library paths to ld.so.conf
+                # Add library paths to ld.so.conf and run ldconfig
                 echo "/lib/x86_64-linux-gnu" | sudo tee -a /etc/ld.so.conf
                 echo "/usr/lib" | sudo tee -a /etc/ld.so.conf
                 sudo ldconfig
 
-                # Debug: Check linker cache
-                sudo ldconfig -p | grep libcrypt
-
                 # Set LD_LIBRARY_PATH
                 export LD_LIBRARY_PATH=/usr/lib:/lib/x86_64-linux-gnu:/usr/local/lib:/usr/local/lib64:/usr/lib64:/lib64
                 echo "LD_LIBRARY_PATH set to: $LD_LIBRARY_PATH"
-
-                # Reinstall libraries if needed
-                sudo apt-get install --reinstall -y libcrypt1 libcrypt-dev libssl-dev
 
                 # Move and enable Nginx configuration
                 sudo mv /home/ubuntu/ecommerce-django-react/nginx.conf /etc/nginx/sites-available/ecommerce-django-react
                 sudo ln -sf /etc/nginx/sites-available/ecommerce-django-react /etc/nginx/sites-enabled/ecommerce-django-react
 
                 echo "Testing Nginx configuration..."
-                sudo LD_PRELOAD=/usr/lib/libcrypt.so.1 nginx -t || (echo "Nginx configuration test failed" && exit 1)
+                sudo nginx -t || (echo "Nginx configuration test failed" && exit 1)
 
                 echo "Restarting Nginx..."
                 sudo systemctl restart nginx
