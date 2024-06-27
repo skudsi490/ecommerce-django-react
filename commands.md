@@ -97,7 +97,7 @@ docker push skudsi/ecommerce-django-react-backend:latest
 
 
 git add .
-git commit -m "Update configuration v71"
+git commit -m "Update configuration v72"
 git push origin main
 
 Please dont use StrictHostKeyChecking-no and use StrictHostKeyChecking=no instead

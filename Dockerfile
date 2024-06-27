@@ -44,13 +44,16 @@ RUN echo "Contents of /app/static:" && ls -la /app/static
 
 COPY ./media/ /app/media/
 COPY ./pytest.ini /app/
-COPY ./entrypoint.sh /app/  
+COPY ./entrypoint.sh /app/
 COPY ./base/migrations/ /app/base/migrations/
 
 # Copy the frontend build files
 COPY --from=build /app/build /app/frontend/build
 
 RUN apt-get update && apt-get install -y netcat-openbsd procps curl net-tools
+
+# Debugging step to list installed packages
+RUN pip list
 
 RUN chmod +x /app/entrypoint.sh
 
