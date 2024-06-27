@@ -250,17 +250,16 @@ server {
 
     location / {
         proxy_pass http://127.0.0.1:8000;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
     }
 }
 EOT
 
-                        echo "Substituting environment variables in Nginx configuration file..."
-                        envsubst < /home/ubuntu/ecommerce-django-react/nginx-template.conf > /home/ubuntu/ecommerce-django-react/nginx.conf
-                        sudo mv /home/ubuntu/ecommerce-django-react/nginx.conf /etc/nginx/sites-available/ecommerce-django-react
+                        echo "Moving Nginx configuration file to the correct location..."
+                        sudo mv /home/ubuntu/ecommerce-django-react/nginx-template.conf /etc/nginx/sites-available/ecommerce-django-react
 
                         echo "Verifying Nginx configuration file content..."
                         sudo cat /etc/nginx/sites-available/ecommerce-django-react
