@@ -187,6 +187,10 @@ EOF
                 # Check Library Path and Permissions
                 sudo find / -iname "libcrypt.so*"
 
+                # Verify library architecture
+                file /usr/lib/libcrypt.so.1
+                file /lib/x86_64-linux-gnu/libcrypt.so.1
+
                 # Create symbolic link for libcrypt.so.1 if not exists
                 if [ ! -f /usr/lib/libcrypt.so.1 ]; then
                   sudo ln -s /lib/x86_64-linux-gnu/libcrypt.so.1 /usr/lib/libcrypt.so.1
@@ -204,6 +208,9 @@ EOF
                 # Set LD_LIBRARY_PATH
                 export LD_LIBRARY_PATH=/usr/lib:/lib/x86_64-linux-gnu:/usr/local/lib:/usr/local/lib64:/usr/lib64:/lib64
                 echo "LD_LIBRARY_PATH set to: $LD_LIBRARY_PATH"
+
+                # Rebuild library cache
+                sudo ldconfig -v
 
                 # Move and enable Nginx configuration
                 sudo mv /home/ubuntu/ecommerce-django-react/nginx.conf /etc/nginx/sites-available/ecommerce-django-react
