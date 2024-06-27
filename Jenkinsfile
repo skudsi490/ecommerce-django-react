@@ -224,7 +224,7 @@ EOF
                         export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
                         export AWS_STORAGE_BUCKET_NAME=${AWS_STORAGE_BUCKET_NAME}
 
-                        ssh -o StrictHostKeyChecking-no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << EOF
+                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << EOF
                         cd /home/ubuntu/ecommerce-django-react
                         docker-compose run --rm web python manage.py collectstatic --noinput
                         EOF
