@@ -11,7 +11,7 @@ done
 echo "Applying database migrations..."
 # Apply database migrations
 python manage.py makemigrations
-python manage.py migrate
+python.manage.py migrate
 
 echo "Checking for data_dump.json..."
 # Load data into PostgreSQL
