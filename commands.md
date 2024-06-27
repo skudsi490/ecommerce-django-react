@@ -22,10 +22,10 @@ cd /home/ubuntu/ecommerce-django-react
 ls -la media/images
 
 
-ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ec2-user@3.70.126.98
+ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ec2-user@3.122.56.6
 ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ec2-user@18.195.65.211
 
-ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.67.70.116
+ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.72.75.83
 ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@18.184.167.254
 ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.79.240.158
 
@@ -79,13 +79,13 @@ npm start
 
 
 git add Jenkinsfile
-git commit -m "Update Jenkinsfile 162"
+git commit -m "Update Jenkinsfile 183"
 git push origin main
 
 sudo cat /var/log/user-data.log
 7
 You don't have to write the full code only give me the part/s need to be modified, change or updated
-
+sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
 
 docker build -t skudsi/ecommerce-django-react-frontend:latest -f frontend/Dockerfile .
 docker tag skudsi/ecommerce-django-react-frontend:latest index.docker.io/skudsi/ecommerce-django-react-frontend:latest
@@ -97,7 +97,7 @@ docker push skudsi/ecommerce-django-react-backend:latest
 
 
 git add .
-git commit -m "Update configuration v64"
+git commit -m "Update configuration v65"
 git push origin main
 
 Please dont use StrictHostKeyChecking-no and use StrictHostKeyChecking=no instead
