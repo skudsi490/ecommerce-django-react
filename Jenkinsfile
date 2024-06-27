@@ -188,7 +188,7 @@ EOF
 
                         # Create symbolic link for libcrypt.so.1 if not exists
                         if [ ! -f /usr/lib/libcrypt.so.1 ]; then
-                            sudo ln -s /lib/x86_64-linux-gnu/libcrypt.so.1 /usr/lib/libcrypt.so.1
+                            sudo ln -sf /lib/x86_64-linux-gnu/libcrypt.so.1 /usr/lib/libcrypt.so.1
                         fi
 
                         # Ensure the symbolic link has correct permissions
@@ -204,8 +204,11 @@ EOF
                         sudo mv /home/ubuntu/ecommerce-django-react/nginx.conf /etc/nginx/sites-available/ecommerce-django-react
                         sudo ln -sf /etc/nginx/sites-available/ecommerce-django-react /etc/nginx/sites-enabled/ecommerce-django-react
 
+                        # Diagnostic step to check library paths
+                        ldd $(which nginx)
+
                         echo "Testing Nginx configuration..."
-                        sudo nginx -t
+                        sudo nginx -t || (sudo ldconfig && sudo nginx -t)
 
                         echo "Restarting Nginx..."
                         sudo systemctl restart nginx
