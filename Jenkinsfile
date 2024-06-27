@@ -163,5 +163,27 @@ EOF
                 }
             }
         }
+
+        stage('Collect Static Files') {
+            steps {
+                script {
+                    withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                                     string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
+                                     string(credentialsId: 'aws-storage-bucket-name', variable: 'AWS_STORAGE_BUCKET_NAME')]) {
+                        sh '''
+                        export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                        export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                        export AWS_STORAGE_BUCKET_NAME=${AWS_STORAGE_BUCKET_NAME}
+
+                        docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml run --rm web python manage.py collectstatic --noinput
+
+                        unset AWS_ACCESS_KEY_ID
+                        unset AWS_SECRET_ACCESS_KEY
+                        unset AWS_STORAGE_BUCKET_NAME
+                        '''
+                    }
+                }
+            }
+        }
     }
 }
