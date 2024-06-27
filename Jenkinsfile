@@ -199,6 +199,9 @@ EOL
                 sudo apt-get --fix-broken install
                 sudo dpkg --configure -a
 
+                # Unhold any held packages
+                sudo apt-mark unhold libcrypt1 libcrypt-dev libssl-dev systemd-sysv libpam-runtime libpam-modules grub-efi-amd64-signed grub2-common mokutil
+
                 # Remove and reinstall necessary libraries and Nginx
                 sudo apt-get remove --purge nginx libcrypt1 libcrypt-dev libssl-dev
                 sudo apt-get install -y nginx libcrypt1 libcrypt-dev libssl-dev
