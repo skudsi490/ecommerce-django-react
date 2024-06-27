@@ -196,23 +196,6 @@ EOF
                           sudo ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
                         fi
 
-                        echo "Extracting web container IP address"
-                        WEB_CONTAINER_ID=$(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web)
-                        if [ -z "$WEB_CONTAINER_ID" ];then
-                          echo "Error: web container not found."
-                          exit 1
-                        fi
-
-                        WEB_CONTAINER_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $WEB_CONTAINER_ID)
-                        echo "Web container IP: $WEB_CONTAINER_IP"
-                        if [ -z "$WEB_CONTAINER_IP" ];then
-                          echo "Error: Failed to get IP address of the web container."
-                          exit 1
-                        fi
-
-                        sudo sed -i "s|proxy_pass http://web:8000;|proxy_pass http://$WEB_CONTAINER_IP:8000;|g" /home/ubuntu/ecommerce-django-react/ecommerce-django-react.conf
-                        sudo cp /home/ubuntu/ecommerce-django-react/nginx.conf /etc/nginx/nginx.conf
-                        sudo cp /home/ubuntu/ecommerce-django-react/ecommerce-django-react.conf /etc/nginx/conf.d/ecommerce-django-react.conf
                         sudo systemctl restart nginx
 EOF
                         '''
