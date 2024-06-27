@@ -179,10 +179,14 @@ EOF
                 scp -o StrictHostKeyChecking=no -i ${SSH_KEY} config/nginx.conf ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/nginx.conf
                 ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                 set -e
-                
-                # Install necessary libraries
+
+                # Remove and reinstall necessary libraries and Nginx
+                sudo apt-get remove --purge nginx libcrypt1 libcrypt-dev libssl-dev
                 sudo apt-get update
-                sudo apt-get install -y libcrypt1 libcrypt-dev libssl-dev
+                sudo apt-get install -y nginx libcrypt1 libcrypt-dev libssl-dev
+
+                # Check File System Type
+                df -Th /usr /lib /lib/x86_64-linux-gnu
 
                 # Check Library Path and Permissions
                 sudo find / -iname "libcrypt.so*"
@@ -199,6 +203,8 @@ EOF
                 # Ensure the symbolic link has correct permissions
                 sudo chmod 755 /lib/x86_64-linux-gnu/libcrypt.so.1
                 sudo chmod 755 /usr/lib/libcrypt.so.1
+                sudo chown root:root /lib/x86_64-linux-gnu/libcrypt.so.1
+                sudo chown root:root /usr/lib/libcrypt.so.1
 
                 # Add library paths to ld.so.conf and run ldconfig
                 echo "/lib/x86_64-linux-gnu" | sudo tee -a /etc/ld.so.conf
@@ -227,6 +233,10 @@ EOF
                 sudo chmod 755 /home/ubuntu
                 sudo chmod 755 /home/ubuntu/ecommerce-django-react
                 sudo chmod 755 /home/ubuntu/ecommerce-django-react/staticfiles
+
+                # Check SELinux and AppArmor status
+                sudo apparmor_status
+                sudo setenforce 0
 
                 # Adjust AppArmor profile for Nginx
                 echo 'Creating AppArmor profile for Nginx...'
