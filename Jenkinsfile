@@ -177,8 +177,11 @@ EOF
                             sh '''
                             echo "Docker containers:"
                             docker ps --format '{{.Names}}'
+                            
+                            CONTAINER_LOG=$(docker ps --format '{{.Names}}')
+                            echo "Container log: $CONTAINER_LOG"
 
-                            WEB_CONTAINER_NAME=$(docker ps --format '{{.Names}}' | grep web)
+                            WEB_CONTAINER_NAME=$(echo "$CONTAINER_LOG" | grep web)
                             if [ -z "$WEB_CONTAINER_NAME" ]; then
                               echo "Error: web container not found."
                               docker ps --format '{{.Names}}'
