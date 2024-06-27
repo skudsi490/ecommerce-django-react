@@ -110,6 +110,20 @@ pipeline {
             }
         }
 
+        stage('Verify libcrypt.so.1') {
+            steps {
+                sh '''
+                echo "Verifying libcrypt.so.1..."
+                if [ ! -f /usr/lib64/libcrypt.so.1 ]; then
+                  echo "libcrypt.so.1 not found, installing libxcrypt-compat..."
+                  sudo yum install -y libxcrypt-compat
+                else
+                  echo "libcrypt.so.1 found."
+                fi
+                '''
+            }
+        }
+
         stage('Build and Push Docker Image') {
             steps {
                 script {
