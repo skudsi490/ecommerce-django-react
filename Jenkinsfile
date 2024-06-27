@@ -147,6 +147,7 @@ pipeline {
                 script {
                     sh '''
                     docker run --rm --entrypoint "" ${DOCKER_IMAGE_WEB}:latest python -c "import storages; print('django-storages is installed')"
+                    docker run --rm --entrypoint "" ${DOCKER_IMAGE_WEB}:latest pip list
                     '''
                 }
             }
