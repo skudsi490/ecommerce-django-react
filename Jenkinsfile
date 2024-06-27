@@ -17,6 +17,7 @@ pipeline {
         POSTGRES_HOST = 'db'
         REACT_APP_BACKEND_URL = 'http://3.76.217.10:8000'
     }
+
     stages {
         stage('Pre-Cleanup') {
             steps {
@@ -111,12 +112,11 @@ pipeline {
             }
         }
 
-        stage('Deploy to Ubuntu') {
+        stage('Fetch Terraform State') {
             steps {
                 script {
                     withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
-                                     string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
-                                     sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
+                                     string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')]) {
                         sh '''
                         export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
                         export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
@@ -124,13 +124,22 @@ pipeline {
                         unset AWS_ACCESS_KEY_ID
                         unset AWS_SECRET_ACCESS_KEY
                         '''
-                        def terraformState = readFile 'terraform.tfstate'
-                        def ubuntuIp = sh(script: "jq -r '.resources[] | select(.type==\"aws_instance\" and .name==\"my_ubuntu\").instances[0].attributes.public_ip' terraform.tfstate", returnStdout: true).trim()
-                        
-                        if (ubuntuIp) {
-                            env.MY_UBUNTU_IP = ubuntuIp
+                    }
+                }
+            }
+        }
+
+        stage('Deploy to Ubuntu') {
+            steps {
+                script {
+                    def terraformState = readFile 'terraform.tfstate'
+                    def ubuntuIp = sh(script: "jq -r '.resources[] | select(.type==\"aws_instance\" and .name==\"my_ubuntu\").instances[0].attributes.public_ip' terraform.tfstate", returnStdout: true).trim()
+                    
+                    if (ubuntuIp) {
+                        env.MY_UBUNTU_IP = ubuntuIp
+                        withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
                             sh '''
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
                                 set -e
                                 echo "Checking disk space and directory permissions..."
                                 df -h
@@ -144,8 +153,14 @@ EOF
                             scp -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.yml ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
                             scp -o StrictHostKeyChecking=no -i ${SSH_KEY} -r Dockerfile entrypoint.sh backend base frontend manage.py requirements.txt static media data_dump.json pytest.ini ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
                             '''
+                            echo "Verifying uploaded files on the server..."
                             sh '''
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
+                            ls -la /home/ubuntu/ecommerce-django-react/
+EOF
+                            '''
+                            sh '''
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
                             set -e
                             if ! [ -x "$(command -v docker)" ]; then
                               echo "Docker not found, installing..."
@@ -159,7 +174,9 @@ EOF
                               echo "Docker Compose not found, installing..."
                               sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
                               sudo chmod +x /usr/local/bin/docker-compose
+                              sudo ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
                             fi
+                            sudo fuser -k 80/tcp || true
                             docker network create app-network || true
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml down --remove-orphans
                             docker network prune -f
@@ -168,16 +185,23 @@ EOF
                             '''
                             echo "Running Django migrations and loading data..."
                             sh '''
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
                             set -e
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py makemigrations
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py migrate
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py loaddata /app/data_dump.json
 EOF
                             '''
-                        } else {
-                            error("Missing ubuntu_ip in terraform state.")
+                            echo "Collecting static files and uploading to S3..."
+                            sh '''
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
+                            set -e
+                            docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py collectstatic --noinput
+EOF
+                            '''
                         }
+                    } else {
+                        error("Missing ubuntu_ip in terraform state.")
                     }
                 }
             }
@@ -189,7 +213,7 @@ EOF
                     withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
                         sh '''
                         echo "Verifying media files on the server..."
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
                         set -e
                         if [ ! -d "/home/ubuntu/ecommerce-django-react/media/images" ]; then
                             echo "Creating media/images directory..."
@@ -212,7 +236,7 @@ EOF
                             scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ${imagePath} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/${imagePath}
                             """
                             sh """
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
                             if [ ! -f "/home/ubuntu/ecommerce-django-react/${imagePath}" ]; then
                                 echo "Error: Failed to upload image ${imagePath}."
                                 exit 1
