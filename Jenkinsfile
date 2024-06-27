@@ -141,6 +141,11 @@ EOF
                               sudo systemctl enable docker
                               sudo usermod -aG docker ubuntu
                             fi
+                            if ! [ -x "$(command -v docker-compose)" ]; then
+                              echo "Docker Compose not found, installing..."
+                              sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+                              sudo chmod +x /usr/local/bin/docker-compose
+                            fi
                             docker network create app-network || true
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml down --remove-orphans
                             docker network prune -f
@@ -152,12 +157,55 @@ EOF
                             sh '''
                             ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                             set -e
+                            docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py makemigrations
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py migrate
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py loaddata /app/data_dump.json
 EOF
                             '''
                         } else {
                             error("Missing ubuntu_ip in terraform state.")
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Verify and Upload Media Files') {
+            steps {
+                script {
+                    withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
+                        sh '''
+                        echo "Verifying media files on the server..."
+                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                        set -e
+                        if [ ! -d "/home/ubuntu/ecommerce-django-react/media/images" ]; then
+                            echo "Creating media/images directory..."
+                            mkdir -p /home/ubuntu/ecommerce-django-react/media/images
+                            chmod 755 /home/ubuntu/ecommerce-django-react/media/images
+                        fi
+EOF
+                        '''
+                        def images = sh(script: "jq -r '.[] | select(.model==\"base.product\") | .fields.image' data_dump.json", returnStdout: true).trim().split('\n')
+                        echo "Images to be verified and uploaded: ${images}"
+                        for (image in images) {
+                            def imagePath = "media/${image}".trim() // Correct the path here
+                            sh """
+                            if [ ! -f "${imagePath}" ]; then
+                                echo "Error: Local image file ${imagePath} not found."
+                                exit 1
+                            fi
+                            """
+                            sh """
+                            scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ${imagePath} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/${imagePath}
+                            """
+                            sh """
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                            if [ ! -f "/home/ubuntu/ecommerce-django-react/${imagePath}" ]; then
+                                echo "Error: Failed to upload image ${imagePath}."
+                                exit 1
+                            fi
+EOF
+                            """
                         }
                     }
                 }
@@ -176,7 +224,7 @@ EOF
                         export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
                         export AWS_STORAGE_BUCKET_NAME=${AWS_STORAGE_BUCKET_NAME}
 
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << EOF
+                        ssh -o StrictHostKeyChecking-no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << EOF
                         cd /home/ubuntu/ecommerce-django-react
                         docker-compose run --rm web python manage.py collectstatic --noinput
                         EOF
@@ -184,6 +232,10 @@ EOF
                         unset AWS_ACCESS_KEY_ID
                         unset AWS_SECRET_ACCESS_KEY
                         unset AWS_STORAGE_BUCKET_NAME
+
+                        # Sync collected static files to S3
+                        aws s3 sync /home/ubuntu/ecommerce-django-react/static s3://${AWS_STORAGE_BUCKET_NAME}/static
+                        aws s3 sync /home/ubuntu/ecommerce-django-react/media s3://${AWS_STORAGE_BUCKET_NAME}/media
                         '''
                     }
                 }
