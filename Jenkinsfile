@@ -130,8 +130,8 @@ pipeline {
                         
                         if (ubuntuIp) {
                             env.MY_UBUNTU_IP = ubuntuIp
-                            sh """
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << EOF
+                            sh '''
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                                 set -e
                                 echo "Checking disk space and directory permissions..."
                                 df -h
@@ -139,13 +139,13 @@ pipeline {
                                 mkdir -p /home/ubuntu/ecommerce-django-react/
                                 chmod 755 /home/ubuntu/ecommerce-django-react/
 EOF
-                            """
+                            '''
                             echo "Uploading files to remote server..."
-                            sh """
+                            sh '''
                             scp -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.yml ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
                             scp -o StrictHostKeyChecking=no -i ${SSH_KEY} -r Dockerfile entrypoint.sh backend base frontend manage.py requirements.txt static media data_dump.json pytest.ini ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
-                            """
-                            sh """
+                            '''
+                            sh '''
                             ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                             set -e
                             if ! [ -x "$(command -v docker)" ]; then
@@ -166,16 +166,16 @@ EOF
                             docker network prune -f
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml up -d
 EOF
-                            """
+                            '''
                             echo "Running Django migrations and loading data..."
-                            sh """
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << EOF
+                            sh '''
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                             set -e
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py makemigrations
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py migrate
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web python manage.py loaddata /app/data_dump.json
 EOF
-                            """
+                            '''
                         } else {
                             error("Missing ubuntu_ip in terraform state.")
                         }
@@ -190,7 +190,7 @@ EOF
                     withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
                         sh '''
                         echo "Verifying media files on the server..."
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << EOF
+                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                         set -e
                         if [ ! -d "/home/ubuntu/ecommerce-django-react/media/images" ]; then
                             echo "Creating media/images directory..."
@@ -213,7 +213,7 @@ EOF
                             scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ${imagePath} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/${imagePath}
                             """
                             sh """
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << EOF
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                             if [ ! -f "/home/ubuntu/ecommerce-django-react/${imagePath}" ]; then
                                 echo "Error: Failed to upload image ${imagePath}."
                                 exit 1
@@ -232,7 +232,7 @@ EOF
                     withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
                         sh '''
                         echo "Configuring Nginx on the server..."
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << EOF
+                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                         set -e
                         echo "Creating Nginx configuration file template..."
                         cat <<EOT > /home/ubuntu/ecommerce-django-react/nginx-template.conf
@@ -259,7 +259,8 @@ server {
 EOT
 
                         echo "Substituting environment variables in Nginx configuration file..."
-                        envsubst < /home/ubuntu/ecommerce-django-react/nginx-template.conf > /etc/nginx/sites-available/ecommerce-django-react
+                        envsubst < /home/ubuntu/ecommerce-django-react/nginx-template.conf > /home/ubuntu/ecommerce-django-react/nginx.conf
+                        sudo mv /home/ubuntu/ecommerce-django-react/nginx.conf /etc/nginx/sites-available/ecommerce-django-react
 
                         echo "Verifying Nginx configuration file content..."
                         sudo cat /etc/nginx/sites-available/ecommerce-django-react
