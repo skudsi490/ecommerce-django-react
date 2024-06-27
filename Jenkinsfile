@@ -176,38 +176,11 @@ EOF
                     withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
                         sh '''
                         echo "Configuring Nginx on the server..."
+                        scp -o StrictHostKeyChecking=no -i ${SSH_KEY} config/nginx.conf ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/nginx.conf
                         ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                         set -e
-                        echo "Creating Nginx configuration file line by line..."
-                        sudo bash -c 'echo "server {" > /home/ubuntu/ecommerce-django-react/nginx-template.conf'
-                        sudo bash -c 'echo "    listen 80;" >> /home/ubuntu/ecommerce-django-react/nginx-template.conf'
-                        sudo bash -c 'echo "    server_name 3.76.217.10;" >> /home/ubuntu/ecommerce-django-react/nginx-template.conf'
-                        sudo bash -c 'echo "    location /static/ {" >> /home/ubuntu/ecommerce-django-react/nginx-template.conf'
-                        sudo bash -c 'echo "        alias /home/ubuntu/ecommerce-django-react/staticfiles/;" >> /home/ubuntu/ecommerce-django-react/nginx-template.conf'
-                        sudo bash -c 'echo "    }" >> /home/ubuntu/ecommerce-django-react/nginx-template.conf'
-                        sudo bash -c 'echo "    location /media/ {" >> /home/ubuntu/ecommerce-django-react/nginx-template.conf'
-                        sudo bash -c 'echo "        alias /home/ubuntu/ecommerce-django-react/media/;" >> /home/ubuntu/ecommerce-django-react/nginx-template.conf'
-                        sudo bash -c 'echo "    }" >> /home/ubuntu/ecommerce-django-react/nginx-template.conf'
-                        sudo bash -c 'echo "    location / {" >> /home/ubuntu/ecommerce-django-react/nginx-template.conf'
-                        sudo bash -c 'echo "        proxy_pass http://127.0.0.1:8000;" >> /home/ubuntu/ecommerce-django-react/nginx-template.conf'
-                        sudo bash -c 'echo "        proxy_set_header Host \\\$host;" >> /home/ubuntu/ecommerce-django-react/nginx-template.conf'
-                        sudo bash -c 'echo "        proxy_set_header X-Real-IP \\\$remote_addr;" >> /home/ubuntu/ecommerce-django-react/nginx-template.conf'
-                        sudo bash -c 'echo "        proxy_set_header X-Forwarded-For \\\$proxy_add_x_forwarded_for;" >> /home/ubuntu/ecommerce-django-react/nginx-template.conf'
-                        sudo bash -c 'echo "        proxy_set_header X-Forwarded-Proto \\\$scheme;" >> /home/ubuntu/ecommerce-django-react/nginx-template.conf'
-                        sudo bash -c 'echo "    }" >> /home/ubuntu/ecommerce-django-react/nginx-template.conf'
-                        sudo bash -c 'echo "}" >> /home/ubuntu/ecommerce-django-react/nginx-template.conf'
-
-                        echo "Moving Nginx configuration file to the correct location..."
-                        sudo mv /home/ubuntu/ecommerce-django-react/nginx-template.conf /etc/nginx/sites-available/ecommerce-django-react
-
-                        echo "Verifying Nginx configuration file content..."
-                        sudo cat /etc/nginx/sites-available/ecommerce-django-react
-
-                        echo "Removing existing Nginx configuration link if it exists..."
-                        sudo rm -f /etc/nginx/sites-enabled/ecommerce-django-react
-
-                        echo "Enabling Nginx configuration..."
-                        sudo ln -s /etc/nginx/sites-available/ecommerce-django-react /etc/nginx/sites-enabled
+                        sudo mv /home/ubuntu/ecommerce-django-react/nginx.conf /etc/nginx/sites-available/ecommerce-django-react
+                        sudo ln -sf /etc/nginx/sites-available/ecommerce-django-react /etc/nginx/sites-enabled/ecommerce-django-react
 
                         echo "Testing Nginx configuration..."
                         sudo nginx -t
