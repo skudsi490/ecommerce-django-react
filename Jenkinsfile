@@ -164,7 +164,7 @@ EOF
             }
         }
 
-        stage('Collect Static Files') {
+        stage('Collect and Upload Static Files to S3') {
             steps {
                 script {
                     withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
