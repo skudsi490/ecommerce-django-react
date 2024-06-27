@@ -157,7 +157,7 @@ EOF
                         mkdir -p /app/staticfiles && chmod -R 755 /app/staticfiles &&
                         python manage.py makemigrations &&
                         python manage.py migrate &&
-                        python manage.py loaddata /app/data_dump.json &&
+                        python manage.py loaddata /tmp/data_dump.json &&
                         python manage.py collectstatic --noinput
                     "
 EOF
