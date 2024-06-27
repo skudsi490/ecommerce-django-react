@@ -169,13 +169,14 @@ EOF
                 script {
                     withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
                                      string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
-                                     string(credentialsId: 'aws-storage-bucket-name', variable: 'AWS_STORAGE_BUCKET_NAME')]) {
+                                     string(credentialsId: 'aws-storage-bucket-name', variable: 'AWS_STORAGE_BUCKET_NAME'),
+                                     sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
                         sh '''
                         export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
                         export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
                         export AWS_STORAGE_BUCKET_NAME=${AWS_STORAGE_BUCKET_NAME}
 
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << EOF
                         cd /home/ubuntu/ecommerce-django-react
                         docker-compose run --rm web python manage.py collectstatic --noinput
                         EOF
