@@ -183,7 +183,7 @@ EOF
 
                             echo "Running tests inside the Docker container..."
                             docker-compose exec web sh -c "
-                                pytest tests/api/ --junitxml=report.xml --html=report.html
+                                pytest tests/api/ --junitxml=/app/report.xml --html=/app/report.html
                             "
 EOF
                         '''
