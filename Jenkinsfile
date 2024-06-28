@@ -172,10 +172,6 @@ EOF
             }
         }
 
-pipeline {
-    agent any
-
-    stages {
         stage('Run Tests in Docker') {
             steps {
                 script {
@@ -224,9 +220,6 @@ EOF
                 }
             }
         }
-    }
-}
-
 
 
 //         stage('Configure Nginx') {
