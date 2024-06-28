@@ -184,8 +184,12 @@ stage('Running Tests') {
                     echo "Setting permissions for ecommerce-django-react directory..."
                     sudo chmod -R 777 /home/ubuntu/ecommerce-django-react
 
+                    echo "Creating directories for test files..."
+                    mkdir -p /home/ubuntu/ecommerce-django-react/tests/api
+
                     echo "Copying test files from Docker container to the instance..."
-                    docker cp web:/app/tests ./tests
+                    docker cp web:/app/tests/api/test_products.py ./tests/api/
+                    docker cp web:/app/tests/api/test_user.py ./tests/api/
                     docker cp web:/app/pytest.ini ./pytest.ini
 
                     echo "Ensuring python3, pip, and required libraries are installed..."
