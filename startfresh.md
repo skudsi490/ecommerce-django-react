@@ -26,6 +26,7 @@ terraform init -reconfigure
 Destroy the Infrastructure: Once Terraform has been reinitialized to use the local backend, you can destroy the infrastructure.
 
 terraform destroy
+
 This should work without requiring the S3 bucket to be available.
 
 
