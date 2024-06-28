@@ -16,8 +16,6 @@ pipeline {
         POSTGRES_PASSWORD = 'ecommercedbpassword'
         POSTGRES_HOST = 'db'
         REACT_APP_BACKEND_URL = 'http://35.159.115.123:8000'
-        DOCKER_COMPOSE_FILE = 'docker-compose.yml'
-
     }
 
     stages {
@@ -172,67 +170,65 @@ EOF
             }
         }
 
-stage('Run Tests in Docker') {
-    steps {
-        script {
-            withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
-                             string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
-                             sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
-                try {
-                    sh '''
-                    echo "Running tests in Docker container..."
-                    ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
-                    set -e
-                    # Clean previous report files
-                    sudo rm -rf /home/ubuntu/ecommerce-django-react/report.html
+        stage('Run Tests in Docker') {
+            steps {
+                script {
+                    withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                                     string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
+                                     sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
+                        try {
+                            sh '''
+                            echo "Running tests in Docker container..."
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                            set -e
+                            # Clean previous report files
+                            sudo rm -rf /home/ubuntu/ecommerce-django-react/report.html
 
-                    # Run tests inside the Docker container
-                    docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web sh -c "
-                        if ! pip show pytest > /dev/null 2>&1; then
-                            pip install pytest pytest-html
-                        fi
-                        pytest --html=/app/report.html || true
-                    "
+                            # Run tests inside the Docker container
+                            docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web sh -c "
+                                if ! pip show pytest > /dev/null 2>&1; then
+                                    pip install pytest pytest-html
+                                fi
+                                pytest --html=/app/report.html || true
+                            "
 
-                    # Verify the report file was generated
-                    docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web ls -l /app/report.html
+                            # Verify the report file was generated
+                            docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web ls -l /app/report.html
 
-                    # Copy the generated report back to the host
-                    docker cp \$(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web):/app/report.html /home/ubuntu/ecommerce-django-react/report.html || true
+                            # Copy the generated report back to the host
+                            docker cp \$(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web):/app/report.html /home/ubuntu/ecommerce-django-react/report.html
 
-                    # List the contents of the directory to verify the report is there
-                    ls -l /home/ubuntu/ecommerce-django-react
+                            # List the contents of the directory to verify the report is there
+                            ls -l /home/ubuntu/ecommerce-django-react
 EOF
-                    '''
-                    sh '''
-                    echo "Copying report file using rsync..."
-                    rsync -avz -e "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY}" ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.html ./
-                    '''
-                } catch (Exception e) {
-                    currentBuild.result = 'UNSTABLE'
-                    echo "Tests failed but continuing to publish report: ${e.message}"
+                            '''
+                            sh '''
+                            echo "Copying report file using rsync..."
+                            rsync -avz -e "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY}" ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.html ./
+                            '''
+                        } catch (Exception e) {
+                            currentBuild.result = 'UNSTABLE'
+                            echo "Tests failed but continuing to publish report: ${e.message}"
+                        }
+                    }
                 }
             }
         }
-    }
-}
 
-stage('Publish Report') {
-    steps {
-        publishHTML(target: [
-            allowMissing: false,
-            alwaysLinkToLastBuild: true,
-            keepAll: true,
-            reportDir: '.',
-            reportFiles: 'report.html',
-            reportName: 'Test Report',
-            reportTitles: 'Test Report'
-        ])
-    }
-}
-
-
-
+        stage('Publish Report') {
+            steps {
+                publishHTML(target: [
+                    allowMissing: false,
+                    alwaysLinkToLastBuild: true,
+                    keepAll: true,
+                    reportDir: '.',
+                    reportFiles: 'report.html',
+                    reportName: 'Test Report',
+                    reportTitles: 'Test Report'
+                ])
+            }
+        }
+   
 
 //         stage('Configure Nginx') {
 //             steps {
