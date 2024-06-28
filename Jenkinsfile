@@ -76,23 +76,23 @@ pipeline {
             }
         }
 
-        stage('Build and Push Docker Image') {
-            steps {
-                script {
-                    docker.build("${DOCKER_IMAGE_WEB}:latest", "--build-arg REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL} .")
-                }
-            }
-        }
+        // stage('Build and Push Docker Image') {
+        //     steps {
+        //         script {
+        //             docker.build("${DOCKER_IMAGE_WEB}:latest", "--build-arg REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL} .")
+        //         }
+        //     }
+        // }
 
-        stage('Push Docker Image') {
-            steps {
-                script {
-                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
-                        docker.image("${DOCKER_IMAGE_WEB}:latest").push('latest')
-                    }
-                }
-            }
-        }
+        // stage('Push Docker Image') {
+        //     steps {
+        //         script {
+        //             docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
+        //                 docker.image("${DOCKER_IMAGE_WEB}:latest").push('latest')
+        //             }
+        //         }
+        //     }
+        // }
 
         stage('Deploy to Ubuntu') {
             steps {
@@ -170,72 +170,76 @@ EOF
             }
         }
 
-        stage('Running Tests') {
-            steps {
-                script {
-                    withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
-                        sh '''
-                        echo "Running tests on the remote AWS instance..."
+stage('Running Tests') {
+    steps {
+        script {
+            withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
+                sh '''
+                echo "Running tests on the remote AWS instance..."
 
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
-                            set -e
-                            cd /home/ubuntu/ecommerce-django-react/
+                ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                    set -e
+                    cd /home/ubuntu/ecommerce-django-react/
 
-                            echo "Creating virtual environment..."
-                            python3 -m venv venv
+                    echo "Ensuring python3 and pip are installed..."
+                    sudo apt-get update
+                    sudo apt-get install -y python3 python3-venv python3-pip
 
-                            echo "Activating virtual environment..."
-                            source venv/bin/activate
+                    echo "Creating virtual environment..."
+                    python3 -m venv venv
 
-                            echo "Installing requirements..."
-                            pip install -r requirements.txt
+                    echo "Activating virtual environment..."
+                    source venv/bin/activate
 
-                            echo "Installing pytest and pytest-html plugin..."
-                            pip install pytest pytest-html
+                    echo "Installing requirements..."
+                    pip install -r requirements.txt
 
-                            echo "Running tests..."
-                            pytest tests/api/ --junitxml=report.xml --html=report.html
+                    echo "Installing pytest and pytest-html plugin..."
+                    pip install pytest pytest-html
 
-                            echo "Checking if report.html was generated..."
-                            if [ -f report.html ]; then
-                                echo 'Report generated successfully'
-                            else
-                                echo 'Report not generated'
-                                exit 1
-                            fi
+                    echo "Running tests..."
+                    pytest tests/api/ --junitxml=report.xml --html=report.html
 
-                            echo "Ensuring permissions for report.html..."
-                            chmod 755 report.html
+                    echo "Checking if report.html was generated..."
+                    if [ -f report.html ]; then
+                        echo 'Report generated successfully'
+                    else
+                        echo 'Report not generated'
+                        exit 1
+                    fi
+
+                    echo "Ensuring permissions for report.html..."
+                    chmod 755 report.html
 EOF
-                        '''
-                    }
-                }
+                '''
+            }
+        }
+    }
+}
+
+stage('Publish Test Report') {
+    steps {
+        script {
+            withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
+                sh '''
+                echo "Copying test report back to Jenkins..."
+
+                scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.html ./
+                '''
             }
         }
 
-        stage('Publish Test Report') {
-            steps {
-                script {
-                    withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
-                        sh '''
-                        echo "Copying test report back to Jenkins..."
-
-                        scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.html ./
-                        '''
-                    }
-                }
-
-                publishHTML(target: [
-                    allowMissing: false,
-                    alwaysLinkToLastBuild: true,
-                    keepAll: true,
-                    reportDir: '.',
-                    reportFiles: 'report.html',
-                    reportName: 'Test Report',
-                    reportTitles: 'Test Report'
-                ])
-            }
-        }
+        publishHTML(target: [
+            allowMissing: false,
+            alwaysLinkToLastBuild: true,
+            keepAll: true,
+            reportDir: '.',
+            reportFiles: 'report.html',
+            reportName: 'Test Report',
+            reportTitles: 'Test Report'
+        ])
+    }
+}
 
 
 //         stage('Configure Nginx') {
