@@ -190,17 +190,25 @@ EOF
                             if ! pip show pytest > /dev/null 2>&1; then
                                 pip install pytest pytest-html
                             fi
-                            pytest tests/api/ --junitxml=/app/report.xml | tee /app/test_output.log || true
+                            pytest tests/api/ --junitxml=/app/report.xml --html=/app/report.html --self-contained-html | tee /app/test_output.log || true
                         "
 
                         # Verify files were generated
                         docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web ls -l /app
 
                         # Copy the generated reports back to the host
-                        docker cp web:/app/report.html ./report.html || true
-                        docker cp web:/app/report.xml ./report.xml || true
-                        docker cp web:/app/test_output.log ./test_output.log || true
+                        docker cp web:/app/report.html /home/ubuntu/ecommerce-django-react/report.html || true
+                        docker cp web:/app/report.xml /home/ubuntu/ecommerce-django-react/report.xml || true
+                        docker cp web:/app/test_output.log /home/ubuntu/ecommerce-django-react/test_output.log || true
+
+                        # List the contents of the directory to verify the reports are there
+                        ls -l /home/ubuntu/ecommerce-django-react
 EOF
+                        '''
+                        sh '''
+                        scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.html ./
+                        scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.xml ./
+                        scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/test_output.log ./
                         '''
                     }
                 }
