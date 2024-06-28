@@ -76,23 +76,23 @@ pipeline {
             }
         }
 
-        stage('Build and Push Docker Image') {
-            steps {
-                script {
-                    docker.build("${DOCKER_IMAGE_WEB}:latest", "--build-arg REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL} .")
-                }
-            }
-        }
+        // stage('Build and Push Docker Image') {
+        //     steps {
+        //         script {
+        //             docker.build("${DOCKER_IMAGE_WEB}:latest", "--build-arg REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL} .")
+        //         }
+        //     }
+        // }
 
-        stage('Push Docker Image') {
-            steps {
-                script {
-                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
-                        docker.image("${DOCKER_IMAGE_WEB}:latest").push('latest')
-                    }
-                }
-            }
-        }
+        // stage('Push Docker Image') {
+        //     steps {
+        //         script {
+        //             docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
+        //                 docker.image("${DOCKER_IMAGE_WEB}:latest").push('latest')
+        //             }
+        //         }
+        //     }
+        // }
 
         stage('Deploy to Ubuntu') {
             steps {
@@ -170,6 +170,7 @@ EOF
             }
         }
 
+    stages {
         stage('Running Tests') {
             steps {
                 script {
@@ -177,38 +178,38 @@ EOF
                         sh '''
                         echo "Running tests on the remote AWS instance..."
 
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
-                            set -e
-                            cd /home/ubuntu/ecommerce-django-react/
+                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
+set -e
+cd /home/ubuntu/ecommerce-django-react/
 
-                            echo "Setting permissions for ecommerce-django-react directory..."
-                            sudo chmod -R 777 /home/ubuntu/ecommerce-django-react
+echo "Setting permissions for ecommerce-django-react directory..."
+sudo chmod -R 777 /home/ubuntu/ecommerce-django-react
 
-                            echo "Running tests in Docker container..."
-                            docker-compose exec -T web sh -c "
-                                pytest tests/api/ --junitxml=/app/report.xml --html=/app/report.html --self-contained-html | tee /app/test_output.log
-                            "
+echo "Running tests in Docker container..."
+docker-compose exec -T web sh -c "
+    pytest tests/api/ --junitxml=/app/report.xml --html=/app/report.html --self-contained-html | tee /app/test_output.log
+"
 
-                            echo "Copying test reports to instance directory..."
-                            docker cp web:/app/report.html ./report.html || echo 'Failed to copy report.html'
-                            docker cp web:/app/report.xml ./report.xml || echo 'Failed to copy report.xml'
-                            docker cp web:/app/test_output.log ./test_output.log || echo 'Failed to copy test_output.log'
+echo "Copying test reports to instance directory..."
+docker cp web:/app/report.html ./report.html || echo 'Failed to copy report.html'
+docker cp web:/app/report.xml ./report.xml || echo 'Failed to copy report.xml'
+docker cp web:/app/test_output.log ./test_output.log || echo 'Failed to copy test_output.log'
 
-                            echo "Test execution completed. Checking for report.html..."
-                            ls -l report.html
-                            cat test_output.log
+echo "Test execution completed. Checking for report.html..."
+ls -l report.html
+cat test_output.log
 
-                            echo "Checking if report.html was generated..."
-                            if [ -f report.html ]; then
-                                echo 'Report generated successfully'
-                            else
-                                echo 'Report not generated'
-                                exit 1
-                            fi
+echo "Checking if report.html was generated..."
+if [ -f report.html ]; then
+    echo 'Report generated successfully'
+else
+    echo 'Report not generated'
+    exit 1
+fi
 
-                            echo "Ensuring permissions for report.html..."
-                            chmod 777 report.html
-                        EOF
+echo "Ensuring permissions for report.html..."
+chmod 777 report.html
+EOF
                         '''
                     }
                 }
