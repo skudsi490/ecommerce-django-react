@@ -241,6 +241,11 @@ EOL
                 # Rebuild library cache
                 sudo ldconfig -v
 
+                # Check the presence of the library and its permissions
+                ls -l /lib/x86_64-linux-gnu/libcrypt.so.1.1.0
+                ls -l /lib/x86_64-linux-gnu/libcrypt.so.1
+                ls -l /usr/lib/libcrypt.so.1
+
                 # Move and enable Nginx configuration
                 sudo mv /home/ubuntu/ecommerce-django-react/nginx.conf /etc/nginx/sites-available/ecommerce-django-react
                 sudo ln -sf /etc/nginx/sites-available/ecommerce-django-react /etc/nginx/sites-enabled/ecommerce-django-react
