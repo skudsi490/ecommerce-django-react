@@ -185,10 +185,10 @@ echo "Setting permissions for ecommerce-django-react directory..."
 sudo chmod -R 777 /home/ubuntu/ecommerce-django-react
 
 echo "Checking for pytest-html plugin..."
-docker-compose exec -T web pip show pytest-html || {
+if ! docker-compose exec -T web pip show pytest-html; then
     echo "pytest-html not found, installing..."
     docker-compose exec -T web pip install pytest-html
-}
+fi
 
 echo "Listing installed pytest-html plugin..."
 docker-compose exec -T web pip show pytest-html
@@ -218,13 +218,13 @@ set -e
 cd /home/ubuntu/ecommerce-django-react/
 
 echo "Copying report.html..."
-docker cp web:/app/report.html ./report.html || echo 'Failed to copy report.html'
+docker cp web:/app/report.html ./report.html || { echo 'Failed to copy report.html'; exit 1; }
 
 echo "Copying report.xml..."
-docker cp web:/app/report.xml ./report.xml || echo 'Failed to copy report.xml'
+docker cp web:/app/report.xml ./report.xml || { echo 'Failed to copy report.xml'; exit 1; }
 
 echo "Copying test_output.log..."
-docker cp web:/app/test_output.log ./test_output.log || echo 'Failed to copy test_output.log'
+docker cp web:/app/test_output.log ./test_output.log || { echo 'Failed to copy test_output.log'; exit 1; }
 
 echo "Listing copied files..."
 ls -l report.html report.xml test_output.log
