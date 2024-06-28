@@ -203,10 +203,7 @@ EOL
                 sudo apt-mark unhold libcrypt1 libcrypt-dev libssl-dev systemd-sysv libpam-runtime libpam-modules grub-efi-amd64-signed grub2-common mokutil
 
                 # Install necessary packages
-                sudo apt-get install -y libcrypt1 libcrypt-dev libssl-dev systemd-sysv libpam-runtime libpam-modules grub-efi-amd64-signed grub2-common mokutil
-
-                # Install Nginx
-                sudo apt-get install -y nginx
+                sudo apt-get install -y libcrypt1 libcrypt-dev libssl-dev systemd-sysv libpam-runtime libpam-modules grub-efi-amd64-signed grub2-common mokutil nginx
 
                 # Check File System Type
                 df -Th /usr /lib /lib/x86_64-linux-gnu
@@ -214,16 +211,19 @@ EOL
                 # Check Library Path and Permissions
                 sudo find / -iname "libcrypt.so*"
 
-                # Verify library architecture
-                file /usr/lib/libcrypt.so.1
-                file /lib/x86_64-linux-gnu/libcrypt.so.1
+                # Verify library architecture and fix symbolic links
+                file /usr/lib/libcrypt.so.1 || true
+                file /lib/x86_64-linux-gnu/libcrypt.so.1 || true
 
-                # Create symbolic link for libcrypt.so.1 if not exists
+                # Recreate symbolic links for libcrypt.so.1
+                sudo ln -sf /lib/x86_64-linux-gnu/libcrypt.so.1.1.0 /lib/x86_64-linux-gnu/libcrypt.so.1
                 sudo ln -sf /lib/x86_64-linux-gnu/libcrypt.so.1 /usr/lib/libcrypt.so.1
 
-                # Ensure the symbolic link has correct permissions
+                # Ensure the symbolic links have correct permissions
+                sudo chmod 755 /lib/x86_64-linux-gnu/libcrypt.so.1.1.0
                 sudo chmod 755 /lib/x86_64-linux-gnu/libcrypt.so.1
                 sudo chmod 755 /usr/lib/libcrypt.so.1
+                sudo chown root:root /lib/x86_64-linux-gnu/libcrypt.so.1.1.0
                 sudo chown root:root /lib/x86_64-linux-gnu/libcrypt.so.1
                 sudo chown root:root /usr/lib/libcrypt.so.1
 
