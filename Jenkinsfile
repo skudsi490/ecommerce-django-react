@@ -64,35 +64,35 @@ pipeline {
             }
         }
 
-        // stage('Test Docker Login') {
-        //     steps {
-        //         script {
-        //             retry(3) {
-        //                 withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-        //                     sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
+        stage('Test Docker Login') {
+            steps {
+                script {
+                    retry(3) {
+                        withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                            sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
+                        }
+                    }
+                }
+            }
+        }
 
-        // stage('Build and Push Docker Image') {
-        //     steps {
-        //         script {
-        //             docker.build("${DOCKER_IMAGE_WEB}:latest", "--build-arg REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL} .")
-        //         }
-        //     }
-        // }
+        stage('Build and Push Docker Image') {
+            steps {
+                script {
+                    docker.build("${DOCKER_IMAGE_WEB}:latest", "--build-arg REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL} .")
+                }
+            }
+        }
 
-        // stage('Push Docker Image') {
-        //     steps {
-        //         script {
-        //             docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
-        //                 docker.image("${DOCKER_IMAGE_WEB}:latest").push('latest')
-        //             }
-        //         }
-        //     }
-        // }
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
+                        docker.image("${DOCKER_IMAGE_WEB}:latest").push('latest')
+                    }
+                }
+            }
+        }
 
         stage('Deploy to Ubuntu') {
             steps {
