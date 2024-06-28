@@ -216,6 +216,8 @@ EOF
                     ])
                 }
             }
+        }
+
 //         stage('Configure Nginx') {
 //             steps {
 //                 script {
