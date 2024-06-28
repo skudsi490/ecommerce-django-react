@@ -183,52 +183,48 @@ stage('Run Tests in Docker') {
                 ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                 set -e
                 # Clean previous report files
-                sudo rm -rf /home/ubuntu/ecommerce-django-react/report.html /home/ubuntu/ecommerce-django-react/report.xml /home/ubuntu/ecommerce-django-react/test_output.log
+                sudo rm -rf /home/ubuntu/ecommerce-django-react/report.html
 
                 # Run tests inside the Docker container
                 docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web sh -c "
                     if ! pip show pytest > /dev/null 2>&1; then
                         pip install pytest pytest-html
                     fi
-                    pytest tests/api/ --junitxml=/app/report.xml | tee /app/test_output.log || true
+                    pytest --html=/app/report.html
                 "
 
-                # Verify files were generated
-                docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web ls -l /app
+                # Verify the report file was generated
+                docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web ls -l /app/report.html
 
-                # Copy the generated reports back to the host
+                # Copy the generated report back to the host
                 docker cp \$(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web):/app/report.html /home/ubuntu/ecommerce-django-react/report.html || true
-                docker cp \$(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web):/app/report.xml /home/ubuntu/ecommerce-django-react/report.xml || true
-                docker cp \$(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web):/app/test_output.log /home/ubuntu/ecommerce-django-react/test_output.log || true
 
-                # List the contents of the directory to verify the reports are there
+                # List the contents of the directory to verify the report is there
                 ls -l /home/ubuntu/ecommerce-django-react
 EOF
                 '''
                 sh '''
                 scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.html ./
-                scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.xml ./
-                scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/test_output.log ./
                 '''
             }
         }
     }
-    post {
-        always {
-            script {
-                publishHTML(target: [
-                    allowMissing: false,
-                    alwaysLinkToLastBuild: true,
-                    keepAll: true,
-                    reportDir: '.',
-                    reportFiles: 'report.html',
-                    reportName: 'Test Report',
-                    reportTitles: 'Test Report'
-                ])
-            }
-        }
+}
+
+stage('Publish Report') {
+    steps {
+        publishHTML(target: [
+            allowMissing: false,
+            alwaysLinkToLastBuild: true,
+            keepAll: true,
+            reportDir: '.',
+            reportFiles: 'report.html',
+            reportName: 'Test Report',
+            reportTitles: 'Test Report'
+        ])
     }
 }
+
 
 //         stage('Configure Nginx') {
 //             steps {
