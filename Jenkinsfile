@@ -76,23 +76,23 @@ pipeline {
             }
         }
 
-        // stage('Build and Push Docker Image') {
-        //     steps {
-        //         script {
-        //             docker.build("${DOCKER_IMAGE_WEB}:latest", "--build-arg REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL} .")
-        //         }
-        //     }
-        // }
+        stage('Build and Push Docker Image') {
+            steps {
+                script {
+                    docker.build("${DOCKER_IMAGE_WEB}:latest", "--build-arg REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL} .")
+                }
+            }
+        }
 
-        // stage('Push Docker Image') {
-        //     steps {
-        //         script {
-        //             docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
-        //                 docker.image("${DOCKER_IMAGE_WEB}:latest").push('latest')
-        //             }
-        //         }
-        //     }
-        // }
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
+                        docker.image("${DOCKER_IMAGE_WEB}:latest").push('latest')
+                    }
+                }
+            }
+        }
 
         stage('Deploy to Ubuntu') {
             steps {
@@ -188,8 +188,8 @@ stage('Running Tests') {
                     mkdir -p /home/ubuntu/ecommerce-django-react/tests/api
 
                     echo "Checking if test files exist in the Docker container..."
-                    docker-compose exec -T web ls /app/tests/api/test_products.py
-                    docker-compose exec -T web ls /app/tests/api/test_user.py
+                    docker-compose exec -T web ls /app/tests/api/test_products.py || { echo 'File test_products.py not found'; exit 1; }
+                    docker-compose exec -T web ls /app/tests/api/test_user.py || { echo 'File test_user.py not found'; exit 1; }
 
                     echo "Copying test files from Docker container to the instance..."
                     docker cp web:/app/tests/api/test_products.py ./tests/api/
@@ -255,6 +255,7 @@ stage('Publish Test Report') {
         ])
     }
 }
+
 
 //         stage('Configure Nginx') {
 //             steps {
