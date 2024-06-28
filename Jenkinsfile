@@ -212,10 +212,6 @@ EOL
                 sudo find / -iname "libcrypt.so*"
 
                 # Verify library architecture and fix symbolic links
-                file /usr/lib/libcrypt.so.1 || true
-                file /lib/x86_64-linux-gnu/libcrypt.so.1 || true
-
-                # Recreate symbolic links for libcrypt.so.1
                 sudo ln -sf /lib/x86_64-linux-gnu/libcrypt.so.1.1.0 /lib/x86_64-linux-gnu/libcrypt.so.1
                 sudo ln -sf /lib/x86_64-linux-gnu/libcrypt.so.1 /usr/lib/libcrypt.so.1
 
