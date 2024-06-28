@@ -170,7 +170,6 @@ EOF
             }
         }
 
-    stages {
         stage('Running Tests') {
             steps {
                 script {
@@ -244,6 +243,7 @@ EOF
                 ])
             }
         }
+
 
 //         stage('Configure Nginx') {
 //             steps {
