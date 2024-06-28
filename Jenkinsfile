@@ -188,8 +188,8 @@ stage('Running Tests') {
                     mkdir -p /home/ubuntu/ecommerce-django-react/tests/api
 
                     echo "Checking if test files exist in the Docker container..."
-                    docker-compose exec web ls /app/tests/api/test_products.py
-                    docker-compose exec web ls /app/tests/api/test_user.py
+                    docker-compose exec -T web ls /app/tests/api/test_products.py
+                    docker-compose exec -T web ls /app/tests/api/test_user.py
 
                     echo "Copying test files from Docker container to the instance..."
                     docker cp web:/app/tests/api/test_products.py ./tests/api/
@@ -255,7 +255,6 @@ stage('Publish Test Report') {
         ])
     }
 }
-
 
 //         stage('Configure Nginx') {
 //             steps {
