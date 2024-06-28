@@ -174,108 +174,29 @@ EOF
             steps {
                 script {
                     withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
-                sh '''
-                echo "Configuring Nginx on the server..."
-                scp -o StrictHostKeyChecking=no -i ${SSH_KEY} config/nginx.conf ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/nginx.conf
-                ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
-                set -e
+                        sh '''
+                        echo "Configuring Nginx on the server..."
+                        scp -o StrictHostKeyChecking=no -i ${SSH_KEY} config/nginx.conf ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/nginx.conf
+                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                        set -e
 
-                # Clean up /etc/apt/sources.list and /etc/apt/sources.list.d/
-                sudo cp /etc/apt/sources.list /etc/apt/sources.list.backup
-                sudo tee /etc/apt/sources.list <<EOL
-deb http://archive.ubuntu.com/ubuntu/ noble main restricted universe multiverse
-deb http://archive.ubuntu.com/ubuntu/ noble-updates main restricted universe multiverse
-deb http://archive.ubuntu.com/ubuntu/ noble-backports main restricted universe multiverse
-deb http://security.ubuntu.com/ubuntu/ noble-security main restricted universe multiverse
-EOL
-                sudo rm -rf /etc/apt/sources.list.d/* || true
+                        # Update and install Nginx
+                        sudo apt-get update
+                        sudo apt-get upgrade -y
+                        sudo apt-get install -y nginx
 
-                # Update and upgrade all packages
-                sudo apt-get update
-                sudo apt-get upgrade -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
-                sudo apt-get dist-upgrade -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
+                        # Move and enable Nginx configuration
+                        sudo mv /home/ubuntu/ecommerce-django-react/nginx.conf /etc/nginx/sites-available/ecommerce-django-react
+                        sudo ln -sf /etc/nginx/sites-available/ecommerce-django-react /etc/nginx/sites-enabled/ecommerce-django-react
 
-                # Fix broken packages
-                sudo apt-get --fix-broken install
-                sudo dpkg --configure -a
+                        echo "Testing Nginx configuration..."
+                        sudo nginx -t || (echo "Nginx configuration test failed" && exit 1)
 
-                # Unhold any held packages
-                sudo apt-mark unhold libcrypt1 libcrypt-dev libssl-dev systemd-sysv libpam-runtime libpam-modules grub-efi-amd64-signed grub2-common mokutil
+                        echo "Restarting Nginx..."
+                        sudo systemctl restart nginx
 
-                # Download necessary packages manually
-                wget http://archive.ubuntu.com/ubuntu/pool/main/l/libxcrypt/libcrypt1_4.4.36-4build1_amd64.deb
-                wget http://archive.ubuntu.com/ubuntu/pool/main/l/libxcrypt/libcrypt-dev_4.4.36-4build1_amd64.deb
-                wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl-dev_3.0.13-0ubuntu3.1_amd64.deb
-                wget http://archive.ubuntu.com/ubuntu/pool/main/s/systemd/systemd-sysv_255.4-1ubuntu8.1_amd64.deb
-                wget http://archive.ubuntu.com/ubuntu/pool/main/p/pam/libpam-runtime_1.5.3-5ubuntu5.1_all.deb
-                wget http://archive.ubuntu.com/ubuntu/pool/main/p/pam/libpam-modules_1.5.3-5ubuntu5.1_amd64.deb
-                wget http://archive.ubuntu.com/ubuntu/pool/main/g/grub2/grub-efi-amd64-signed_1.202+2.12-1ubuntu7_amd64.deb
-                wget http://archive.ubuntu.com/ubuntu/pool/main/g/grub2/grub2-common_2.12-1ubuntu7_amd64.deb
-                wget http://archive.ubuntu.com/ubuntu/pool/main/m/mokutil/mokutil_0.6.0-2build3_amd64.deb
-
-                # Install the downloaded packages
-                sudo dpkg -i libcrypt1_4.4.36-4build1_amd64.deb libcrypt-dev_4.4.36-4build1_amd64.deb libssl-dev_3.0.13-0ubuntu3.1_amd64.deb systemd-sysv_255.4-1ubuntu8.1_amd64.deb libpam-runtime_1.5.3-5ubuntu5.1_all.deb libpam-modules_1.5.3-5ubuntu5.1_amd64.deb grub-efi-amd64-signed_1.202+2.12-1ubuntu7_amd64.deb grub2-common_2.12-1ubuntu7_amd64.deb mokutil_0.6.0-2build3_amd64.deb
-
-                # Install Nginx
-                sudo apt-get install -y nginx
-
-                # Check File System Type
-                df -Th /usr /lib /lib/x86_64-linux-gnu
-
-                # Check Library Path and Permissions
-                sudo find / -iname "libcrypt.so*"
-
-                # Verify library architecture
-                file /usr/lib/libcrypt.so.1
-                file /lib/x86_64-linux-gnu/libcrypt.so.1
-
-                # Create symbolic link for libcrypt.so.1 if not exists
-                sudo ln -sf /lib/x86_64-linux-gnu/libcrypt.so.1 /usr/lib/libcrypt.so.1
-
-                # Ensure the symbolic link has correct permissions
-                sudo chmod 755 /lib/x86_64-linux-gnu/libcrypt.so.1
-                sudo chmod 755 /usr/lib/libcrypt.so.1
-                sudo chown root:root /lib/x86_64-linux-gnu/libcrypt.so.1
-                sudo chown root:root /usr/lib/libcrypt.so.1
-
-                # Clean up /etc/ld.so.conf and included files
-                sudo tee /etc/ld.so.conf <<EOL
-/lib/x86_64-linux-gnu
-/usr/lib
-EOL
-                sudo rm -f /etc/ld.so.conf.d/* || true
-
-                # Rebuild library cache
-                sudo ldconfig -v
-
-                # Move and enable Nginx configuration
-                sudo mv /home/ubuntu/ecommerce-django-react/nginx.conf /etc/nginx/sites-available/ecommerce-django-react
-                sudo ln -sf /etc/nginx/sites-available/ecommerce-django-react /etc/nginx/sites-enabled/ecommerce-django-react
-
-                echo "Testing Nginx configuration..."
-                sudo nginx -t || (echo "Nginx configuration test failed" && exit 1)
-
-                echo "Restarting Nginx..."
-                sudo systemctl restart nginx
-
-                # Ensure directory permissions
-                sudo chmod 755 /home
-                sudo chmod 755 /home/ubuntu
-                sudo chmod 755 /home/ubuntu/ecommerce-django-react
-                sudo chmod 755 /home/ubuntu/ecommerce-django-react/staticfiles
-
-                # Check SELinux and AppArmor status
-                sudo apparmor_status
-                sudo setenforce 0 || true
-
-                # Adjust AppArmor profile for Nginx
-                echo 'Creating AppArmor profile for Nginx...'
-                sudo touch /etc/apparmor.d/usr.sbin.nginx
-                echo -e '#include <tunables/global>\\n/usr/sbin/nginx {\\n  /home/ubuntu/ecommerce-django-react/staticfiles/** r,\\n}' | sudo tee /etc/apparmor.d/usr.sbin.nginx
-
-                sudo apparmor_parser -r /etc/apparmor.d/usr.sbin.nginx || true
-EOF
-                '''
+                        EOF
+                        '''
                     }
                 }
             }
