@@ -180,7 +180,7 @@ EOF
                                      sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
                         sh '''
                         echo "Running tests in Docker container..."
-                        ssh ${MY_UBUNTU_IP} << 'EOF'
+                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                         set -e
                         # Clean previous report files
                         sudo rm -rf /home/ubuntu/ecommerce-django-react/report.html /home/ubuntu/ecommerce-django-react/report.xml /home/ubuntu/ecommerce-django-react/test_output.log
@@ -197,12 +197,9 @@ EOF
                         docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web ls -l /app
 
                         # Copy the generated reports back to the host
-                        docker cp web:/app/report.html /home/ubuntu/ecommerce-django-react/report.html || true
-                        docker cp web:/app/report.xml /home/ubuntu/ecommerce-django-react/report.xml || true
-                        docker cp web:/app/test_output.log /home/ubuntu/ecommerce-django-react/test_output.log || true
-
-                        # List the contents of the directory to verify the reports are there
-                        ls -l /home/ubuntu/ecommerce-django-react
+                        docker cp \$(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web):/app/report.html /home/ubuntu/ecommerce-django-react/report.html || true
+                        docker cp \$(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web):/app/report.xml /home/ubuntu/ecommerce-django-react/report.xml || true
+                        docker cp \$(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web):/app/test_output.log /home/ubuntu/ecommerce-django-react/test_output.log || true
 EOF
                         '''
                         sh '''
