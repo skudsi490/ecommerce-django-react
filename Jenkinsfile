@@ -170,6 +170,7 @@ EOF
             }
         }
 
+     stages {
         stage('Running Tests') {
             steps {
                 script {
@@ -177,7 +178,7 @@ EOF
                         sh '''
                         echo "Running tests on the remote AWS instance..."
 
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
 set -e
 cd /home/ubuntu/ecommerce-django-react/
 
@@ -244,7 +245,6 @@ EOF
                 ])
             }
         }
-
 //         stage('Configure Nginx') {
 //             steps {
 //                 script {
