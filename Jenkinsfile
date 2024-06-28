@@ -173,56 +173,60 @@ EOF
         stage('Run Tests in Docker') {
             steps {
                 script {
-                    try {
-                        sh '''
-                        echo "Running tests in Docker container..."
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
-                        set -e
-                        # Clean previous report files
-                        sudo rm -rf /home/ubuntu/ecommerce-django-react/report.html
+                    withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                                     string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
+                                     sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
+                        try {
+                            sh '''
+                            echo "Running tests in Docker container..."
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                            set -e
+                            # Clean previous report files
+                            sudo rm -rf /home/ubuntu/ecommerce-django-react/report.html
 
-                        # Run tests inside the Docker container
-                        cd /home/ubuntu/ecommerce-django-react
-                        docker-compose -f docker-compose.yml exec -T web sh -c "
-                            if ! pip show pytest > /dev/null 2>&1; then
-                                pip install pytest pytest-html
-                            fi
-                            pytest --html=/app/report.html || true
-                        "
+                            # Run tests inside the Docker container
+                            cd /home/ubuntu/ecommerce-django-react
+                            docker-compose -f docker-compose.yml exec -T web sh -c "
+                                if ! pip show pytest > /dev/null 2>&1; then
+                                    pip install pytest pytest-html
+                                fi
+                                pytest --html=/app/report.html || true
+                            "
 
-                        # Verify the report file was generated inside the Docker container
-                        docker-compose -f docker-compose.yml exec -T web ls -l /app/report.html || exit 1
+                            # Verify the report file was generated inside the Docker container
+                            docker-compose -f docker-compose.yml exec -T web ls -l /app/report.html || exit 1
 
-                        # Debug: List files in Docker container
-                        echo "Listing files in /app directory in Docker container:"
-                        docker-compose -f docker-compose.yml exec -T web ls -l /app
+                            # Debug: List files in Docker container
+                            echo "Listing files in /app directory in Docker container:"
+                            docker-compose -f docker-compose.yml exec -T web ls -l /app
 
-                        # Copy the report from Docker container to the host (Ubuntu instance)
-                        container_id=$(docker-compose -f docker-compose.yml ps -q web)
-                        docker cp $container_id:/app/report.html /home/ubuntu/ecommerce-django-react/report.html || exit 1
+                            # Copy the report from Docker container to the host (Ubuntu instance)
+                            container_id=$(docker-compose -f docker-compose.yml ps -q web)
+                            docker cp $container_id:/app/report.html /home/ubuntu/ecommerce-django-react/report.html || exit 1
 
-                        # Debug: Verify file copy to host
-                        echo "Listing files in /home/ubuntu/ecommerce-django-react directory on host:"
-                        ls -l /home/ubuntu/ecommerce-django-react || exit 1
+                            # Debug: Verify file copy to host
+                            echo "Listing files in /home/ubuntu/ecommerce-django-react directory on host:"
+                            ls -l /home/ubuntu/ecommerce-django-react || exit 1
 
-                        # Set permissions to ensure the file is accessible
-                        sudo chmod 644 /home/ubuntu/ecommerce-django-react/report.html
+                            # Set permissions to ensure the file is accessible
+                            sudo chmod 644 /home/ubuntu/ecommerce-django-react/report.html
 
-                        # Verify the report file content and existence on the host (Ubuntu instance)
-                        echo "Content of report.html on Ubuntu instance:"
-                        cat /home/ubuntu/ecommerce-django-react/report.html || exit 1
+                            # Verify the report file content and existence on the host (Ubuntu instance)
+                            echo "Content of report.html on Ubuntu instance:"
+                            cat /home/ubuntu/ecommerce-django-react/report.html || exit 1
 EOF
-                        '''
-                        // Using cat command to transfer the file from Ubuntu instance to Jenkins
-                        sh '''
-                        echo "Transferring report file using cat..."
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} 'cat /home/ubuntu/ecommerce-django-react/report.html' > report.html
-                        echo "Content of report.html on Jenkins:"
-                        cat report.html
-                        '''
-                    } catch (Exception e) {
-                        currentBuild.result = 'UNSTABLE'
-                        echo "Tests failed but continuing to publish report: ${e.message}"
+                            '''
+                            // Using cat command to transfer the file from Ubuntu instance to Jenkins
+                            sh '''
+                            echo "Transferring report file using cat..."
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} 'cat /home/ubuntu/ecommerce-django-react/report.html' > report.html
+                            echo "Content of report.html on Jenkins:"
+                            cat report.html
+                            '''
+                        } catch (Exception e) {
+                            currentBuild.result = 'UNSTABLE'
+                            echo "Tests failed but continuing to publish report: ${e.message}"
+                        }
                     }
                 }
             }
@@ -241,6 +245,7 @@ EOF
                 ])
             }
         }
+
 
 
 //         stage('Configure Nginx') {
