@@ -117,11 +117,6 @@ pipeline {
                             sh '''
                             ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                                 set -e
-                                # Clean Docker environment
-                                docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml down --volumes
-                                docker system prune -af --volumes
-                                sudo rm -rf /home/ubuntu/ecommerce-django-react/report.html /home/ubuntu/ecommerce-django-react/report.xml /home/ubuntu/ecommerce-django-react/test_output.log
-                        
                                 echo "Checking disk space and directory permissions..."
                                 df -h
                                 sudo rm -rf /home/ubuntu/ecommerce-django-react/
@@ -187,23 +182,30 @@ EOF
                         echo "Running tests in Docker container..."
                         ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                         set -e
-                        sudo chmod -R 777 /home/ubuntu/ecommerce-django-react
+                        # Clean previous report files
+                        sudo rm -rf /home/ubuntu/ecommerce-django-react/report.html /home/ubuntu/ecommerce-django-react/report.xml /home/ubuntu/ecommerce-django-react/test_output.log
+
+                        # Run tests inside the Docker container
                         docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web sh -c "
                             if ! pip show pytest > /dev/null 2>&1; then
                                 pip install pytest pytest-html
                             fi
                             pytest tests/api/ --junitxml=/app/report.xml | tee /app/test_output.log
                         "
+
+                        # Verify files were generated
                         docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web ls -l /app
-                        docker cp web:/app/report.html /home/ubuntu/ecommerce-django-react/report.html
-                        docker cp web:/app/report.xml /home/ubuntu/ecommerce-django-react/report.xml
-                        docker cp web:/app/test_output.log /home/ubuntu/ecommerce-django-react/test_output.log
+
+                        # Copy the generated reports back to the host
+                        docker cp \$(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web):/app/report.html /home/ubuntu/ecommerce-django-react/report.html
+                        docker cp \$(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web):/app/report.xml /home/ubuntu/ecommerce-django-react/report.xml
+                        docker cp \$(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web):/app/test_output.log /home/ubuntu/ecommerce-django-react/test_output.log
 EOF
                         '''
                         sh '''
                         scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.html ./
                         scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.xml ./
-                        scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/test_output.log ./
+                        scp -o StrictHostKeyChecking-no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/test_output.log ./
                         '''
                     }
                 }
@@ -225,7 +227,6 @@ EOF
                 }
             }
         }
-
 //         stage('Configure Nginx') {
 //             steps {
 //                 script {
