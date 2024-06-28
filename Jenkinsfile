@@ -190,6 +190,11 @@ EOF
                             docker-compose exec -T web sh -c "
                                 pytest tests/api/ --junitxml=/app/report.xml --html=/app/report.html
                             "
+
+                            echo "Checking if report.html was generated..."
+                            docker-compose exec -T web sh -c "
+                                ls -l /app/report.html
+                            "
 EOF
                         '''
                     }
