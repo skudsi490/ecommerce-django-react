@@ -220,14 +220,16 @@ EOF
                             # Verify the report file content and existence on the host (Ubuntu instance)
                             echo "Content of report.html on Ubuntu instance:"
                             cat /home/ubuntu/ecommerce-django-react/report.html || exit 1
-
-                            # Copy the report to Jenkins workspace
+EOF
+                            '''
+                            // Copy the report to Jenkins workspace
+                            sh '''
+                            echo "Copying report from Ubuntu instance to Jenkins agent..."
                             scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.html report.html || exit 1
 
-                            # Debug: Verify file copy to Jenkins workspace
-                            echo "Listing files in Jenkins workspace directory:"
-                            ls -l || exit 1
-EOF
+                            # Debug: Verify file copy to Jenkins agent workspace
+                            echo "Listing files in Jenkins agent workspace directory:"
+                            ls -l report.html || exit 1
                             '''
                         } catch (Exception e) {
                             currentBuild.result = 'UNSTABLE'
@@ -250,6 +252,13 @@ EOF
                     }
                     echo "Report file 'report.html' exists and has content."
                 }
+            }
+        }
+
+        stage('Copy Report to Master') {
+            steps {
+                // Archive the report.html file to make it available on the Jenkins master
+                archiveArtifacts artifacts: 'report.html', allowEmptyArchive: false
             }
         }
 
