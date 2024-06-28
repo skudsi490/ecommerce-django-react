@@ -236,6 +236,7 @@ stage('Running Tests') {
     }
 }
 
+
 stage('Publish Test Report') {
     steps {
         script {
@@ -244,6 +245,11 @@ stage('Publish Test Report') {
                 echo "Copying test report back to Jenkins..."
 
                 scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.html ./
+
+                if [ ! -f report.html ]; then
+                    echo "Report file not found in Jenkins workspace"
+                    exit 1
+                fi
                 '''
             }
         }
@@ -259,6 +265,7 @@ stage('Publish Test Report') {
         ])
     }
 }
+
 
 
 
