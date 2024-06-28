@@ -202,27 +202,8 @@ EOL
                 # Unhold any held packages
                 sudo apt-mark unhold libcrypt1 libcrypt-dev libssl-dev systemd-sysv libpam-runtime libpam-modules grub-efi-amd64-signed grub2-common mokutil
 
-                # Define an array of package names
-                packages=(
-                    "libcrypt1"
-                    "libcrypt-dev"
-                    "libssl-dev"
-                    "systemd-sysv"
-                    "libpam-runtime"
-                    "libpam-modules"
-                    "grub-efi-amd64-signed"
-                    "grub2-common"
-                    "mokutil"
-                )
-
-                # Download necessary packages manually
-                for package in "${packages[@]}"; do
-                    url=$(apt-cache madison $package | head -1 | awk '{print $3}')
-                    wget "http://archive.ubuntu.com/ubuntu/pool/main/${package:0:1}/$package/$package_$url.deb" || { echo "Failed to download $package"; exit 1; }
-                done
-
-                # Install the downloaded packages
-                sudo dpkg -i *.deb
+                # Install necessary packages
+                sudo apt-get install -y libcrypt1 libcrypt-dev libssl-dev systemd-sysv libpam-runtime libpam-modules grub-efi-amd64-signed grub2-common mokutil
 
                 # Install Nginx
                 sudo apt-get install -y nginx
