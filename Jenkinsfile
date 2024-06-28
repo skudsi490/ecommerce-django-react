@@ -16,6 +16,8 @@ pipeline {
         POSTGRES_PASSWORD = 'ecommercedbpassword'
         POSTGRES_HOST = 'db'
         REACT_APP_BACKEND_URL = 'http://35.159.115.123:8000'
+        DOCKER_IMAGE = 'ecommerce-test-image'
+        CONTAINER_NAME = 'ecommerce-test-container'
     }
 
     stages {
@@ -170,48 +172,32 @@ EOF
             }
         }
 
-        stage('Running Tests') {
+        stage('Run Tests in Docker') {
             steps {
                 script {
-                    withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
-                        sh '''
-                        echo "Running tests on the remote AWS instance..."
+                    sh '''
+                    echo "Building Docker image..."
+                    docker build -t ${DOCKER_IMAGE} -f Dockerfile .
 
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
-set -e
-cd /home/ubuntu/ecommerce-django-react/
+                    echo "Running tests in Docker container..."
+                    docker run --name ${CONTAINER_NAME} -d ${DOCKER_IMAGE}
 
-echo "Setting permissions for ecommerce-django-react directory..."
-sudo chmod -R 777 /home/ubuntu/ecommerce-django-react
+                    docker exec ${CONTAINER_NAME} sh -c "
+                        pytest tests/api/ --junitxml=/app/report.xml --html=/app/report.html --self-contained-html | tee /app/test_output.log
+                    "
 
-echo "Creating virtual environment..."
-docker-compose exec -T web python3 -m venv /app/venv
+                    echo "Copying test reports from Docker container to Jenkins workspace..."
+                    docker cp ${CONTAINER_NAME}:/app/report.html ./report.html
+                    docker cp ${CONTAINER_NAME}:/app/report.xml ./report.xml
+                    docker cp ${CONTAINER_NAME}:/app/test_output.log ./test_output.log
 
-echo "Activating virtual environment and installing dependencies..."
-docker-compose exec -T web /app/venv/bin/pip install -r requirements.txt
-docker-compose exec -T web /app/venv/bin/pip install pytest-html
+                    echo "Listing copied files..."
+                    ls -l report.html report.xml test_output.log
 
-echo "Running tests in Docker container..."
-docker-compose exec -T web sh -c "/app/venv/bin/pytest tests/api/ --junitxml=/app/report.xml --html=/app/report.html --self-contained-html | tee /app/test_output.log"
-
-echo "Listing files in /app directory..."
-docker-compose exec -T web ls -l /app
-
-echo "Copying report.html..."
-docker cp web:/app/report.html ./report.html || { echo 'Failed to copy report.html'; exit 1; }
-
-echo "Copying report.xml..."
-docker cp web:/app/report.xml ./report.xml || { echo 'Failed to copy report.xml'; exit 1; }
-
-echo "Copying test_output.log..."
-docker cp web:/app/test_output.log ./test_output.log || { echo 'Failed to copy test_output.log'; exit 1; }
-
-echo "Listing copied files..."
-ls -l report.html report.xml test_output.log
-
-EOF
-                        '''
-                    }
+                    echo "Stopping and removing Docker container..."
+                    docker stop ${CONTAINER_NAME}
+                    docker rm ${CONTAINER_NAME}
+                    '''
                 }
             }
         }
@@ -219,31 +205,17 @@ EOF
         stage('Publish Test Report') {
             steps {
                 script {
-                    withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
-                        sh '''
-                        echo "Copying test report back to Jenkins..."
-
-                        scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.html ./
-
-                        if [ ! -f report.html ]; then
-                            echo "Report file not found in Jenkins workspace"
-                            exit 1
-                        fi
-                        '''
-                    }
+                    publishHTML(target: [
+                        allowMissing: false,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: '.',
+                        reportFiles: 'report.html',
+                        reportName: 'Test Report',
+                        reportTitles: 'Test Report'
+                    ])
                 }
-
-                publishHTML(target: [
-                    allowMissing: false,
-                    alwaysLinkToLastBuild: true,
-                    keepAll: true,
-                    reportDir: '.',
-                    reportFiles: 'report.html',
-                    reportName: 'Test Report',
-                    reportTitles: 'Test Report'
-                ])
             }
-        }
 //         stage('Configure Nginx') {
 //             steps {
 //                 script {
