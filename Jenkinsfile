@@ -187,7 +187,7 @@ EOF
                             if ! pip show pytest > /dev/null 2>&1; then
                                 pip install pytest
                             fi
-                            pytest tests/api/ --junitxml=/app/report.xml | tee /app/test_output.log
+                            pytest --html-report=/app/report.html | tee /app/test_output.log
                         "
                         docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web ls -l /app
                         docker cp web:/app/report.html ./report.html
