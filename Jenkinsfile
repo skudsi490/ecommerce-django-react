@@ -196,9 +196,17 @@ stage('Run Tests in Docker') {
                     # Verify the report file was generated inside the Docker container
                     docker-compose -f docker-compose.yml exec -T web ls -l /app/report.html
 
+                    # Debug: List files in Docker container
+                    echo "Listing files in /app directory in Docker container:"
+                    docker-compose -f docker-compose.yml exec -T web ls -l /app
+
                     # Copy the report from Docker container to the host (Ubuntu instance)
                     container_id=$(docker-compose -f docker-compose.yml ps -q web)
                     docker cp $container_id:/app/report.html /home/ubuntu/ecommerce-django-react/report.html
+
+                    # Debug: Verify file copy to host
+                    echo "Listing files in /home/ubuntu/ecommerce-django-react directory on host:"
+                    ls -l /home/ubuntu/ecommerce-django-react
 
                     # Set permissions to ensure the file is accessible
                     sudo chmod 644 /home/ubuntu/ecommerce-django-react/report.html
@@ -237,6 +245,7 @@ stage('Publish Report') {
         ])
     }
 }
+
 
 
 //         stage('Configure Nginx') {
