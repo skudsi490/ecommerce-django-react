@@ -181,9 +181,9 @@ stage('Running Tests') {
                     set -e
                     cd /home/ubuntu/ecommerce-django-react/
 
-                    echo "Ensuring python3, pip, and libpq-dev are installed..."
+                    echo "Ensuring python3, pip, and required libraries are installed..."
                     sudo apt-get update
-                    sudo apt-get install -y python3 python3-venv python3-pip libpq-dev
+                    sudo apt-get install -y python3 python3-venv python3-pip libpq-dev libjpeg-dev zlib1g-dev
 
                     echo "Creating virtual environment..."
                     python3 -m venv venv
