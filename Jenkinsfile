@@ -174,34 +174,40 @@ EOF
             steps {
                 script {
                     withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
-                    sh '''
-                    echo "Running tests on the remote AWS instance..."
+                        sh '''
+                        echo "Running tests on the remote AWS instance..."
 
-                    ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
-                        set -e
-                        cd /home/ubuntu/ecommerce-django-react/
+                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                            set -e
+                            cd /home/ubuntu/ecommerce-django-react/
 
-                        echo "Installing pytest-html plugin..."
-                        docker-compose exec -T web sh -c "
-                            pip install pytest-html
-                        "
+                            echo "Creating virtual environment..."
+                            python3 -m venv venv
 
-                        echo "Running tests inside the Docker container..."
-                        docker-compose exec -T web sh -c "
-                            pytest tests/api/ --junitxml=/app/report.xml --html=/app/report.html
-                        "
+                            echo "Activating virtual environment..."
+                            source venv/bin/activate
 
-                        echo "Checking if report.html was generated..."
-                        docker-compose exec -T web sh -c "
-                            ls -l /app/
-                        "
+                            echo "Installing requirements..."
+                            pip install -r requirements.txt
 
-                        echo "Ensuring permissions for report.html..."
-                        docker-compose exec -T web sh -c "
-                            chmod 755 /app/report.html
-                        "
+                            echo "Installing pytest and pytest-html plugin..."
+                            pip install pytest pytest-html
+
+                            echo "Running tests..."
+                            pytest tests/api/ --junitxml=report.xml --html=report.html
+
+                            echo "Checking if report.html was generated..."
+                            if [ -f report.html ]; then
+                                echo 'Report generated successfully'
+                            else
+                                echo 'Report not generated'
+                                exit 1
+                            fi
+
+                            echo "Ensuring permissions for report.html..."
+                            chmod 755 report.html
 EOF
-                    '''
+                        '''
                     }
                 }
             }
@@ -230,6 +236,7 @@ EOF
                 ])
             }
         }
+
 
 //         stage('Configure Nginx') {
 //             steps {
