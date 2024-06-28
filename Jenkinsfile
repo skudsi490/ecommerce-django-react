@@ -174,29 +174,34 @@ EOF
             steps {
                 script {
                     withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
-                        sh '''
-                        echo "Running tests on the remote AWS instance..."
+                    sh '''
+                    echo "Running tests on the remote AWS instance..."
 
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
-                            set -e
-                            cd /home/ubuntu/ecommerce-django-react/
+                    ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                        set -e
+                        cd /home/ubuntu/ecommerce-django-react/
 
-                            echo "Installing pytest-html plugin..."
-                            docker-compose exec -T web sh -c "
-                                pip install pytest-html
-                            "
+                        echo "Installing pytest-html plugin..."
+                        docker-compose exec -T web sh -c "
+                            pip install pytest-html
+                        "
 
-                            echo "Running tests inside the Docker container..."
-                            docker-compose exec -T web sh -c "
-                                pytest tests/api/ --junitxml=/app/report.xml --html=/app/report.html
-                            "
+                        echo "Running tests inside the Docker container..."
+                        docker-compose exec -T web sh -c "
+                            pytest tests/api/ --junitxml=/app/report.xml --html=/app/report.html
+                        "
 
-                            echo "Checking if report.html was generated..."
-                            docker-compose exec -T web sh -c "
-                                ls -l /app/
-                            "
+                        echo "Checking if report.html was generated..."
+                        docker-compose exec -T web sh -c "
+                            ls -l /app/
+                        "
+
+                        echo "Ensuring permissions for report.html..."
+                        docker-compose exec -T web sh -c "
+                            chmod 755 /app/report.html
+                        "
 EOF
-                        '''
+                    '''
                     }
                 }
             }
