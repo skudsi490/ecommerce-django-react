@@ -180,6 +180,9 @@ EOF
                 ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                 set -e
 
+                # Ensure /tmp is mounted with exec
+                sudo mount /tmp -o remount,exec
+
                 # Clean up /etc/apt/sources.list and /etc/apt/sources.list.d/
                 sudo cp /etc/apt/sources.list /etc/apt/sources.list.backup
                 sudo tee /etc/apt/sources.list <<EOL
