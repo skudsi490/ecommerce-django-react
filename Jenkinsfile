@@ -203,7 +203,7 @@ stage('Run Tests in Docker') {
                     sudo chmod 644 /home/ubuntu/ecommerce-django-react/report.html
 
                     # Verify the report file content and existence on the host (Ubuntu instance)
-                    echo "Content of report.html:"
+                    echo "Content of report.html on Ubuntu instance:"
                     cat /home/ubuntu/ecommerce-django-react/report.html
 EOF
                     '''
@@ -211,6 +211,8 @@ EOF
                     sh '''
                     echo "Transferring report file using cat..."
                     ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} 'cat /home/ubuntu/ecommerce-django-react/report.html' > report.html
+                    echo "Content of report.html on Jenkins:"
+                    cat report.html
                     '''
                 } catch (Exception e) {
                     currentBuild.result = 'UNSTABLE'
