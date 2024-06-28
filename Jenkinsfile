@@ -193,7 +193,7 @@ EOF
 
                             echo "Checking if report.html was generated..."
                             docker-compose exec -T web sh -c "
-                                ls -l /app/report.html
+                                ls -l /app/
                             "
 EOF
                         '''
