@@ -78,23 +78,23 @@ pipeline {
             }
         }
 
-        stage('Build and Push Docker Image') {
-            steps {
-                script {
-                    docker.build("${DOCKER_IMAGE_WEB}:latest", "--build-arg REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL} .")
-                }
-            }
-        }
+        // stage('Build and Push Docker Image') {
+        //     steps {
+        //         script {
+        //             docker.build("${DOCKER_IMAGE_WEB}:latest", "--build-arg REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL} .")
+        //         }
+        //     }
+        // }
 
-        stage('Push Docker Image') {
-            steps {
-                script {
-                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
-                        docker.image("${DOCKER_IMAGE_WEB}:latest").push('latest')
-                    }
-                }
-            }
-        }
+        // stage('Push Docker Image') {
+        //     steps {
+        //         script {
+        //             docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
+        //                 docker.image("${DOCKER_IMAGE_WEB}:latest").push('latest')
+        //             }
+        //         }
+        //     }
+        // }
 
         stage('Deploy to Ubuntu') {
             steps {
@@ -175,22 +175,27 @@ EOF
         stage('Run Tests in Docker') {
             steps {
                 script {
-                    sh '''
-                    echo "Running tests in Docker container..."
-                    ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
-                    set -e
-                    docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web sh -c "
-                        pytest tests/api/ --junitxml=/app/report.xml --html=/app/report.html --self-contained-html | tee /app/test_output.log
-                    "
-                    docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web ls -l /app
-                    docker cp web:/app/report.html ./report.html
-                    docker cp web:/app/report.xml ./report.xml
-                    docker cp web:/app/test_output.log ./test_output.log
+                    withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                                    string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
+                                    sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
+                        sh '''
+                        echo "Running tests in Docker container..."
+                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                        set -e
+                        docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web sh -c "
+                            pytest tests/api/ --junitxml=/app/report.xml --html=/app/report.html --self-contained-html | tee /app/test_output.log
+                        "
+                        docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web ls -l /app
+                        docker cp web:/app/report.html ./report.html
+                        docker cp web:/app/report.xml ./report.xml
+                        docker cp web:/app/test_output.log ./test_output.log
 EOF
-                    '''
+                        '''
+                    }
                 }
             }
         }
+
 
         stage('Publish Test Report') {
             steps {
