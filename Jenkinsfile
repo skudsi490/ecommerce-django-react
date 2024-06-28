@@ -172,17 +172,24 @@ EOF
             }
         }
 
-         stage('Run Tests in Docker') {
+        stage('Clean Environment and Run Tests in Docker') {
             steps {
                 script {
                     withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
                                      string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
                                      sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
                         sh '''
-                        echo "Running tests in Docker container..."
+                        echo "Cleaning environment and running tests in Docker container..."
                         ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                         set -e
+                        # Clean Docker environment
+                        docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml down --volumes
+                        docker system prune -af --volumes
+                        sudo rm -rf /home/ubuntu/ecommerce-django-react/report.html /home/ubuntu/ecommerce-django-react/report.xml /home/ubuntu/ecommerce-django-react/test_output.log
+                        
+                        # Run tests in Docker container
                         sudo chmod -R 777 /home/ubuntu/ecommerce-django-react
+                        docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml up -d
                         docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web sh -c "
                             if ! pip show pytest > /dev/null 2>&1; then
                                 pip install pytest pytest-html
@@ -190,9 +197,9 @@ EOF
                             pytest tests/api/ --junitxml=/app/report.xml | tee /app/test_output.log
                         "
                         docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web ls -l /app
-                        docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web sh -c "docker cp /app/report.html /home/ubuntu/ecommerce-django-react/report.html"
-                        docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web sh -c "docker cp /app/report.xml /home/ubuntu/ecommerce-django-react/report.xml"
-                        docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web sh -c "docker cp /app/test_output.log /home/ubuntu/ecommerce-django-react/test_output.log"
+                        docker cp web:/app/report.html /home/ubuntu/ecommerce-django-react/report.html
+                        docker cp web:/app/report.xml /home/ubuntu/ecommerce-django-react/report.xml
+                        docker cp web:/app/test_output.log /home/ubuntu/ecommerce-django-react/test_output.log
 EOF
                         '''
                         sh '''
