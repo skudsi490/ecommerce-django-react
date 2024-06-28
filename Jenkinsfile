@@ -117,6 +117,11 @@ pipeline {
                             sh '''
                             ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                                 set -e
+                                # Clean Docker environment
+                                docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml down --volumes
+                                docker system prune -af --volumes
+                                sudo rm -rf /home/ubuntu/ecommerce-django-react/report.html /home/ubuntu/ecommerce-django-react/report.xml /home/ubuntu/ecommerce-django-react/test_output.log
+                        
                                 echo "Checking disk space and directory permissions..."
                                 df -h
                                 sudo rm -rf /home/ubuntu/ecommerce-django-react/
@@ -220,7 +225,6 @@ EOF
                 }
             }
         }
-
 
 //         stage('Configure Nginx') {
 //             steps {
