@@ -182,7 +182,7 @@ stage('Running Tests') {
                     cd /home/ubuntu/ecommerce-django-react/
 
                     echo "Setting permissions for ecommerce-django-react directory..."
-                    sudo chmod -R 755 /home/ubuntu/ecommerce-django-react
+                    sudo chmod -R 777 /home/ubuntu/ecommerce-django-react
 
                     echo "Copying test files from Docker container to the instance..."
                     docker cp web:/app/tests ./tests
@@ -216,7 +216,7 @@ stage('Running Tests') {
                     fi
 
                     echo "Ensuring permissions for report.html..."
-                    chmod 755 report.html
+                    chmod 777 report.html
 EOF
                 '''
             }
@@ -247,6 +247,7 @@ stage('Publish Test Report') {
         ])
     }
 }
+
 
 //         stage('Configure Nginx') {
 //             steps {
