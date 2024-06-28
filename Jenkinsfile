@@ -213,7 +213,11 @@ stage('Running Tests') {
                     pip install pytest pytest-html
 
                     echo "Running tests..."
-                    pytest tests/api/ --junitxml=report.xml --html=report.html
+                    pytest tests/api/ --junitxml=report.xml --html=report.html | tee test_output.log
+
+                    echo "Test execution completed. Checking for report.html..."
+                    ls -l report.html
+                    cat test_output.log
 
                     echo "Checking if report.html was generated..."
                     if [ -f report.html ]; then
