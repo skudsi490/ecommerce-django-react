@@ -15,7 +15,7 @@ pipeline {
         POSTGRES_USER = 'ecommerceuser'
         POSTGRES_PASSWORD = 'ecommercedbpassword'
         POSTGRES_HOST = 'db'
-        REACT_APP_BACKEND_URL = 'http://18.184.123.252:8000'
+        REACT_APP_BACKEND_URL = 'http://35.159.115.123:8000'
     }
 
     stages {
@@ -176,12 +176,25 @@ EOF
                     withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
                 sh '''
                 echo "Configuring Nginx on the server..."
-                scp -o StrictHostKeyChecking=no -i ${SSH_KEY} config/nginx.conf ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/nginx.conf
+                scp -o StrictHostKeyChecking=no -i ${SSH_KEY} config/nginx.conf ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/nginx.conf
                 ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                 set -e
 
+                # Ensure /tmp is mounted with exec
+                sudo mount -o remount,exec /tmp
+
+                # Update and upgrade packages
+                sudo apt-get update
+                sudo apt-get upgrade -y
+                sudo apt-get dist-upgrade -y
+                sudo apt-get --fix-broken install
+                sudo dpkg --configure -a
+
+                # Install necessary packages
+                sudo apt-get install -y nginx
+
                 # Move and enable Nginx configuration
-                sudo mv /home/ubuntu/ecommerce-django-react/nginx.conf /etc/nginx/sites-available/ecommerce-django-react
+                sudo mv /home/ubuntu/nginx.conf /etc/nginx/sites-available/ecommerce-django-react
                 sudo ln -sf /etc/nginx/sites-available/ecommerce-django-react /etc/nginx/sites-enabled/ecommerce-django-react
 
                 echo "Testing Nginx configuration..."
@@ -189,6 +202,17 @@ EOF
 
                 echo "Restarting Nginx..."
                 sudo systemctl restart nginx
+
+                # Ensure directory permissions
+                sudo chmod 755 /home/ubuntu
+                sudo chmod 755 /home/ubuntu/ecommerce-django-react
+                sudo chmod 755 /home/ubuntu/ecommerce-django-react/staticfiles
+
+                # Adjust AppArmor profile for Nginx
+                sudo touch /etc/apparmor.d/usr.sbin.nginx
+                echo -e '#include <tunables/global>\n/usr/sbin/nginx {\n  /home/ubuntu/ecommerce-django-react/staticfiles/** r,\n}' | sudo tee /etc/apparmor.d/usr.sbin.nginx
+
+                sudo apparmor_parser -r /etc/apparmor.d/usr.sbin.nginx || true
 EOF
                 '''
                     }

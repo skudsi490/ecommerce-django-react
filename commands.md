@@ -22,7 +22,7 @@ cd /home/ubuntu/ecommerce-django-react
 ls -la media/images
 
 
-ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ec2-user@18.199.96.170
+ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ec2-user@3.76.30.59
 ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ec2-user@18.195.65.211
 
 ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.70.96.244
@@ -97,7 +97,7 @@ docker push skudsi/ecommerce-django-react-backend:latest
 
 
 git add .
-git commit -m "Update configuration v111"
+git commit -m "Update configuration v112"
 git push origin main
 
 Please dont use StrictHostKeyChecking-no and use StrictHostKeyChecking=no instead
