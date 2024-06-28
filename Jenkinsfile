@@ -15,7 +15,7 @@ pipeline {
         POSTGRES_USER = 'ecommerceuser'
         POSTGRES_PASSWORD = 'ecommercedbpassword'
         POSTGRES_HOST = 'db'
-        REACT_APP_BACKEND_URL = 'http://3.70.96.244:8000'
+        REACT_APP_BACKEND_URL = 'http://3.67.176.12:8000'
     }
 
     stages {
@@ -180,6 +180,72 @@ EOF
                 ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                 set -e
 
+                # Ensure /tmp is mounted with exec
+                if ! mountpoint -q /tmp; then
+                    echo "/tmp is not mounted, mounting /tmp..."
+                    sudo mount -t tmpfs tmpfs /tmp
+                fi
+
+                sudo mount -o remount,exec /tmp
+
+                # Clean up /etc/apt/sources.list and /etc/apt/sources.list.d/
+                sudo cp /etc/apt/sources.list /etc/apt/sources.list.backup
+                sudo tee /etc/apt/sources.list <<EOL
+deb http://archive.ubuntu.com/ubuntu/ noble main restricted universe multiverse
+deb http://archive.ubuntu.com/ubuntu/ noble-updates main restricted universe multiverse
+deb http://archive.ubuntu.com/ubuntu/ noble-backports main restricted universe multiverse
+deb http://security.ubuntu.com/ubuntu/ noble-security main restricted universe multiverse
+EOL
+                sudo rm -rf /etc/apt/sources.list.d/* || true
+
+                # Update and upgrade all packages
+                sudo apt-get update
+                sudo apt-get upgrade -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
+                sudo apt-get dist-upgrade -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
+
+                # Fix broken packages
+                sudo apt-get --fix-broken install
+                sudo dpkg --configure -a
+
+                # Unhold any held packages
+                sudo apt-mark unhold libcrypt1 libcrypt-dev libssl-dev systemd-sysv libpam-runtime libpam-modules grub-efi-amd64-signed grub2-common mokutil
+
+                # Install necessary packages
+                sudo apt-get install -y libcrypt1 libcrypt-dev libssl-dev systemd-sysv libpam-runtime libpam-modules grub-efi-amd64-signed grub2-common mokutil nginx
+
+                # Check File System Type
+                df -Th /usr /lib /lib/x86_64-linux-gnu
+
+                # Check Library Path and Permissions
+                sudo find / -iname "libcrypt.so*"
+
+                # Verify library architecture and fix symbolic links
+                sudo ln -sf /lib/x86_64-linux-gnu/libcrypt.so.1.1.0 /lib/x86_64-linux-gnu/libcrypt.so.1
+                sudo ln -sf /lib/x86_64-linux-gnu/libcrypt.so.1 /usr/lib/libcrypt.so.1
+
+                # Ensure the symbolic links have correct permissions
+                sudo chmod 755 /lib/x86_64-linux-gnu/libcrypt.so.1.1.0
+                sudo chmod 755 /lib/x86_64-linux-gnu/libcrypt.so.1
+                sudo chmod 755 /usr/lib/libcrypt.so.1
+                sudo chown root:root /lib/x86_64-linux-gnu/libcrypt.so.1.1.0
+                sudo chown root:root /lib/x86_64-linux-gnu/libcrypt.so.1
+                sudo chown root:root /usr/lib/libcrypt.so.1
+
+                # Clean up /etc/ld.so.conf and included files
+                sudo tee /etc/ld.so.conf <<EOL
+/lib/x86_64-linux-gnu
+/usr/lib
+EOL
+                sudo rm -f /etc/ld.so.conf.d/* || true
+
+                # Rebuild library cache
+                sudo ldconfig -v
+
+                # Check the presence of the library and its permissions
+                ls -l /lib/x86_64-linux-gnu/libcrypt.so.1.1.0
+                ls -l /lib/x86_64-linux-gnu/libcrypt.so.1
+                ls -l /usr/lib/libcrypt.so.1
+
                 # Move and enable Nginx configuration
                 sudo mv /home/ubuntu/ecommerce-django-react/nginx.conf /etc/nginx/sites-available/ecommerce-django-react
                 sudo ln -sf /etc/nginx/sites-available/ecommerce-django-react /etc/nginx/sites-enabled/ecommerce-django-react
@@ -189,6 +255,23 @@ EOF
 
                 echo "Restarting Nginx..."
                 sudo systemctl restart nginx
+
+                # Ensure directory permissions
+                sudo chmod 755 /home
+                sudo chmod 755 /home/ubuntu
+                sudo chmod 755 /home/ubuntu/ecommerce-django-react
+                sudo chmod 755 /home/ubuntu/ecommerce-django-react/staticfiles
+
+                # Check SELinux and AppArmor status
+                sudo apparmor_status
+                sudo setenforce 0 || true
+
+                # Adjust AppArmor profile for Nginx
+                echo 'Creating AppArmor profile for Nginx...'
+                sudo touch /etc/apparmor.d/usr.sbin.nginx
+                echo -e '#include <tunables/global>\\n/usr/sbin/nginx {\\n  /home/ubuntu/ecommerce-django-react/staticfiles/** r,\\n}' | sudo tee /etc/apparmor.d/usr.sbin.nginx
+
+                sudo apparmor_parser -r /etc/apparmor.d/usr.sbin.nginx || true
 EOF
                 '''
                     }
