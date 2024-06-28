@@ -46,6 +46,7 @@ COPY ./media/ /app/media/
 COPY ./pytest.ini /app/
 COPY ./entrypoint.sh /app/  
 COPY ./base/migrations/ /app/base/migrations/
+COPY ./tests /app/tests
 
 # Copy the frontend build files
 COPY --from=build /app/build /app/frontend/build
