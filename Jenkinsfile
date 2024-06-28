@@ -192,20 +192,24 @@ stage('Run Tests in Docker') {
                         pytest --html=/app/report.html || true
                     "
 
-                    # Verify the report file was generated
+                    # Verify the report file was generated inside the Docker container
                     docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web ls -l /app/report.html
 
-                    # Copy the generated report back to a known location on the host
+                    # Copy the report from Docker container to the host (Ubuntu instance)
                     docker cp \$(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web):/app/report.html /home/ubuntu/ecommerce-django-react/report.html
 
                     # Set permissions to ensure the file is accessible
                     sudo chmod 644 /home/ubuntu/ecommerce-django-react/report.html
+
+                    # Verify the report file content and existence on the host (Ubuntu instance)
+                    echo "Content of report.html:"
+                    cat /home/ubuntu/ecommerce-django-react/report.html
 EOF
                     '''
-                    // Using scp command to transfer the file
+                    // Using cat command to transfer the file from Ubuntu instance to Jenkins
                     sh '''
-                    echo "Transferring report file using scp..."
-                    scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.html report.html
+                    echo "Transferring report file using cat..."
+                    ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} 'cat /home/ubuntu/ecommerce-django-react/report.html' > report.html
                     '''
                 } catch (Exception e) {
                     currentBuild.result = 'UNSTABLE'
@@ -229,6 +233,7 @@ stage('Publish Report') {
         ])
     }
 }
+
 
 
 
