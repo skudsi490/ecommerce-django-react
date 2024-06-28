@@ -25,7 +25,7 @@ ls -la media/images
 ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ec2-user@54.93.103.30
 ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ec2-user@18.195.65.211
 
-ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.76.217.10
+ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.70.96.244
 ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@18.184.167.254
 ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.79.240.158
 
@@ -79,7 +79,7 @@ npm start
 
 
 git add Jenkinsfile
-git commit -m "Update Jenkinsfile 252"
+git commit -m "Update Jenkinsfile 253"
 git push origin main
 
 sudo cat /var/log/user-data.log

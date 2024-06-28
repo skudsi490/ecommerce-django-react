@@ -170,27 +170,28 @@ EOF
             }
         }
 
-    stage('Configure Nginx') {
-        steps {
-            script {
-                withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
-                    sh '''
-                    echo "Configuring Nginx on the server..."
-                    scp -o StrictHostKeyChecking=no -i ${SSH_KEY} config/nginx.conf ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/nginx.conf
-                    ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
-                    set -e
+        stage('Configure Nginx') {
+            steps {
+                script {
+                    withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
+                sh '''
+                echo "Configuring Nginx on the server..."
+                scp -o StrictHostKeyChecking=no -i ${SSH_KEY} config/nginx.conf ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/nginx.conf
+                ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                set -e
 
-                    # Move and enable Nginx configuration
-                    sudo mv /home/ubuntu/ecommerce-django-react/nginx.conf /etc/nginx/sites-available/ecommerce-django-react
-                    sudo ln -sf /etc/nginx/sites-available/ecommerce-django-react /etc/nginx/sites-enabled/ecommerce-django-react
+                # Move and enable Nginx configuration
+                sudo mv /home/ubuntu/ecommerce-django-react/nginx.conf /etc/nginx/sites-available/ecommerce-django-react
+                sudo ln -sf /etc/nginx/sites-available/ecommerce-django-react /etc/nginx/sites-enabled/ecommerce-django-react
 
-                    echo "Testing Nginx configuration..."
-                    sudo nginx -t || (echo "Nginx configuration test failed" && exit 1)
+                echo "Testing Nginx configuration..."
+                sudo nginx -t || (echo "Nginx configuration test failed" && exit 1)
 
-                    echo "Restarting Nginx..."
-                    sudo systemctl restart nginx
+                echo "Restarting Nginx..."
+                sudo systemctl restart nginx
 EOF
-                    '''
+                '''
+                    }
                 }
             }
         }
