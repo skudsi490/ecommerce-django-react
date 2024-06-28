@@ -205,7 +205,8 @@ stage('Run Tests in Docker') {
 EOF
                     '''
                     sh '''
-                    scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.html ./
+                    echo "Copying report file using rsync..."
+                    rsync -avz -e "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY}" ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.html ./
                     '''
                 } catch (Exception e) {
                     currentBuild.result = 'UNSTABLE'
@@ -229,6 +230,7 @@ stage('Publish Report') {
         ])
     }
 }
+
 
 
 
