@@ -180,7 +180,7 @@ EOF
                                      sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
                         sh '''
                         echo "Running tests in Docker container..."
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                        ssh ${MY_UBUNTU_IP} << 'EOF'
                         set -e
                         # Clean previous report files
                         sudo rm -rf /home/ubuntu/ecommerce-django-react/report.html /home/ubuntu/ecommerce-django-react/report.xml /home/ubuntu/ecommerce-django-react/test_output.log
@@ -190,7 +190,7 @@ EOF
                             if ! pip show pytest > /dev/null 2>&1; then
                                 pip install pytest pytest-html
                             fi
-                            pytest tests/api/ --junitxml=/app/report.xml --html=/app/report.html --self-contained-html | tee /app/test_output.log || true
+                            pytest tests/api/ --junitxml=/app/report.xml | tee /app/test_output.log || true
                         "
 
                         # Verify files were generated
@@ -206,9 +206,9 @@ EOF
 EOF
                         '''
                         sh '''
-                        scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.html ./
-                        scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.xml ./
-                        scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/test_output.log ./
+                        scp ${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.html ./
+                        scp ${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.xml ./
+                        scp ${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/test_output.log ./
                         '''
                     }
                 }
