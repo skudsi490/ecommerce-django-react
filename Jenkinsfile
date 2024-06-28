@@ -247,8 +247,6 @@ EOF
                 ])
             }
         }
-    }
-}
 
 //         stage('Configure Nginx') {
 //             steps {
