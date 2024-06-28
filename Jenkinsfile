@@ -265,17 +265,6 @@ EOF
             }
         }
 
-                publishHTML(target: [
-                    allowMissing: false,
-                    alwaysLinkToLastBuild: true,
-                    keepAll: true,
-                    reportDir: '.',
-                    reportFiles: 'report.html',
-                    reportName: 'Test Report',
-                    reportTitles: 'Test Report'
-                ])
-            }
-        }
 //         stage('Configure Nginx') {
 //             steps {
 //                 script {
