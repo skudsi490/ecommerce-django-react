@@ -202,22 +202,23 @@ EOL
                 # Unhold any held packages
                 sudo apt-mark unhold libcrypt1 libcrypt-dev libssl-dev systemd-sysv libpam-runtime libpam-modules grub-efi-amd64-signed grub2-common mokutil
 
-                # Define an array of packages
+                # Define an array of package names
                 packages=(
-                    "http://archive.ubuntu.com/ubuntu/pool/main/l/libxcrypt/libcrypt1_4.4.36-4build1_amd64.deb"
-                    "http://archive.ubuntu.com/ubuntu/pool/main/l/libxcrypt/libcrypt-dev_4.4.36-4build1_amd64.deb"
-                    "http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl-dev_3.0.13-0ubuntu3.1_amd64.deb"
-                    "http://archive.ubuntu.com/ubuntu/pool/main/s/systemd/systemd-sysv_255.4-1ubuntu8.1_amd64.deb"
-                    "http://archive.ubuntu.com/ubuntu/pool/main/p/pam/libpam-runtime_1.5.3-5ubuntu5.1_all.deb"
-                    "http://archive.ubuntu.com/ubuntu/pool/main/p/pam/libpam-modules_1.5.3-5ubuntu5.1_amd64.deb"
-                    "http://archive.ubuntu.com/ubuntu/pool/main/g/grub2/grub-efi-amd64-signed_1.202+2.12-1ubuntu7_amd64.deb"
-                    "http://archive.ubuntu.com/ubuntu/pool/main/g/grub2/grub2-common_2.12-1ubuntu7_amd64.deb"
-                    "http://archive.ubuntu.com/ubuntu/pool/main/m/mokutil/mokutil_0.6.0-2build3_amd64.deb"
+                    "libcrypt1"
+                    "libcrypt-dev"
+                    "libssl-dev"
+                    "systemd-sysv"
+                    "libpam-runtime"
+                    "libpam-modules"
+                    "grub-efi-amd64-signed"
+                    "grub2-common"
+                    "mokutil"
                 )
 
                 # Download necessary packages manually
                 for package in "${packages[@]}"; do
-                    wget $package || { echo "Failed to download $package"; exit 1; }
+                    url=$(apt-cache madison $package | head -1 | awk '{print $3}')
+                    wget "http://archive.ubuntu.com/ubuntu/pool/main/${package:0:1}/$package/$package_$url.deb" || { echo "Failed to download $package"; exit 1; }
                 done
 
                 # Install the downloaded packages
