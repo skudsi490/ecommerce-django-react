@@ -202,10 +202,10 @@ stage('Run Tests in Docker') {
                     sudo chmod 644 /home/ubuntu/ecommerce-django-react/report.html
 EOF
                     '''
-                    // Using cat command to transfer the file
+                    // Using scp command to transfer the file
                     sh '''
-                    echo "Transferring report file using cat..."
-                    ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} 'cat /home/ubuntu/ecommerce-django-react/report.html' > report.html
+                    echo "Transferring report file using scp..."
+                    scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.html report.html
                     '''
                 } catch (Exception e) {
                     currentBuild.result = 'UNSTABLE'
