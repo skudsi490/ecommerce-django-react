@@ -186,7 +186,7 @@ sudo chmod -R 777 /home/ubuntu/ecommerce-django-react
 
 echo "Running tests in Docker container..."
 docker-compose exec -T web sh -c "
-    pytest tests/api/ --junitxml=/app/report.xml --html=/app/report.html --self-contained-html | tee /app/test_output.log
+    pytest tests/api/ --junitxml=/app/report.xml --html=/app/report.html | tee /app/test_output.log
 "
 
 echo "Copying test reports to instance directory..."
@@ -243,7 +243,6 @@ EOF
                 ])
             }
         }
-
 
 //         stage('Configure Nginx') {
 //             steps {
