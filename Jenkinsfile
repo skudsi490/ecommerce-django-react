@@ -210,7 +210,10 @@ EOF
                             cat /home/ubuntu/ecommerce-django-react/report.html
 
                             # Upload the report to S3
+                            echo "Uploading report to S3..."
                             aws s3 cp /home/ubuntu/ecommerce-django-react/report.html s3://${S3_BUCKET}/reports/report.html
+                            echo "Upload complete. Verifying the upload..."
+                            aws s3 ls s3://${S3_BUCKET}/reports/
 EOF
                             '''
                         } catch (Exception e) {
