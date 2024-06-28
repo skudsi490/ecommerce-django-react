@@ -170,7 +170,6 @@ EOF
             }
         }
 
-     stages {
         stage('Running Tests') {
             steps {
                 script {
