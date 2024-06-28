@@ -177,11 +177,20 @@ EOF
                                      string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
                                      sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
                         try {
+                            def terraformState = readFile 'terraform.tfstate'
+                            def ubuntuIp = sh(script: "jq -r '.resources[] | select(.type==\"aws_instance\" and .name==\"my_ubuntu\").instances[0].attributes.public_ip' terraform.tfstate", returnStdout: true).trim()
+                            
+                            if (ubuntuIp) {
+                                env.MY_UBUNTU_IP = ubuntuIp
+                            } else {
+                                error("Failed to retrieve Ubuntu IP from Terraform state.")
+                            }
+                            
                             sh '''
                             echo "Running tests in Jenkins workspace..."
                             ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                             set -e
-                            # Run tests and generate report in Jenkins workspace
+                            # Run tests and generate report in Docker container
                             cd /home/ubuntu/ecommerce-django-react
                             docker-compose -f docker-compose.yml exec -T web sh -c "
                                 if ! pip show pytest > /dev/null 2>&1; then
@@ -190,9 +199,30 @@ EOF
                                 pytest --html=/app/report.html || true
                             "
 
-                            # Copy the report to Jenkins workspace
+                            # Verify the report file was generated inside the Docker container
+                            docker-compose -f docker-compose.yml exec -T web ls -l /app/report.html || exit 1
+
+                            # Debug: List files in Docker container
+                            echo "Listing files in /app directory in Docker container:"
+                            docker-compose -f docker-compose.yml exec -T web ls -l /app
+
+                            # Copy the report from Docker container to the host (Ubuntu instance)
                             container_id=$(docker-compose -f docker-compose.yml ps -q web)
-                            docker cp $container_id:/app/report.html report.html || exit 1
+                            docker cp $container_id:/app/report.html /home/ubuntu/ecommerce-django-react/report.html || exit 1
+
+                            # Debug: Verify file copy to host
+                            echo "Listing files in /home/ubuntu/ecommerce-django-react directory on host:"
+                            ls -l /home/ubuntu/ecommerce-django-react || exit 1
+
+                            # Set permissions to ensure the file is accessible
+                            sudo chmod 644 /home/ubuntu/ecommerce-django-react/report.html
+
+                            # Verify the report file content and existence on the host (Ubuntu instance)
+                            echo "Content of report.html on Ubuntu instance:"
+                            cat /home/ubuntu/ecommerce-django-react/report.html || exit 1
+
+                            # Copy the report to Jenkins workspace
+                            scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.html report.html || exit 1
 
                             # Debug: Verify file copy to Jenkins workspace
                             echo "Listing files in Jenkins workspace directory:"
