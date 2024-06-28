@@ -39,6 +39,8 @@ services:
       - ./media:/app/media
       - ./staticfiles:/app/staticfiles
       - ./data_dump.json:/tmp/data_dump.json
+      - ./tests:/app/tests            
+      - ./pytest.ini:/app/pytest.ini
     depends_on:
       - db
     ports:

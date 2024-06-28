@@ -170,52 +170,51 @@ EOF
             }
         }
 
-        stage('Running Tests') {
-            steps {
-                script {
-                    withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
-                        sh '''
-                        echo "Running tests on the remote AWS instance..."
+stage('Running Tests') {
+    steps {
+        script {
+            withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
+                sh '''
+                echo "Running tests on the remote AWS instance..."
 
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
-                            set -e
-                            cd /home/ubuntu/ecommerce-django-react/
+                ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                    set -e
+                    cd /home/ubuntu/ecommerce-django-react/
 
-                            echo "Running tests inside the Docker container..."
-                            docker-compose exec web sh -c "
-                                pytest tests/api/ --junitxml=/app/report.xml --html=/app/report.html
-                            "
+                    echo "Running tests inside the Docker container..."
+                    docker-compose exec -T web sh -c "
+                        pytest tests/api/ --junitxml=/app/report.xml --html=/app/report.html
+                    "
 EOF
-                        '''
-                    }
-                }
+                '''
+            }
+        }
+    }
+}
+
+stage('Publish Test Report') {
+    steps {
+        script {
+            withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
+                sh '''
+                echo "Copying test report back to Jenkins..."
+
+                scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.html ./
+                '''
             }
         }
 
-        stage('Publish Test Report') {
-            steps {
-                script {
-                    withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
-                        sh '''
-                        echo "Copying test report back to Jenkins..."
-
-                        scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.html ./
-                        '''
-                    }
-                }
-
-                publishHTML(target: [
-                    allowMissing: false,
-                    alwaysLinkToLastBuild: true,
-                    keepAll: true,
-                    reportDir: '.',
-                    reportFiles: 'report.html',
-                    reportName: 'Test Report',
-                    reportTitles: 'Test Report'
-                ])
-            }
-        }
-
+        publishHTML(target: [
+            allowMissing: false,
+            alwaysLinkToLastBuild: true,
+            keepAll: true,
+            reportDir: '.',
+            reportFiles: 'report.html',
+            reportName: 'Test Report',
+            reportTitles: 'Test Report'
+        ])
+    }
+}
 
 //         stage('Configure Nginx') {
 //             steps {
