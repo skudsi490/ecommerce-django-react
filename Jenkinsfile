@@ -184,8 +184,21 @@ cd /home/ubuntu/ecommerce-django-react/
 echo "Setting permissions for ecommerce-django-react directory..."
 sudo chmod -R 777 /home/ubuntu/ecommerce-django-react
 
+echo "Checking for pytest-html plugin..."
+docker-compose exec -T web pip show pytest-html || {
+    echo "pytest-html not found, installing..."
+    docker-compose exec -T web pip install pytest-html
+}
+
+echo "Listing installed pytest-html plugin..."
+docker-compose exec -T web pip show pytest-html
+
 echo "Running tests in Docker container..."
 docker-compose exec -T web sh -c "pytest tests/api/ --junitxml=/app/report.xml --html=/app/report.html --self-contained-html | tee /app/test_output.log"
+
+echo "Listing files in /app directory..."
+docker-compose exec -T web ls -l /app
+
 EOF
                         '''
                     }
@@ -252,6 +265,19 @@ EOF
             }
         }
 
+                publishHTML(target: [
+                    allowMissing: false,
+                    alwaysLinkToLastBuild: true,
+                    keepAll: true,
+                    reportDir: '.',
+                    reportFiles: 'report.html',
+                    reportName: 'Test Report',
+                    reportTitles: 'Test Report'
+                ])
+            }
+        }
+    }
+}
 //         stage('Configure Nginx') {
 //             steps {
 //                 script {
