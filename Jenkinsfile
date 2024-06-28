@@ -172,7 +172,7 @@ EOF
             }
         }
 
-        stage('Run Tests in Docker') {
+         stage('Run Tests in Docker') {
             steps {
                 script {
                     withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
@@ -187,7 +187,7 @@ EOF
                             if ! pip show pytest > /dev/null 2>&1; then
                                 pip install pytest pytest-html
                             fi
-                            pytest tests/api/ --junitxml=/app/report.xml --html=/app/report.html --self-contained-html | tee /app/test_output.log
+                            pytest tests/api/ --junitxml=/app/report.xml | tee /app/test_output.log
                         "
                         docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web ls -l /app
                         docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web sh -c "docker cp /app/report.html /home/ubuntu/ecommerce-django-react/report.html"
