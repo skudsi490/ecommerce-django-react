@@ -188,10 +188,10 @@ EOF
                             
                             sh '''
                             echo "Running tests in Jenkins workspace..."
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ec2-user@${MY_UBUNTU_IP} << 'EOF'
                             set -e
                             # Run tests and generate report in Docker container
-                            cd /home/ubuntu/ecommerce-django-react
+                            cd /home/ec2-user/ecommerce-django-react
                             docker-compose -f docker-compose.yml exec -T web sh -c "
                                 if ! pip show pytest > /dev/null 2>&1; then
                                     pip install pytest pytest-html
@@ -206,26 +206,26 @@ EOF
                             echo "Listing files in /app directory in Docker container:"
                             docker-compose -f docker-compose.yml exec -T web ls -l /app
 
-                            # Copy the report from Docker container to the host (Ubuntu instance)
+                            # Copy the report from Docker container to the host (Amazon Linux instance)
                             container_id=$(docker-compose -f docker-compose.yml ps -q web)
-                            docker cp $container_id:/app/report.html /home/ubuntu/ecommerce-django-react/report.html || exit 1
+                            docker cp $container_id:/app/report.html /home/ec2-user/ecommerce-django-react/report.html || exit 1
 
                             # Debug: Verify file copy to host
-                            echo "Listing files in /home/ubuntu/ecommerce-django-react directory on host:"
-                            ls -l /home/ubuntu/ecommerce-django-react || exit 1
+                            echo "Listing files in /home/ec2-user/ecommerce-django-react directory on host:"
+                            ls -l /home/ec2-user/ecommerce-django-react || exit 1
 
                             # Set permissions to ensure the file is accessible
-                            sudo chmod 644 /home/ubuntu/ecommerce-django-react/report.html
+                            sudo chmod 644 /home/ec2-user/ecommerce-django-react/report.html
 
-                            # Verify the report file content and existence on the host (Ubuntu instance)
-                            echo "Content of report.html on Ubuntu instance:"
-                            cat /home/ubuntu/ecommerce-django-react/report.html || exit 1
+                            # Verify the report file content and existence on the host (Amazon Linux instance)
+                            echo "Content of report.html on Amazon Linux instance:"
+                            cat /home/ec2-user/ecommerce-django-react/report.html || exit 1
 EOF
                             '''
                             // Copy the report to Jenkins workspace
                             sh '''
-                            echo "Copying report from Ubuntu instance to Jenkins agent..."
-                            scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.html report.html || exit 1
+                            echo "Copying report from Amazon Linux instance to Jenkins agent..."
+                            scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ec2-user@${MY_UBUNTU_IP}:/home/ec2-user/ecommerce-django-react/report.html report.html || exit 1
 
                             # Debug: Verify file copy to Jenkins agent workspace
                             echo "Listing files in Jenkins agent workspace directory:"
