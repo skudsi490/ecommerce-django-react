@@ -114,6 +114,7 @@ Configure the New Node:
 Provide necessary details like the node name, remote root directory, number of executors, and labels (docker).
 Launch Method:
 
+
 Choose the appropriate launch method (e.g., Launch agent via SSH or Launch agent via Java Web Start).
 
 

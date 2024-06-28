@@ -202,11 +202,21 @@ EOL
                 # Unhold any held packages
                 sudo apt-mark unhold libcrypt1 libcrypt-dev libssl-dev systemd-sysv libpam-runtime libpam-modules grub-efi-amd64-signed grub2-common mokutil
 
-                # Manually install dependencies
-                sudo apt-get install -y libcrypt1 libcrypt-dev libssl-dev systemd-sysv libpam-runtime libpam-modules grub-efi-amd64-signed grub2-common mokutil --allow-downgrades --allow-remove-essential --allow-change-held-packages
+                # Download necessary packages manually
+                wget http://archive.ubuntu.com/ubuntu/pool/main/l/libxcrypt/libcrypt1_4.4.36-4build1_amd64.deb
+                wget http://archive.ubuntu.com/ubuntu/pool/main/l/libxcrypt/libcrypt-dev_4.4.36-4build1_amd64.deb
+                wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl-dev_3.0.13-0ubuntu3.1_amd64.deb
+                wget http://archive.ubuntu.com/ubuntu/pool/main/s/systemd/systemd-sysv_255.4-1ubuntu8.1_amd64.deb
+                wget http://archive.ubuntu.com/ubuntu/pool/main/p/pam/libpam-runtime_1.5.3-5ubuntu5.1_all.deb
+                wget http://archive.ubuntu.com/ubuntu/pool/main/p/pam/libpam-modules_1.5.3-5ubuntu5.1_amd64.deb
+                wget http://archive.ubuntu.com/ubuntu/pool/main/g/grub2/grub-efi-amd64-signed_1.202+2.12-1ubuntu7_amd64.deb
+                wget http://archive.ubuntu.com/ubuntu/pool/main/g/grub2/grub2-common_2.12-1ubuntu7_amd64.deb
+                wget http://archive.ubuntu.com/ubuntu/pool/main/m/mokutil/mokutil_0.6.0-2build3_amd64.deb
 
-                # Remove and reinstall necessary libraries and Nginx
-                sudo apt-get remove --purge -y nginx libcrypt1 libcrypt-dev libssl-dev
+                # Install the downloaded packages
+                sudo dpkg -i libcrypt1_4.4.36-4build1_amd64.deb libcrypt-dev_4.4.36-4build1_amd64.deb libssl-dev_3.0.13-0ubuntu3.1_amd64.deb systemd-sysv_255.4-1ubuntu8.1_amd64.deb libpam-runtime_1.5.3-5ubuntu5.1_all.deb libpam-modules_1.5.3-5ubuntu5.1_amd64.deb grub-efi-amd64-signed_1.202+2.12-1ubuntu7_amd64.deb grub2-common_2.12-1ubuntu7_amd64.deb mokutil_0.6.0-2build3_amd64.deb
+
+                # Install Nginx
                 sudo apt-get install -y nginx
 
                 # Check File System Type
