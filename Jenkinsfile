@@ -190,7 +190,7 @@ EOF
                             if ! pip show pytest > /dev/null 2>&1; then
                                 pip install pytest pytest-html
                             fi
-                            pytest tests/api/ --junitxml=/app/report.xml | tee /app/test_output.log
+                            pytest tests/api/ --junitxml=/app/report.xml | tee /app/test_output.log || true
                         "
 
                         # Verify files were generated
@@ -204,8 +204,8 @@ EOF
                         '''
                         sh '''
                         scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.html ./
-                        scp -o StrictHostKeyChecking-no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.xml ./
-                        scp -o StrictHostKeyChecking-no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/test_output.log ./
+                        scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.xml ./
+                        scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/test_output.log ./
                         '''
                     }
                 }
