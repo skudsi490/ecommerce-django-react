@@ -197,6 +197,9 @@ stage('Run Tests in Docker') {
 
                     # Copy the generated report back to a known location on the host
                     docker cp \$(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web):/app/report.html /home/ubuntu/ecommerce-django-react/report.html
+
+                    # Set permissions to ensure the file is accessible
+                    sudo chmod 644 /home/ubuntu/ecommerce-django-react/report.html
 EOF
                     '''
                     // Using cat command to transfer the file
@@ -226,6 +229,7 @@ stage('Publish Report') {
         ])
     }
 }
+
 
 
 
