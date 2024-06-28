@@ -223,6 +223,19 @@ EOF
     }
 }
 
+stage('Verify Report on Ubuntu') {
+    steps {
+        script {
+            withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
+                sh '''
+                echo "Verifying report.html on Ubuntu instance..."
+                ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} 'ls -l /home/ubuntu/ecommerce-django-react/report.html'
+                ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} 'cat /home/ubuntu/ecommerce-django-react/report.html'
+                '''
+            }
+        }
+    }
+}
 
 stage('Publish Report') {
     steps {
