@@ -185,8 +185,9 @@ EOF
                     echo "Running tests in Docker container..."
                     docker run --name ${CONTAINER_NAME} -d ${DOCKER_IMAGE}
 
+                    echo "Executing tests..."
                     docker exec ${CONTAINER_NAME} sh -c "
-                        pytest tests/api/ --junitxml=/app/report.xml --html-report=/app/report.html --self-contained-html | tee /app/test_output.log
+                        pytest tests/api/ --junitxml=/app/report.xml --html=/app/report.html --self-contained-html | tee /app/test_output.log
                     "
 
                     echo "Copying test reports from Docker container to Jenkins workspace..."
