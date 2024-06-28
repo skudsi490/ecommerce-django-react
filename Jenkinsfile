@@ -196,6 +196,24 @@ docker-compose exec -T web pip show pytest-html
 echo "Running tests in Docker container..."
 docker-compose exec -T web sh -c "pytest tests/api/ --junitxml=/app/report.xml --html=/app/report.html --self-contained-html | tee /app/test_output.log"
 
+EOF
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('List Test Output') {
+            steps {
+                script {
+                    withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
+                        sh '''
+                        echo "Listing test output files in Docker container..."
+
+                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+set -e
+cd /home/ubuntu/ecommerce-django-react/
+
 echo "Listing files in /app directory..."
 docker-compose exec -T web ls -l /app
 
