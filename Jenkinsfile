@@ -188,7 +188,7 @@ deb http://archive.ubuntu.com/ubuntu/ noble-updates main restricted universe mul
 deb http://archive.ubuntu.com/ubuntu/ noble-backports main restricted universe multiverse
 deb http://security.ubuntu.com/ubuntu/ noble-security main restricted universe multiverse
 EOL
-                sudo rm -rf /etc/apt/sources.list.d/* 2>/dev/null || true
+                sudo rm -rf /etc/apt/sources.list.d/* || true
 
                 # Update and upgrade all packages
                 sudo apt-get update
@@ -202,9 +202,11 @@ EOL
                 # Unhold any held packages
                 sudo apt-mark unhold libcrypt1 libcrypt-dev libssl-dev systemd-sysv libpam-runtime libpam-modules grub-efi-amd64-signed grub2-common mokutil
 
+                # Manually install dependencies
+                sudo apt-get install -y libcrypt1 libcrypt-dev libssl-dev systemd-sysv libpam-runtime libpam-modules grub-efi-amd64-signed grub2-common mokutil --allow-downgrades --allow-remove-essential --allow-change-held-packages
+
                 # Remove and reinstall necessary libraries and Nginx
                 sudo apt-get remove --purge -y nginx libcrypt1 libcrypt-dev libssl-dev
-                sudo apt-get install -y libcrypt1 libcrypt-dev libssl-dev systemd-sysv libpam-runtime libpam-modules grub-efi-amd64-signed grub2-common mokutil
                 sudo apt-get install -y nginx
 
                 # Check File System Type
@@ -231,7 +233,7 @@ EOL
 /lib/x86_64-linux-gnu
 /usr/lib
 EOL
-                sudo rm -f /etc/ld.so.conf.d/* 2>/dev/null || true
+                sudo rm -f /etc/ld.so.conf.d/* || true
 
                 # Rebuild library cache
                 sudo ldconfig -v
@@ -254,14 +256,14 @@ EOL
 
                 # Check SELinux and AppArmor status
                 sudo apparmor_status
-                sudo setenforce 0
+                sudo setenforce 0 || true
 
                 # Adjust AppArmor profile for Nginx
                 echo 'Creating AppArmor profile for Nginx...'
                 sudo touch /etc/apparmor.d/usr.sbin.nginx
                 echo -e '#include <tunables/global>\\n/usr/sbin/nginx {\\n  /home/ubuntu/ecommerce-django-react/staticfiles/** r,\\n}' | sudo tee /etc/apparmor.d/usr.sbin.nginx
 
-                sudo apparmor_parser -r /etc/apparmor.d/usr.sbin.nginx
+                sudo apparmor_parser -r /etc/apparmor.d/usr.sbin.nginx || true
 EOF
                 '''
                     }
