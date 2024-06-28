@@ -185,7 +185,8 @@ stage('Run Tests in Docker') {
                     sudo rm -rf /home/ubuntu/ecommerce-django-react/report.html
 
                     # Run tests inside the Docker container
-                    docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web sh -c "
+                    cd /home/ubuntu/ecommerce-django-react
+                    docker-compose -f docker-compose.yml exec -T web sh -c "
                         if ! pip show pytest > /dev/null 2>&1; then
                             pip install pytest pytest-html
                         fi
@@ -193,10 +194,10 @@ stage('Run Tests in Docker') {
                     "
 
                     # Verify the report file was generated inside the Docker container
-                    docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web ls -l /app/report.html
+                    docker-compose -f docker-compose.yml exec -T web ls -l /app/report.html
 
                     # Copy the report from Docker container to the host (Ubuntu instance)
-                    docker cp \$(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web):/app/report.html /home/ubuntu/ecommerce-django-react/report.html
+                    docker cp \$(docker-compose -f docker-compose.yml ps -q web):/app/report.html /home/ubuntu/ecommerce-django-react/report.html
 
                     # Set permissions to ensure the file is accessible
                     sudo chmod 644 /home/ubuntu/ecommerce-django-react/report.html
@@ -219,6 +220,7 @@ EOF
         }
     }
 }
+
 
 stage('Publish Report') {
     steps {
