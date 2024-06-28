@@ -180,8 +180,14 @@ EOF
                 ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                 set -e
 
-                # Ensure /tmp is mounted with exec
-                sudo mount /tmp -o remount,exec
+                # Check if /tmp is mounted
+                if ! mountpoint -q /tmp; then
+                    echo "/tmp is not mounted, mounting /tmp..."
+                    sudo mount -t tmpfs tmpfs /tmp
+                fi
+
+                # Remount /tmp with exec option
+                sudo mount -o remount,exec /tmp
 
                 # Clean up /etc/apt/sources.list and /etc/apt/sources.list.d/
                 sudo cp /etc/apt/sources.list /etc/apt/sources.list.backup
