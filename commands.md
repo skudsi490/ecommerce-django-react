@@ -22,7 +22,7 @@ cd /home/ubuntu/ecommerce-django-react
 ls -la media/images
 
 
-ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ec2-user@3.122.56.6
+ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ec2-user@54.93.103.30
 ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ec2-user@18.195.65.211
 
 ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.76.217.10
@@ -79,7 +79,7 @@ npm start
 
 
 git add Jenkinsfile
-git commit -m "Update Jenkinsfile 251"
+git commit -m "Update Jenkinsfile 252"
 git push origin main
 
 sudo cat /var/log/user-data.log
@@ -97,7 +97,7 @@ docker push skudsi/ecommerce-django-react-backend:latest
 
 
 git add .
-git commit -m "Update configuration v107"
+git commit -m "Update configuration v108"
 git push origin main
 
 Please dont use StrictHostKeyChecking-no and use StrictHostKeyChecking=no instead

@@ -15,7 +15,7 @@ pipeline {
         POSTGRES_USER = 'ecommerceuser'
         POSTGRES_PASSWORD = 'ecommercedbpassword'
         POSTGRES_HOST = 'db'
-        REACT_APP_BACKEND_URL = 'http://3.76.217.10:8000'
+        REACT_APP_BACKEND_URL = 'http://3.70.96.244:8000'
     }
 
     stages {
