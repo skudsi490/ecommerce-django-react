@@ -177,7 +177,7 @@ EOF
                         sh '''
                         echo "Running tests on the remote AWS instance..."
 
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} <<EOF
+                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
 set -e
 cd /home/ubuntu/ecommerce-django-react/
 
@@ -185,9 +185,7 @@ echo "Setting permissions for ecommerce-django-react directory..."
 sudo chmod -R 777 /home/ubuntu/ecommerce-django-react
 
 echo "Running tests in Docker container..."
-docker-compose exec -T web sh -c "
-    pytest tests/api/ --junitxml=/app/report.xml --html=/app/report.html --self-contained-html | tee /app/test_output.log
-"
+docker-compose exec -T web sh -c "pytest tests/api/ --junitxml=/app/report.xml --html=/app/report.html --self-contained-html | tee /app/test_output.log"
 
 echo "Copying test reports to instance directory..."
 docker cp web:/app/report.html ./report.html || echo 'Failed to copy report.html'
