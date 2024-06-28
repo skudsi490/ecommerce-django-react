@@ -208,6 +208,21 @@ EOF
             }
         }
 
+        stage('Verify Report') {
+            steps {
+                script {
+                    if (!fileExists('report.html')) {
+                        error("Report file 'report.html' does not exist.")
+                    }
+                    def reportContent = readFile('report.html')
+                    if (reportContent.trim().isEmpty()) {
+                        error("Report file 'report.html' is empty.")
+                    }
+                    echo "Report file 'report.html' exists and has content."
+                }
+            }
+        }
+
         stage('Publish Report') {
             steps {
                 publishHTML(target: [
