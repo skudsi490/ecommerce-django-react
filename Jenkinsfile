@@ -198,13 +198,9 @@ stage('Run Tests in Docker') {
                     # Copy the generated report back to a known location on the host
                     docker cp \$(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web):/app/report.html /home/ubuntu/ecommerce-django-react/report.html
 
-                    # List the contents of the directory to verify the report is there
-                    ls -l /home/ubuntu/ecommerce-django-react
+                    # Upload the report to S3
+                    aws s3 cp /home/ubuntu/ecommerce-django-react/report.html s3://${S3_BUCKET}/reports/report.html
 EOF
-                    '''
-                    sh '''
-                    echo "Copying report file using rsync..."
-                    rsync -avz -e "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY}" ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.html ./
                     '''
                 } catch (Exception e) {
                     currentBuild.result = 'UNSTABLE'
