@@ -184,60 +184,6 @@ cd /home/ubuntu/ecommerce-django-react/
 echo "Setting permissions for ecommerce-django-react directory..."
 sudo chmod -R 777 /home/ubuntu/ecommerce-django-react
 
-echo "Checking for pytest-html plugin..."
-if ! docker-compose exec -T web pip show pytest-html; then
-    echo "pytest-html not found, installing..."
-    docker-compose exec -T web pip install pytest-html
-fi
-
-echo "Listing installed pytest-html plugin..."
-docker-compose exec -T web pip show pytest-html
-
-echo "Running tests in Docker container..."
-docker-compose exec -T web sh -c "pytest tests/api/ --junitxml=/app/report.xml --html=/app/report.html --self-contained-html | tee /app/test_output.log"
-
-EOF
-                        '''
-                    }
-                }
-            }
-        }
-
-        stage('List Test Output') {
-            steps {
-                script {
-                    withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
-                        sh '''
-                        echo "Listing test output files in Docker container..."
-
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
-set -e
-cd /home/ubuntu/ecommerce-django-react/
-
-echo "Listing files in /app directory..."
-docker-compose exec -T web ls -l /app
-
-EOF
-                        '''
-                    }
-                }
-            }
-        }
-
-        stage('Running Tests') {
-            steps {
-                script {
-                    withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
-                        sh '''
-                        echo "Running tests on the remote AWS instance..."
-
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
-set -e
-cd /home/ubuntu/ecommerce-django-react/
-
-echo "Setting permissions for ecommerce-django-react directory..."
-sudo chmod -R 777 /home/ubuntu/ecommerce-django-react
-
 echo "Creating virtual environment..."
 docker-compose exec -T web python3 -m venv /app/venv
 
@@ -250,24 +196,6 @@ docker-compose exec -T web sh -c "/app/venv/bin/pytest tests/api/ --junitxml=/ap
 
 echo "Listing files in /app directory..."
 docker-compose exec -T web ls -l /app
-
-EOF
-                        '''
-                    }
-                }
-            }
-        }
-
-        stage('Copy Test Reports') {
-            steps {
-                script {
-                    withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
-                        sh '''
-                        echo "Copying test reports to instance directory..."
-
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
-set -e
-cd /home/ubuntu/ecommerce-django-react/
 
 echo "Copying report.html..."
 docker cp web:/app/report.html ./report.html || { echo 'Failed to copy report.html'; exit 1; }
@@ -316,6 +244,7 @@ EOF
                 ])
             }
         }
+
 //         stage('Configure Nginx') {
 //             steps {
 //                 script {
