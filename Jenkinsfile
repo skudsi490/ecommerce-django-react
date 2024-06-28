@@ -190,10 +190,15 @@ EOF
                             pytest tests/api/ --junitxml=/app/report.xml --html=/app/report.html --self-contained-html | tee /app/test_output.log
                         "
                         docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web ls -l /app
-                        docker cp web:/app/report.html ./report.html
-                        docker cp web:/app/report.xml ./report.xml
-                        docker cp web:/app/test_output.log ./test_output.log
+                        docker cp \$(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web):/app/report.html /home/ubuntu/ecommerce-django-react/report.html
+                        docker cp \$(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web):/app/report.xml /home/ubuntu/ecommerce-django-react/report.xml
+                        docker cp \$(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web):/app/test_output.log /home/ubuntu/ecommerce-django-react/test_output.log
 EOF
+                        '''
+                        sh '''
+                        scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.html ./
+                        scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.xml ./
+                        scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/test_output.log ./
                         '''
                     }
                 }
