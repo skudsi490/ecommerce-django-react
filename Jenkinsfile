@@ -170,88 +170,83 @@ EOF
             }
         }
 
-stage('Run Tests in Docker') {
-    steps {
-        script {
-            withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
-                             string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
-                             sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
-                try {
-                    sh '''
-                    echo "Running tests in Docker container..."
-                    ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
-                    set -e
-                    # Clean previous report files
-                    sudo rm -rf /home/ubuntu/ecommerce-django-react/report.html
+        stage('Run Tests in Docker') {
+            steps {
+                script {
+                    withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                                     string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
+                                     sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
+                        try {
+                            sh '''
+                            echo "Cleaning up previous reports in S3..."
+                            aws s3 rm s3://${S3_BUCKET}/reports/report.html || true
+                            
+                            echo "Running tests in Docker container..."
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                            set -e
+                            # Clean previous report files
+                            sudo rm -rf /home/ubuntu/ecommerce-django-react/report.html
 
-                    # Run tests inside the Docker container
-                    cd /home/ubuntu/ecommerce-django-react
-                    docker-compose -f docker-compose.yml exec -T web sh -c "
-                        if ! pip show pytest > /dev/null 2>&1; then
-                            pip install pytest pytest-html
-                        fi
-                        pytest --html=/app/report.html || true
-                    "
+                            # Run tests inside the Docker container
+                            cd /home/ubuntu/ecommerce-django-react
+                            docker-compose -f docker-compose.yml exec -T web sh -c "
+                                if ! pip show pytest > /dev/null 2>&1; then
+                                    pip install pytest pytest-html
+                                fi
+                                pytest --html=/app/report.html || true
+                            "
 
-                    # Verify the report file was generated inside the Docker container
-                    docker-compose -f docker-compose.yml exec -T web ls -l /app/report.html
+                            # Verify the report file was generated inside the Docker container
+                            docker-compose -f docker-compose.yml exec -T web ls -l /app/report.html
 
-                    # Copy the report from Docker container to the host (Ubuntu instance)
-                    docker cp \$(docker-compose -f docker-compose.yml ps -q web):/app/report.html /home/ubuntu/ecommerce-django-react/report.html
+                            # Copy the report from Docker container to the host (Ubuntu instance)
+                            docker cp \$(docker-compose -f docker-compose.yml ps -q web):/app/report.html /home/ubuntu/ecommerce-django-react/report.html
 
-                    # Set permissions to ensure the file is accessible
-                    sudo chmod 644 /home/ubuntu/ecommerce-django-react/report.html
+                            # Set permissions to ensure the file is accessible
+                            sudo chmod 644 /home/ubuntu/ecommerce-django-react/report.html
 
-                    # Verify the report file content and existence on the host (Ubuntu instance)
-                    echo "Content of report.html on Ubuntu instance:"
-                    cat /home/ubuntu/ecommerce-django-react/report.html
+                            # Verify the report file content and existence on the host (Ubuntu instance)
+                            echo "Content of report.html on Ubuntu instance:"
+                            cat /home/ubuntu/ecommerce-django-react/report.html
+
+                            # Upload the report to S3
+                            aws s3 cp /home/ubuntu/ecommerce-django-react/report.html s3://${S3_BUCKET}/reports/report.html
 EOF
-                    '''
-                    // Using cat command to transfer the file from Ubuntu instance to Jenkins
-                    sh '''
-                    echo "Transferring report file using cat..."
-                    ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} 'cat /home/ubuntu/ecommerce-django-react/report.html' > report.html
-                    echo "Content of report.html on Jenkins:"
-                    cat report.html
-                    '''
-                } catch (Exception e) {
-                    currentBuild.result = 'UNSTABLE'
-                    echo "Tests failed but continuing to publish report: ${e.message}"
+                            '''
+                        } catch (Exception e) {
+                            currentBuild.result = 'UNSTABLE'
+                            echo "Tests failed but continuing to publish report: ${e.message}"
+                        }
+                    }
                 }
             }
         }
-    }
-}
 
-
-stage('Verify Report on Ubuntu') {
-    steps {
-        script {
-            withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
-                sh '''
-                echo "Verifying report.html on Ubuntu instance..."
-                ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} 'ls -l /home/ubuntu/ecommerce-django-react/report.html'
-                ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} 'cat /home/ubuntu/ecommerce-django-react/report.html'
-                '''
+        stage('Retrieve Report from S3') {
+            steps {
+                withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                                 string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')]) {
+                    sh '''
+                    echo "Retrieving report from S3..."
+                    aws s3 cp s3://${S3_BUCKET}/reports/report.html report.html
+                    '''
+                }
             }
         }
-    }
-}
 
-stage('Publish Report') {
-    steps {
-        publishHTML(target: [
-            allowMissing: false,
-            alwaysLinkToLastBuild: true,
-            keepAll: true,
-            reportDir: '.',
-            reportFiles: 'report.html',
-            reportName: 'Test Report',
-            reportTitles: 'Test Report'
-        ])
-    }
-}
-
+        stage('Publish Report') {
+            steps {
+                publishHTML(target: [
+                    allowMissing: false,
+                    alwaysLinkToLastBuild: true,
+                    keepAll: true,
+                    reportDir: '.',
+                    reportFiles: 'report.html',
+                    reportName: 'Test Report',
+                    reportTitles: 'Test Report'
+                ])
+            }
+        }
 
 
 
