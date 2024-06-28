@@ -181,6 +181,10 @@ stage('Running Tests') {
                     set -e
                     cd /home/ubuntu/ecommerce-django-react/
 
+                    echo "Copying test files from Docker container to the instance..."
+                    docker cp web:/app/tests ./tests
+                    docker cp web:/app/pytest.ini ./pytest.ini
+
                     echo "Ensuring python3, pip, and required libraries are installed..."
                     sudo apt-get update
                     sudo apt-get install -y python3 python3-venv python3-pip libpq-dev libjpeg-dev zlib1g-dev
@@ -240,6 +244,7 @@ stage('Publish Test Report') {
         ])
     }
 }
+
 
 
 //         stage('Configure Nginx') {
