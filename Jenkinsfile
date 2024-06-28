@@ -16,8 +16,8 @@ pipeline {
         POSTGRES_PASSWORD = 'ecommercedbpassword'
         POSTGRES_HOST = 'db'
         REACT_APP_BACKEND_URL = 'http://35.159.115.123:8000'
-        DOCKER_IMAGE = 'ecommerce-test-image'
-        CONTAINER_NAME = 'ecommerce-test-container'
+        DOCKER_COMPOSE_FILE = 'docker-compose.yml'
+
     }
 
     stages {
@@ -176,31 +176,17 @@ EOF
             steps {
                 script {
                     sh '''
-                    echo "Building Docker image..."
-                    docker build -t ${DOCKER_IMAGE} -f Dockerfile .
-
-                    echo "Removing existing container if it exists..."
-                    docker rm -f ${CONTAINER_NAME} || true
-
                     echo "Running tests in Docker container..."
-                    docker run --name ${CONTAINER_NAME} -d ${DOCKER_IMAGE}
-
-                    echo "Executing tests..."
-                    docker exec ${CONTAINER_NAME} sh -c "
+                    ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                    set -e
+                    docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web sh -c "
                         pytest tests/api/ --junitxml=/app/report.xml --html=/app/report.html --self-contained-html | tee /app/test_output.log
                     "
-
-                    echo "Copying test reports from Docker container to Jenkins workspace..."
-                    docker cp ${CONTAINER_NAME}:/app/report.html ./report.html
-                    docker cp ${CONTAINER_NAME}:/app/report.xml ./report.xml
-                    docker cp ${CONTAINER_NAME}:/app/test_output.log ./test_output.log
-
-                    echo "Listing copied files..."
-                    ls -l report.html report.xml test_output.log
-
-                    echo "Stopping and removing Docker container..."
-                    docker stop ${CONTAINER_NAME}
-                    docker rm ${CONTAINER_NAME}
+                    docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web ls -l /app
+                    docker cp web:/app/report.html ./report.html
+                    docker cp web:/app/report.xml ./report.xml
+                    docker cp web:/app/test_output.log ./test_output.log
+EOF
                     '''
                 }
             }
