@@ -78,23 +78,23 @@ pipeline {
             }
         }
 
-        stage('Build and Push Docker Image') {
-            steps {
-                script {
-                    docker.build("${DOCKER_IMAGE_WEB}:latest", "--build-arg REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL} .")
-                }
-            }
-        }
+        // stage('Build and Push Docker Image') {
+        //     steps {
+        //         script {
+        //             docker.build("${DOCKER_IMAGE_WEB}:latest", "--build-arg REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL} .")
+        //         }
+        //     }
+        // }
 
-        stage('Push Docker Image') {
-            steps {
-                script {
-                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
-                        docker.image("${DOCKER_IMAGE_WEB}:latest").push('latest')
-                    }
-                }
-            }
-        }
+        // stage('Push Docker Image') {
+        //     steps {
+        //         script {
+        //             docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
+        //                 docker.image("${DOCKER_IMAGE_WEB}:latest").push('latest')
+        //             }
+        //         }
+        //     }
+        // }
 
         stage('Deploy to Ubuntu') {
             steps {
@@ -172,7 +172,7 @@ EOF
             }
         }
 
-        stage('Run Tests in Docker') {
+            stage('Run Tests in Docker') {
             steps {
                 script {
                     sh '''
@@ -183,7 +183,7 @@ EOF
                     docker run --name ${CONTAINER_NAME} -d ${DOCKER_IMAGE}
 
                     docker exec ${CONTAINER_NAME} sh -c "
-                        pytest tests/api/ --junitxml=/app/report.xml --html=/app/report.html --self-contained-html --report=pytest-html-reporter | tee /app/test_output.log
+                        pytest tests/api/ --junitxml=/app/report.xml --html-report=/app/report.html --self-contained-html | tee /app/test_output.log
                     "
 
                     echo "Copying test reports from Docker container to Jenkins workspace..."
