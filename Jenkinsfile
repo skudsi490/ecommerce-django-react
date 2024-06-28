@@ -172,6 +172,10 @@ EOF
             }
         }
 
+pipeline {
+    agent any
+
+    stages {
         stage('Run Tests in Docker') {
             steps {
                 script {
@@ -190,9 +194,9 @@ EOF
                             pytest tests/api/ --junitxml=/app/report.xml --html=/app/report.html --self-contained-html | tee /app/test_output.log
                         "
                         docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web ls -l /app
-                        docker cp \$(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web):/app/report.html /home/ubuntu/ecommerce-django-react/report.html
-                        docker cp \$(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web):/app/report.xml /home/ubuntu/ecommerce-django-react/report.xml
-                        docker cp \$(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web):/app/test_output.log /home/ubuntu/ecommerce-django-react/test_output.log
+                        docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web sh -c "docker cp /app/report.html /home/ubuntu/ecommerce-django-react/report.html"
+                        docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web sh -c "docker cp /app/report.xml /home/ubuntu/ecommerce-django-react/report.xml"
+                        docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web sh -c "docker cp /app/test_output.log /home/ubuntu/ecommerce-django-react/test_output.log"
 EOF
                         '''
                         sh '''
@@ -220,6 +224,9 @@ EOF
                 }
             }
         }
+    }
+}
+
 
 
 //         stage('Configure Nginx') {
