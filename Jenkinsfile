@@ -186,26 +186,36 @@ sudo chmod -R 777 /home/ubuntu/ecommerce-django-react
 
 echo "Running tests in Docker container..."
 docker-compose exec -T web sh -c "pytest tests/api/ --junitxml=/app/report.xml --html=/app/report.html --self-contained-html | tee /app/test_output.log"
+EOF
+                        '''
+                    }
+                }
+            }
+        }
 
-echo "Copying test reports to instance directory..."
+        stage('Copy Test Reports') {
+            steps {
+                script {
+                    withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
+                        sh '''
+                        echo "Copying test reports to instance directory..."
+
+                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+set -e
+cd /home/ubuntu/ecommerce-django-react/
+
+echo "Copying report.html..."
 docker cp web:/app/report.html ./report.html || echo 'Failed to copy report.html'
+
+echo "Copying report.xml..."
 docker cp web:/app/report.xml ./report.xml || echo 'Failed to copy report.xml'
+
+echo "Copying test_output.log..."
 docker cp web:/app/test_output.log ./test_output.log || echo 'Failed to copy test_output.log'
 
-echo "Test execution completed. Checking for report.html..."
-ls -l report.html
-cat test_output.log
+echo "Listing copied files..."
+ls -l report.html report.xml test_output.log
 
-echo "Checking if report.html was generated..."
-if [ -f report.html ]; then
-    echo 'Report generated successfully'
-else
-    echo 'Report not generated'
-    exit 1
-fi
-
-echo "Ensuring permissions for report.html..."
-chmod 777 report.html
 EOF
                         '''
                     }
