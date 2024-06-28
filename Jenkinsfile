@@ -199,9 +199,10 @@ stage('Run Tests in Docker') {
                     docker cp \$(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web):/app/report.html /home/ubuntu/ecommerce-django-react/report.html
 EOF
                     '''
+                    // Using cat command to transfer the file
                     sh '''
-                    echo "Copying report file from Ubuntu instance to Jenkins workspace..."
-                    scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.html ${WORKSPACE}/report.html
+                    echo "Transferring report file using cat..."
+                    ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} 'cat /home/ubuntu/ecommerce-django-react/report.html' > report.html
                     '''
                 } catch (Exception e) {
                     currentBuild.result = 'UNSTABLE'
@@ -226,8 +227,6 @@ stage('Publish Report') {
     }
 }
 
-
-   
 
 //         stage('Configure Nginx') {
 //             steps {
