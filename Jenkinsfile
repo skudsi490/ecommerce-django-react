@@ -188,9 +188,7 @@ deb http://archive.ubuntu.com/ubuntu/ noble-updates main restricted universe mul
 deb http://archive.ubuntu.com/ubuntu/ noble-backports main restricted universe multiverse
 deb http://security.ubuntu.com/ubuntu/ noble-security main restricted universe multiverse
 EOL
-                if [ -d /etc/apt/sources.list.d/ ]; then
-                    sudo rm /etc/apt/sources.list.d/*
-                fi
+                sudo rm -rf /etc/apt/sources.list.d/* 2>/dev/null || true
 
                 # Update and upgrade all packages
                 sudo apt-get update
@@ -232,7 +230,7 @@ EOL
 /lib/x86_64-linux-gnu
 /usr/lib
 EOL
-                sudo rm -f /etc/ld.so.conf.d/*
+                sudo rm -f /etc/ld.so.conf.d/* 2>/dev/null || true
 
                 # Rebuild library cache
                 sudo ldconfig -v
