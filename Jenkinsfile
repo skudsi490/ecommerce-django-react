@@ -195,7 +195,7 @@ stage('Run Tests in Docker') {
                     # Verify the report file was generated
                     docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web ls -l /app/report.html
 
-                    # Copy the generated report back to the host
+                    # Copy the generated report back to a known location on the host
                     docker cp \$(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web):/app/report.html /home/ubuntu/ecommerce-django-react/report.html
 
                     # List the contents of the directory to verify the report is there
@@ -228,6 +228,7 @@ stage('Publish Report') {
         ])
     }
 }
+
 
    
 
