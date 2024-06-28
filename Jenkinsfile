@@ -228,6 +228,7 @@ stage('Publish Report') {
 }
 
 
+
 //         stage('Configure Nginx') {
 //             steps {
 //                 script {
