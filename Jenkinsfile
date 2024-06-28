@@ -192,8 +192,8 @@ EOL
 
                 # Update and upgrade all packages
                 sudo apt-get update
-                sudo apt-get upgrade -y
-                sudo apt-get dist-upgrade -y
+                sudo apt-get upgrade -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
+                sudo apt-get dist-upgrade -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
 
                 # Fix broken packages
                 sudo apt-get --fix-broken install
@@ -203,8 +203,9 @@ EOL
                 sudo apt-mark unhold libcrypt1 libcrypt-dev libssl-dev systemd-sysv libpam-runtime libpam-modules grub-efi-amd64-signed grub2-common mokutil
 
                 # Remove and reinstall necessary libraries and Nginx
-                sudo apt-get remove --purge nginx libcrypt1 libcrypt-dev libssl-dev
-                sudo apt-get install -y nginx libcrypt1 libcrypt-dev libssl-dev
+                sudo apt-get remove --purge -y nginx libcrypt1 libcrypt-dev libssl-dev
+                sudo apt-get install -y libcrypt1 libcrypt-dev libssl-dev systemd-sysv libpam-runtime libpam-modules grub-efi-amd64-signed grub2-common mokutil
+                sudo apt-get install -y nginx
 
                 # Check File System Type
                 df -Th /usr /lib /lib/x86_64-linux-gnu
