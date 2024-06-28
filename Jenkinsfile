@@ -170,92 +170,91 @@ EOF
             }
         }
 
-// stage('Running Tests') {
-//     steps {
-//         script {
-//             withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
-//                 sh '''
-//                 echo "Running tests on the remote AWS instance..."
+stage('Running Tests') {
+    steps {
+        script {
+            withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
+                sh '''
+                echo "Running tests on the remote AWS instance..."
 
-//                 ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
-//                     set -e
-//                     cd /home/ubuntu/ecommerce-django-react/
+                ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                    set -e
+                    cd /home/ubuntu/ecommerce-django-react/
 
-//                     echo "Setting permissions for ecommerce-django-react directory..."
-//                     sudo chmod -R 777 /home/ubuntu/ecommerce-django-react
+                    echo "Setting permissions for ecommerce-django-react directory..."
+                    sudo chmod -R 777 /home/ubuntu/ecommerce-django-react
 
-//                     echo "Creating directories for test files..."
-//                     mkdir -p /home/ubuntu/ecommerce-django-react/tests/api
+                    echo "Creating directories for test files..."
+                    mkdir -p /home/ubuntu/ecommerce-django-react/tests/api
 
-//                     echo "Checking if test files exist in the Docker container..."
-//                     docker-compose exec -T web ls /app/tests/api/test_products.py || { echo 'File test_products.py not found'; exit 1; }
-//                     docker-compose exec -T web ls /app/tests/api/test_user.py || { echo 'File test_user.py not found'; exit 1; }
+                    echo "Checking if test files exist in the Docker container..."
+                    docker-compose exec -T web ls /app/tests/api/test_products.py || { echo 'File test_products.py not found'; exit 1; }
+                    docker-compose exec -T web ls /app/tests/api/test_user.py || { echo 'File test_user.py not found'; exit 1; }
 
-//                     echo "Copying test files from Docker container to the instance..."
-//                     docker cp web:/app/tests/api/test_products.py ./tests/api/
-//                     docker cp web:/app/tests/api/test_user.py ./tests/api/
-//                     docker cp web:/app/pytest.ini ./pytest.ini
+                    echo "Copying test files from Docker container to the instance..."
+                    docker cp web:/app/tests/api/test_products.py ./tests/api/
+                    docker cp web:/app/tests/api/test_user.py ./tests/api/
+                    docker cp web:/app/pytest.ini ./pytest.ini
 
-//                     echo "Ensuring python3, pip, and required libraries are installed..."
-//                     sudo apt-get update
-//                     sudo apt-get install -y python3 python3-venv python3-pip libpq-dev libjpeg-dev zlib1g-dev
+                    echo "Ensuring python3, pip, and required libraries are installed..."
+                    sudo apt-get update
+                    sudo apt-get install -y python3 python3-venv python3-pip libpq-dev libjpeg-dev zlib1g-dev
 
-//                     echo "Creating virtual environment..."
-//                     python3 -m venv venv
+                    echo "Creating virtual environment..."
+                    python3 -m venv venv
 
-//                     echo "Activating virtual environment..."
-//                     source venv/bin/activate
+                    echo "Activating virtual environment..."
+                    source venv/bin/activate
 
-//                     echo "Installing requirements..."
-//                     pip install -r requirements.txt
+                    echo "Installing requirements..."
+                    pip install -r requirements.txt
 
-//                     echo "Installing pytest and pytest-html plugin..."
-//                     pip install pytest pytest-html
+                    echo "Installing pytest and pytest-html plugin..."
+                    pip install pytest pytest-html
 
-//                     echo "Running tests..."
-//                     pytest tests/api/ --junitxml=report.xml --html=report.html
+                    echo "Running tests..."
+                    pytest tests/api/ --junitxml=report.xml --html=report.html
 
-//                     echo "Checking if report.html was generated..."
-//                     if [ -f report.html ]; then
-//                         echo 'Report generated successfully'
-//                     else
-//                         echo 'Report not generated'
-//                         exit 1
-//                     fi
+                    echo "Checking if report.html was generated..."
+                    if [ -f report.html ]; then
+                        echo 'Report generated successfully'
+                    else
+                        echo 'Report not generated'
+                        exit 1
+                    fi
 
-//                     echo "Ensuring permissions for report.html..."
-//                     chmod 777 report.html
-//                 EOF
-//                 '''
-//             }
-//         }
-//     }
-// }
+                    echo "Ensuring permissions for report.html..."
+                    chmod 777 report.html
+                EOF
+                '''
+            }
+        }
+    }
+}
 
-// stage('Publish Test Report') {
-//     steps {
-//         script {
-//             withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
-//                 sh '''
-//                 echo "Copying test report back to Jenkins..."
+stage('Publish Test Report') {
+    steps {
+        script {
+            withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
+                sh '''
+                echo "Copying test report back to Jenkins..."
 
-//                 scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.html ./
-//                 '''
-//             }
-//         }
+                scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.html ./
+                '''
+            }
+        }
 
-//         publishHTML(target: [
-//             allowMissing: false,
-//             alwaysLinkToLastBuild: true,
-//             keepAll: true,
-//             reportDir: '.',
-//             reportFiles: 'report.html',
-//             reportName: 'Test Report',
-//             reportTitles: 'Test Report'
-//         ])
-//     }
-// }
-
+        publishHTML(target: [
+            allowMissing: false,
+            alwaysLinkToLastBuild: true,
+            keepAll: true,
+            reportDir: '.',
+            reportFiles: 'report.html',
+            reportName: 'Test Report',
+            reportTitles: 'Test Report'
+        ])
+    }
+}
 
 
 
