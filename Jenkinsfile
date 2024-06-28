@@ -172,12 +172,15 @@ EOF
             }
         }
 
-            stage('Run Tests in Docker') {
+        stage('Run Tests in Docker') {
             steps {
                 script {
                     sh '''
                     echo "Building Docker image..."
                     docker build -t ${DOCKER_IMAGE} -f Dockerfile .
+
+                    echo "Removing existing container if it exists..."
+                    docker rm -f ${CONTAINER_NAME} || true
 
                     echo "Running tests in Docker container..."
                     docker run --name ${CONTAINER_NAME} -d ${DOCKER_IMAGE}
