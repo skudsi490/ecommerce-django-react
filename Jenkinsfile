@@ -184,36 +184,19 @@ EOF
                             echo "Setting permissions for ecommerce-django-react directory..."
                             sudo chmod -R 777 /home/ubuntu/ecommerce-django-react
 
-                            echo "Creating directories for test files..."
-                            mkdir -p /home/ubuntu/ecommerce-django-react/tests/api
-
                             echo "Checking if test files exist in the Docker container..."
                             docker-compose exec -T web ls /app/tests/api/test_products.py || { echo 'File test_products.py not found'; exit 1; }
                             docker-compose exec -T web ls /app/tests/api/test_user.py || { echo 'File test_user.py not found'; exit 1; }
 
-                            echo "Copying test files from Docker container to the instance..."
-                            docker cp web:/app/tests/api/test_products.py ./tests/api/
-                            docker cp web:/app/tests/api/test_user.py ./tests/api/
-                            docker cp web:/app/pytest.ini ./pytest.ini
+                            echo "Running tests in Docker container..."
+                            docker-compose exec -T web sh -c "
+                                pytest tests/api/ --junitxml=/app/report.xml --html=/app/report.html | tee /app/test_output.log
+                            "
 
-                            echo "Ensuring python3, pip, and required libraries are installed..."
-                            sudo apt-get update
-                            sudo apt-get install -y python3 python3-venv python3-pip libpq-dev libjpeg-dev zlib1g-dev
-
-                            echo "Creating virtual environment..."
-                            python3 -m venv venv
-
-                            echo "Activating virtual environment..."
-                            source venv/bin/activate
-
-                            echo "Installing requirements..."
-                            pip install -r requirements.txt
-
-                            echo "Installing pytest and pytest-html plugin..."
-                            pip install pytest pytest-html
-
-                            echo "Running tests..."
-                            pytest tests/api/ --junitxml=report.xml --html=report.html | tee test_output.log
+                            echo "Copying test reports to instance directory..."
+                            docker cp web:/app/report.html ./report.html
+                            docker cp web:/app/report.xml ./report.xml
+                            docker cp web:/app/test_output.log ./test_output.log
 
                             echo "Test execution completed. Checking for report.html..."
                             ls -l report.html
@@ -243,8 +226,6 @@ EOF
                         sh '''
                         echo "Copying test report back to Jenkins..."
 
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} "ls -l /home/ubuntu/ecommerce-django-react/report.html"
-
                         scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.html ./
 
                         if [ ! -f report.html ]; then
@@ -266,6 +247,8 @@ EOF
                 ])
             }
         }
+    }
+}
 
 //         stage('Configure Nginx') {
 //             steps {
