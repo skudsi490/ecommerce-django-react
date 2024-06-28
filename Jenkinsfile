@@ -172,60 +172,67 @@ EOF
             }
         }
 
-        stage('Run Tests in Docker') {
-            steps {
-                script {
-                    withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
-                                     string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
-                                     sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
-                        sh '''
-                        echo "Running tests in Docker container..."
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
-                        set -e
-                        # Clean previous report files
-                        sudo rm -rf /home/ubuntu/ecommerce-django-react/report.html /home/ubuntu/ecommerce-django-react/report.xml /home/ubuntu/ecommerce-django-react/test_output.log
+stage('Run Tests in Docker') {
+    steps {
+        script {
+            def terraformState = readFile 'terraform.tfstate'
+            def ubuntuIp = sh(script: "jq -r '.resources[] | select(.type==\"aws_instance\" and .name==\"my_ubuntu\").instances[0].attributes.public_ip' terraform.tfstate", returnStdout: true).trim()
+            env.MY_UBUNTU_IP = ubuntuIp
+            withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                             string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
+                             sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
+                sh '''
+                echo "Running tests in Docker container..."
+                ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                set -e
+                # Clean previous report files
+                sudo rm -rf /home/ubuntu/ecommerce-django-react/report.html /home/ubuntu/ecommerce-django-react/report.xml /home/ubuntu/ecommerce-django-react/test_output.log
 
-                        # Run tests inside the Docker container
-                        docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web sh -c "
-                            if ! pip show pytest > /dev/null 2>&1; then
-                                pip install pytest pytest-html
-                            fi
-                            pytest tests/api/ --junitxml=/app/report.xml | tee /app/test_output.log || true
-                        "
+                # Run tests inside the Docker container
+                docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web sh -c "
+                    if ! pip show pytest > /dev/null 2>&1; then
+                        pip install pytest pytest-html
+                    fi
+                    pytest tests/api/ --junitxml=/app/report.xml | tee /app/test_output.log || true
+                "
 
-                        # Verify files were generated
-                        docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web ls -l /app
+                # Verify files were generated
+                docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web ls -l /app
 
-                        # Copy the generated reports back to the host
-                        docker cp \$(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web):/app/report.html /home/ubuntu/ecommerce-django-react/report.html || true
-                        docker cp \$(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web):/app/report.xml /home/ubuntu/ecommerce-django-react/report.xml || true
-                        docker cp \$(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web):/app/test_output.log /home/ubuntu/ecommerce-django-react/test_output.log || true
+                # Copy the generated reports back to the host
+                docker cp web:/app/report.html /home/ubuntu/ecommerce-django-react/report.html || true
+                docker cp web:/app/report.xml /home/ubuntu/ecommerce-django-react/report.xml || true
+                docker cp web:/app/test_output.log /home/ubuntu/ecommerce-django-react/test_output.log || true
+
+                # List the contents of the directory to verify the reports are there
+                ls -l /home/ubuntu/ecommerce-django-react
 EOF
-                        '''
-                        sh '''
-                        scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.html ./
-                        scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.xml ./
-                        scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/test_output.log ./
-                        '''
-                    }
-                }
-            }
-            post {
-                always {
-                    script {
-                        publishHTML(target: [
-                            allowMissing: false,
-                            alwaysLinkToLastBuild: true,
-                            keepAll: true,
-                            reportDir: '.',
-                            reportFiles: 'report.html',
-                            reportName: 'Test Report',
-                            reportTitles: 'Test Report'
-                        ])
-                    }
-                }
+                '''
+                sh '''
+                scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.html ./
+                scp -o StrictHostKeyChecking-no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.xml ./
+                scp -o StrictHostKeyChecking-no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/test_output.log ./
+                '''
             }
         }
+    }
+    post {
+        always {
+            script {
+                publishHTML(target: [
+                    allowMissing: false,
+                    alwaysLinkToLastBuild: true,
+                    keepAll: true,
+                    reportDir: '.',
+                    reportFiles: 'report.html',
+                    reportName: 'Test Report',
+                    reportTitles: 'Test Report'
+                ])
+            }
+        }
+    }
+}
+
 //         stage('Configure Nginx') {
 //             steps {
 //                 script {
