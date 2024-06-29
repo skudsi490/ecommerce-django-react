@@ -69,7 +69,7 @@ pipeline {
             steps {
                 script {
                     withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
-                                     string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')]) {
+                                    string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')]) {
                         sh '''
                         export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
                         export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
@@ -77,8 +77,8 @@ pipeline {
                         unset AWS_ACCESS_KEY_ID
                         unset AWS_SECRET_ACCESS_KEY
 
-                        terraformState=$(cat terraform.tfstate)
-                        ubuntuIp=$(echo "$terraformState" | jq -r '.resources[] | select(.type=="aws_instance" and .name=="my_ubuntu").instances[0].attributes.public_ip')
+                        # Extract the Ubuntu IP address without printing the whole file
+                        ubuntuIp=$(jq -r '.resources[] | select(.type=="aws_instance" and .name=="my_ubuntu").instances[0].attributes.public_ip' terraform.tfstate)
                         echo "UBUNTU_IP=$ubuntuIp" > ip.txt
                         '''
                     }
@@ -89,6 +89,7 @@ pipeline {
                 }
             }
         }
+
 
         stage('Test Docker Login') {
             steps {
