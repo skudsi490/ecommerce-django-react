@@ -143,7 +143,7 @@ stage('Build Locally') {
 
                     // Slack notification
                     slackSend channel: "#devops-channel",
-                              username: "Sami from Jenkins",
+                              username: "jenkins ",
                               message: message
 
                     // // Email notification
