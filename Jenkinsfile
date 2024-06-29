@@ -82,10 +82,11 @@ pipeline {
                 docker build --build-arg REACT_APP_BACKEND_URL=http://localhost:8000 -t skudsi/ecommerce-django-react-web:latest .
 
                 echo "Running the application container..."
-                docker run --name web -d -p 8000:8000 --link postgres-db:db skudsi/ecommerce-django-react-web:latest
+                docker run --name web -d -p 8000:8000 --link postgres-db:db -e POSTGRES_HOST=postgres-db skudsi/ecommerce-django-react-web:latest
 
                 echo "Running database migrations and collecting static files..."
                 docker exec web sh -c "
+                    export POSTGRES_HOST=postgres-db &&
                     python manage.py makemigrations &&
                     python manage.py migrate &&
                     python manage.py loaddata /tmp/data_dump.json &&
@@ -94,7 +95,6 @@ pipeline {
                 '''
             }
         }
-
 
 
         stage('Test Locally') {
@@ -119,6 +119,7 @@ pipeline {
                 }
             }
         }
+
 
 
 
