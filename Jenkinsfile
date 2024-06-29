@@ -95,67 +95,74 @@ pipeline {
         //     }
         // }
 
-stage('Run Tests and Publish Report in Docker') {
-    steps {
-        script {
-            withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
-                             string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
-                             sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
-                sh '''
-                export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-                export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-                aws s3 cp s3://${S3_BUCKET}/terraform/state/terraform.tfstate terraform.tfstate
-                unset AWS_ACCESS_KEY_ID
-                unset AWS_SECRET_ACCESS_KEY
-                '''
-                
-                def terraformState = readFile 'terraform.tfstate'
-                def ubuntuIp = sh(script: "jq -r '.resources[] | select(.type==\"aws_instance\" and .name==\"my_ubuntu\").instances[0].attributes.public_ip' terraform.tfstate", returnStdout: true).trim()
-                
-                if (ubuntuIp) {
-                    env.MY_UBUNTU_IP = ubuntuIp
-                    sh '''
-                    ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
-                        set -e
+        stage('Run Tests and Publish Report in Docker') {
+            steps {
+                script {
+                    withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                                     string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
+                                     sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
+                        sh '''
+                        export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                        export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                        aws s3 cp s3://${S3_BUCKET}/terraform/state/terraform.tfstate terraform.tfstate
+                        unset AWS_ACCESS_KEY_ID
+                        unset AWS_SECRET_ACCESS_KEY
+                        '''
                         
-                        CONTAINER_NAME=ecommerce-test-container
+                        def terraformState = readFile 'terraform.tfstate'
+                        def ubuntuIp = sh(script: "jq -r '.resources[] | select(.type==\"aws_instance\" and .name==\"my_ubuntu\").instances[0].attributes.public_ip' terraform.tfstate", returnStdout: true).trim()
+                        
+                        if (ubuntuIp) {
+                            env.MY_UBUNTU_IP = ubuntuIp
+                            sh '''
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                                set -e
+                                
+                                CONTAINER_NAME=ecommerce-test-container
 
-                        echo "Removing existing container if it exists..."
-                        docker rm -f ${CONTAINER_NAME} || true
+                                echo "Removing existing container if it exists..."
+                                docker rm -f ${CONTAINER_NAME} || true
 
-                        echo "Running tests inside the web application container..."
-                        docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web sh -c "
-                            pytest tests/api/ --html-report=/app/report.html --self-contained-html | tee /app/test_output.log
-                        "
+                                echo "Running tests inside the web application container..."
+                                docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web sh -c "
+                                    if ! pip show pytest > /dev/null 2>&1; then
+                                        pip install pytest pytest-html
+                                    fi &&
+                                    pytest tests/api/ --html=/app/report.html --self-contained-html | tee /app/test_output.log
+                                "
 
-                        echo "Listing contents of /app to verify report.html is created..."
-                        docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web ls -l /app
+                                echo "Listing contents of /app to verify report.html is created..."
+                                docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web ls -l /app
 
-                        echo "Copying test report from Docker container to local workspace..."
-                        docker cp $(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web):/app/report.html 
+                                echo "Copying test report from Docker container to local workspace..."
+                                docker cp $(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web):/app/report.html /home/ubuntu/ecommerce-django-react/report.html
 
-                        echo "Listing contents of /home/ubuntu/ecommerce-django-react to verify report.html is copied..."
-                        ls -l report.html
+                                ls -l /home/ubuntu/ecommerce-django-react/report.html
 EOF
-                    '''
+                            '''
 
-                    echo "Publishing test report..."
-                    publishHTML(target: [
-                        allowMissing: false,
-                        alwaysLinkToLastBuild: true,
-                        keepAll: true,
-                        reportDir: '.',
-                        reportFiles: 'report.html',
-                        reportName: 'Test Report',
-                        reportTitles: 'Test Report'
-                    ])
-                } else {
-                    error("Failed to retrieve the IP address of the Ubuntu instance from Terraform state.")
+                            sh '''
+                            echo "Copying report.html from remote Ubuntu instance to Jenkins workspace..."
+                            scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.html .
+                            '''
+
+                            echo "Publishing test report..."
+                            publishHTML(target: [
+                                allowMissing: false,
+                                alwaysLinkToLastBuild: true,
+                                keepAll: true,
+                                reportDir: '.',
+                                reportFiles: 'report.html',
+                                reportName: 'Test Report',
+                                reportTitles: 'Test Report'
+                            ])
+                        } else {
+                            error("Failed to retrieve the IP address of the Ubuntu instance from Terraform state.")
+                        }
+                    }
                 }
             }
         }
-    }
-}
 
         stage('Deploy to Ubuntu') {
             steps {
