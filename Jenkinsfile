@@ -103,11 +103,8 @@ stage('Run Tests in Docker') {
             python3 -m venv venv
             source venv/bin/activate
 
-            echo "Checking if docker-compose is installed..."
-            if ! [ -x "$(command -v docker-compose)" ]; then
-              echo "docker-compose not found, installing..."
-              pip install docker-compose
-            fi
+            echo "Installing docker-compose in virtual environment..."
+            pip install docker-compose
 
             echo "Ensuring libcrypt.so.1 is available..."
             if ! [ -e /usr/lib/libcrypt.so.1 ]; then
@@ -115,16 +112,16 @@ stage('Run Tests in Docker') {
             fi
 
             echo "Removing existing containers if they exist..."
-            docker-compose -f docker-compose.yml down --remove-orphans || true
+            ./venv/bin/docker-compose -f docker-compose.yml down --remove-orphans || true
 
             echo "Starting services with Docker Compose..."
-            docker-compose -f docker-compose.yml up -d
+            ./venv/bin/docker-compose -f docker-compose.yml up -d
 
             echo "Waiting for services to be ready..."
             sleep 20  # Give services some time to start
 
             echo "Running tests in web application container..."
-            docker-compose -f docker-compose.yml exec -T web sh -c "
+            ./venv/bin/docker-compose -f docker-compose.yml exec -T web sh -c "
                 if ! pip show pytest > /dev/null 2>&1; then
                     pip install pytest pytest-html
                 fi &&
@@ -132,13 +129,13 @@ stage('Run Tests in Docker') {
             "
 
             echo "Copying test report from web container to Jenkins workspace..."
-            docker cp $(docker-compose -f docker-compose.yml ps -q web):/app/report.html ./report.html
+            docker cp $(./venv/bin/docker-compose -f docker-compose.yml ps -q web):/app/report.html ./report.html
 
             echo "Listing copied files..."
             ls -l report.html
 
             echo "Stopping and removing Docker Compose services..."
-            docker-compose -f docker-compose.yml down
+            ./venv/bin/docker-compose -f docker-compose.yml down
 
             echo "Cleaning up symbolic links..."
             sudo rm -f /usr/lib/libcrypt.so.1
