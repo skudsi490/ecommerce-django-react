@@ -157,12 +157,6 @@ EOF
     }
 }
 
-            }
-        }
-    }
-}
-
-
         stage('Deploy to Ubuntu') {
             steps {
                 script {
