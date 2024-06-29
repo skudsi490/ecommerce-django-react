@@ -96,6 +96,12 @@ stage('Build Locally') {
         docker exec postgres-db psql -U ecommerceuser -d postgres -c 'DROP DATABASE IF EXISTS ecommerce;'
         docker exec postgres-db psql -U ecommerceuser -d postgres -c 'CREATE DATABASE ecommerce;'
 
+        echo "Dropping and recreating tables if necessary..."
+        docker exec postgres-db psql -U ecommerceuser -d ecommerce -c '
+            DROP TABLE IF EXISTS base_review CASCADE;
+            DROP TABLE IF EXISTS django_migrations CASCADE;
+        '
+
         echo "Running database migrations and collecting static files..."
         docker exec web sh -c "
             export POSTGRES_HOST=postgres-db &&
