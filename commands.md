@@ -10,7 +10,7 @@ docker-compose -f docker-compose.yml -f docker-compose.override.yml up --build
 docker-compose -f docker-compose.yml -f docker-compose.prod.yml up --build
 
 
-
+02:28:12/05:05:56
 
 
 To run the end-to-end tests, use the following command:

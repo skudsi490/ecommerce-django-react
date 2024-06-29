@@ -74,42 +74,18 @@ stage('Build Locally') {
         sudo yum update -y
         sudo yum install -y python3 python3-pip docker
 
-        echo "Stopping and removing any existing PostgreSQL containers..."
-        docker stop postgres-db || true
-        docker rm postgres-db || true
-
         echo "Stopping and removing any existing application containers..."
         docker stop web || true
         docker rm web || true
-
-        echo "Starting PostgreSQL database using Docker..."
-        docker run --name postgres-db -e POSTGRES_DB=ecommerce -e POSTGRES_USER=ecommerceuser -e POSTGRES_PASSWORD=ecommercedbpassword -p 5432:5432 -d postgres:latest
-        sleep 10  # Wait for PostgreSQL to start
 
         echo "Building Docker image for the application..."
         docker build --build-arg REACT_APP_BACKEND_URL=http://localhost:8000 -t skudsi/ecommerce-django-react-web:latest .
 
         echo "Running the application container..."
-        docker run --name web -d -p 8000:8000 --link postgres-db:db -e POSTGRES_HOST=postgres-db -e POSTGRES_DB=ecommerce -e POSTGRES_USER=ecommerceuser -e POSTGRES_PASSWORD=ecommercedbpassword skudsi/ecommerce-django-react-web:latest
-
-        echo "Resetting the database schema and sequences..."
-        docker exec postgres-db psql -U ecommerceuser -d ecommerce -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'
-        docker exec postgres-db psql -U ecommerceuser -d ecommerce -c "
-            DO \$\$ DECLARE
-                r RECORD;
-            BEGIN
-                FOR r IN (SELECT sequence_name FROM information_schema.sequences WHERE sequence_schema = 'public') LOOP
-                    EXECUTE 'DROP SEQUENCE ' || quote_ident(r.sequence_name);
-                END LOOP;
-            END \$\$;
-        "
+        docker run --name web -d -p 8000:8000 skudsi/ecommerce-django-react-web:latest
 
         echo "Running database migrations and collecting static files..."
         docker exec web sh -c "
-            export POSTGRES_HOST=postgres-db &&
-            export POSTGRES_DB=ecommerce &&
-            export POSTGRES_USER=ecommerceuser &&
-            export POSTGRES_PASSWORD=ecommercedbpassword &&
             python manage.py makemigrations &&
             python manage.py migrate &&
             python manage.py loaddata /tmp/data_dump.json &&
@@ -143,7 +119,6 @@ stage('Test Locally') {
         }
     }
 }
-
 
 
 
