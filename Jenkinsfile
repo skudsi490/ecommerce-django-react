@@ -72,42 +72,36 @@ pipeline {
                 sh '''
                 echo "Installing dependencies using yum..."
                 sudo yum update -y
-                sudo yum install -y python3 python3-pip
+                sudo yum install -y python3 python3-pip docker
 
-                echo "Installing virtualenv using pip..."
-                pip3 install virtualenv
+                echo "Starting PostgreSQL database using Docker..."
+                docker run --name postgres-db -e POSTGRES_DB=ecommerce -e POSTGRES_USER=ecommerceuser -e POSTGRES_PASSWORD=ecommercedbpassword -p 5432:5432 -d postgres:latest
+                sleep 10  # Wait for PostgreSQL to start
 
-                echo "Setting up virtual environment and installing Python dependencies..."
-                virtualenv .venv
-                . .venv/bin/activate
-                pip install --upgrade pip
-                pip install -r requirements.txt
+                echo "Building Docker image for the application..."
+                docker build --build-arg REACT_APP_BACKEND_URL=http://localhost:8000 -t skudsi/ecommerce-django-react-web:latest .
 
-                echo "Running database migrations..."
-                python manage.py makemigrations
-                python manage.py migrate
+                echo "Running the application container..."
+                docker run --name web -d -p 8000:8000 --link postgres-db:db skudsi/ecommerce-django-react-web:latest
 
-                echo "Loading initial data..."
-                python manage.py loaddata data_dump.json
-
-                echo "Collecting static files..."
-                python manage.py collectstatic --noinput
-
-                echo "Running the Django server..."
-                nohup python manage.py runserver 0.0.0.0:8000 &
+                echo "Running database migrations and collecting static files..."
+                docker exec web sh -c "
+                    python manage.py makemigrations &&
+                    python manage.py migrate &&
+                    python manage.py loaddata /tmp/data_dump.json &&
+                    python manage.py collectstatic --noinput
+                "
                 '''
             }
         }
 
 
+
         stage('Test Locally') {
             steps {
                 sh '''
-                echo "Activating virtual environment..."
-                . .venv/bin/activate
-
-                echo "Running tests..."
-                pytest tests/api/ --html=report.html --self-contained-html | tee test_output.log
+                echo "Running tests in the application container..."
+                docker exec web pytest tests/api/ --html=report.html --self-contained-html | tee test_output.log
                 '''
             }
             post {
@@ -125,6 +119,7 @@ pipeline {
                 }
             }
         }
+
 
 
 
