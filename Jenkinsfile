@@ -103,7 +103,7 @@ stage('Run Tests in Docker') {
             if ! [ -x "$(command -v docker-compose)" ]; then
               echo "docker-compose not found, installing..."
               sudo apt-get update -y
-              sudo apt-get install -y libffi-dev libssl-dev
+              sudo apt-get install -y libffi-dev libssl-dev libcrypt1 libcrypt-dev
               sudo apt-get install -y python3 python3-pip
               sudo pip3 install docker-compose
             fi
