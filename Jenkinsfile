@@ -138,16 +138,6 @@ stage('Run Tests in Docker') {
                         ls -l /home/ubuntu/ecommerce-django-react
 EOF
                     '''
-
-                    echo "Copying test report from remote server to Jenkins workspace..."
-                    sh '''
-                    scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.html ./report.html
-                    '''
-
-                    echo "Listing copied files..."
-                    sh '''
-                    ls -l report.html
-                    '''
                 } else {
                     error("Failed to retrieve the IP address of the Ubuntu instance from Terraform state.")
                 }
@@ -155,6 +145,7 @@ EOF
         }
     }
 }
+
 
 
 
