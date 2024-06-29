@@ -99,6 +99,13 @@ stage('Run Tests in Docker') {
     steps {
         script {
             sh '''
+            echo "Checking if docker-compose is installed..."
+            if ! [ -x "$(command -v docker-compose)" ]; then
+              echo "docker-compose not found, installing..."
+              sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+              sudo chmod +x /usr/local/bin/docker-compose
+            fi
+
             echo "Removing existing container if it exists..."
             docker rm -f ${CONTAINER_NAME} || true
 
@@ -106,7 +113,7 @@ stage('Run Tests in Docker') {
             docker-compose -f docker-compose.yml up -d db
             sleep 10  # Give PostgreSQL some time to start
 
-            docker run --name ${CONTAINER_NAME} --network app-network -d skudsi/ecommerce-django-react-web:latest
+            docker run --name ${CONTAINER_NAME} --network app-network -d ${DOCKER_IMAGE_WEB}:latest
 
             echo "Waiting for web container to be fully up and running..."
             sleep 20
@@ -124,7 +131,7 @@ stage('Run Tests in Docker') {
                 if ! pip show pytest > /dev/null 2>&1; then
                     pip install pytest pytest-html
                 fi &&
-                pytest tests/api/ --html=report.html --self-contained-html | tee /app/test_output.log
+                pytest tests/api/ --html-report=report.html --self-contained-html | tee /app/test_output.log
             "
 
             echo "Copying test report from Docker container to Jenkins workspace..."
@@ -143,8 +150,6 @@ stage('Run Tests in Docker') {
         }
     }
 }
-
-
 
         stage('Publish Test Report') {
             steps {
