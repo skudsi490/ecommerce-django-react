@@ -138,19 +138,17 @@ stage('Run Tests in Docker') {
                     "
 
                     echo "Copying test report from Docker container to local workspace..."
-                    docker cp $(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web):/app/report.html /home/ubuntu/report.html
-                    docker cp $(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web):/app/test_output.log /home/ubuntu/test_output.log
+                    docker cp $(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web):/app/report.html /home/ubuntu/ecommerce-django-react/report.html
+
+                    echo "Listing contents of /home/ubuntu/ecommerce-django-react to verify report.html is copied..."
+                    ls -l /home/ubuntu/ecommerce-django-react
 EOF
                 '''
 
                 sh '''
                 echo "Copying report.html from remote Ubuntu instance to Jenkins workspace..."
-                scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/report.html .
-                scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/test_output.log .
+                scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.html ./report.html
                 '''
-
-                echo "Displaying test output log for debugging..."
-                sh 'cat test_output.log'
 
                 echo "Publishing test report..."
                 publishHTML(target: [
