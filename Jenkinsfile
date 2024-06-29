@@ -108,6 +108,11 @@ stage('Run Tests in Docker') {
               sudo pip3 install docker-compose
             fi
 
+            echo "Ensuring libcrypt.so.1 is available..."
+            if ! [ -e /lib/x86_64-linux-gnu/libcrypt.so.1 ]; then
+              sudo ln -s /lib/x86_64-linux-gnu/libcrypt.so.1.1.0 /lib/x86_64-linux-gnu/libcrypt.so.1 || true
+            fi
+
             echo "Removing existing container if it exists..."
             docker rm -f ${CONTAINER_NAME} || true
 
@@ -152,6 +157,7 @@ stage('Run Tests in Docker') {
         }
     }
 }
+
 
         stage('Publish Test Report') {
             steps {
