@@ -90,15 +90,14 @@ stage('Build Locally') {
         docker build --build-arg REACT_APP_BACKEND_URL=http://localhost:8000 -t skudsi/ecommerce-django-react-web:latest .
 
         echo "Running the application container..."
-        docker run --name web -d -p 8000:8000 --link postgres-db:db -e POSTGRES_HOST=postgres-db skudsi/ecommerce-django-react-web:latest
-
-        echo "Resetting the database..."
-        docker exec postgres-db psql -U ecommerceuser -d postgres -c 'DROP DATABASE ecommerce;'
-        docker exec postgres-db psql -U ecommerceuser -d postgres -c 'CREATE DATABASE ecommerce;'
+        docker run --name web -d -p 8000:8000 --link postgres-db:db -e POSTGRES_HOST=postgres-db -e POSTGRES_DB=ecommerce -e POSTGRES_USER=ecommerceuser -e POSTGRES_PASSWORD=ecommercedbpassword skudsi/ecommerce-django-react-web:latest
 
         echo "Running database migrations and collecting static files..."
         docker exec web sh -c "
             export POSTGRES_HOST=postgres-db &&
+            export POSTGRES_DB=ecommerce &&
+            export POSTGRES_USER=ecommerceuser &&
+            export POSTGRES_PASSWORD=ecommercedbpassword &&
             python manage.py makemigrations &&
             python manage.py migrate &&
             python manage.py loaddata /tmp/data_dump.json &&
@@ -107,6 +106,7 @@ stage('Build Locally') {
         '''
     }
 }
+
 
 
 
