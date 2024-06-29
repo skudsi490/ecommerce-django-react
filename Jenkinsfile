@@ -141,6 +141,7 @@ pipeline {
                 script {
                     def buildStatus = currentBuild.currentResult ?: 'FAILURE'
                     def message = "The build status is ${buildStatus}, on project ${env.JOB_NAME}. Find the test report here: ${env.BUILD_URL}/Test_20Report/"
+                    def emailmessage = """The build status is ${buildStatus}, on project ${env.JOB_NAME}. Find the test report here: ${env.BUILD_URL}/Test_20Report/"""
 
                     // Slack notification
                     slackSend channel: "${SLACK_CHANNEL}",
@@ -148,69 +149,69 @@ pipeline {
                               message: message
 
                     // Email notification
-                    emailext body: message,
-                             subject: "Build ${env.JOB_NAME} - ${env.BUILD_NUMBER} failed",
+                    emailext body: emailmessage,
+                             subject: """Build ${env.JOB_NAME} - ${env.BUILD_NUMBER} failed""",
                              to: "${EMAIL_RECIPIENTS}"
                 }
             }
         }
 
 
-        // stage('Extract Ubuntu IP') {
-        //     steps {
-        //         script {
-        //             withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
-        //                             string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')]) {
-        //                 sh '''
-        //                 export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-        //                 export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-        //                 aws s3 cp s3://${S3_BUCKET}/terraform/state/terraform.tfstate terraform.tfstate
-        //                 unset AWS_ACCESS_KEY_ID
-        //                 unset AWS_SECRET_ACCESS_KEY
+//         stage('Extract Ubuntu IP') {
+//             steps {
+//                 script {
+//                     withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+//                                     string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')]) {
+//                         sh '''
+//                         export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+//                         export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+//                         aws s3 cp s3://${S3_BUCKET}/terraform/state/terraform.tfstate terraform.tfstate
+//                         unset AWS_ACCESS_KEY_ID
+//                         unset AWS_SECRET_ACCESS_KEY
 
-        //                 # Extract the Ubuntu IP address without printing the whole file
-        //                 ubuntuIp=$(jq -r '.resources[] | select(.type=="aws_instance" and .name=="my_ubuntu").instances[0].attributes.public_ip' terraform.tfstate)
-        //                 echo "UBUNTU_IP=$ubuntuIp" > ip.txt
-        //                 '''
-        //             }
-        //             script {
-        //                 def ip = readFile('ip.txt').trim()
-        //                 env.MY_UBUNTU_IP = ip.split('=')[1]
-        //             }
-        //         }
-        //     }
-        // }
+//                         # Extract the Ubuntu IP address without printing the whole file
+//                         ubuntuIp=$(jq -r '.resources[] | select(.type=="aws_instance" and .name=="my_ubuntu").instances[0].attributes.public_ip' terraform.tfstate)
+//                         echo "UBUNTU_IP=$ubuntuIp" > ip.txt
+//                         '''
+//                     }
+//                     script {
+//                         def ip = readFile('ip.txt').trim()
+//                         env.MY_UBUNTU_IP = ip.split('=')[1]
+//                     }
+//                 }
+//             }
+//         }
 
 
-        // stage('Test Docker Login') {
-        //     steps {
-        //         script {
-        //             retry(3) {
-        //                 withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-        //                     sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
+//         stage('Test Docker Login') {
+//             steps {
+//                 script {
+//                     retry(3) {
+//                         withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+//                             sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
+//                         }
+//                     }
+//                 }
+//             }
+//         }
 
-        // stage('Build and Push Docker Image') {
-        //     steps {
-        //         script {
-        //             docker.build("${DOCKER_IMAGE_WEB}:latest", "--build-arg REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL} .")
-        //         }
-        //     }
-        // }
+//         stage('Build and Push Docker Image') {
+//             steps {
+//                 script {
+//                     docker.build("${DOCKER_IMAGE_WEB}:latest", "--build-arg REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL} .")
+//                 }
+//             }
+//         }
 
-        // stage('Push Docker Image') {
-        //     steps {
-        //         script {
-        //             docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
-        //                 docker.image("${DOCKER_IMAGE_WEB}:latest").push('latest')
-        //             }
-        //         }
-        //     }
-        // }
+//         stage('Push Docker Image') {
+//             steps {
+//                 script {
+//                     docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
+//                         docker.image("${DOCKER_IMAGE_WEB}:latest").push('latest')
+//                     }
+//                 }
+//             }
+//         }
 
 
 //         stage('Deploy to Ubuntu') {
@@ -272,8 +273,6 @@ pipeline {
 //                 }
 //             }
 //         }
-
-
 
 //         stage('Configure Nginx') {
 //             steps {
