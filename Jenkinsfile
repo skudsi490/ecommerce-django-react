@@ -154,25 +154,6 @@ pipeline {
                 }
             }
         }
-    }
-
-    post {
-        failure {
-            script {
-                def buildStatus = currentBuild.currentResult ?: 'FAILURE'
-                def message = "The build status is ${buildStatus}, on project ${env.JOB_NAME}. Find the test report here: ${env.BUILD_URL}Test_20Report/"
-
-                // Slack notification
-                slackSend channel: "${SLACK_CHANNEL}",
-                          username: "${SLACK_USERNAME}",
-                          message: message
-
-                // Email notification
-                // emailext body: message,
-                //          subject: "Build ${env.JOB_NAME} - ${env.BUILD_NUMBER} failed",
-                //          to: "${EMAIL_RECIPIENTS}"
-            }
-        }
 
 
         // stage('Extract Ubuntu IP') {
