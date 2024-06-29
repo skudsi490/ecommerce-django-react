@@ -94,15 +94,15 @@ stage('Build Locally') {
 
         echo "Resetting the database schema and sequences..."
         docker exec postgres-db psql -U ecommerceuser -d ecommerce -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'
-        docker exec postgres-db psql -U ecommerceuser -d ecommerce -c '
-            DO $$ DECLARE
+        docker exec postgres-db psql -U ecommerceuser -d ecommerce -c "
+            DO \$\$ DECLARE
                 r RECORD;
             BEGIN
                 FOR r IN (SELECT sequence_name FROM information_schema.sequences WHERE sequence_schema = 'public') LOOP
                     EXECUTE 'DROP SEQUENCE ' || quote_ident(r.sequence_name);
                 END LOOP;
-            END $$;
-        '
+            END \$\$;
+        "
 
         echo "Running database migrations and collecting static files..."
         docker exec web sh -c "
