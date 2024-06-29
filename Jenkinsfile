@@ -142,8 +142,8 @@ stage('Build Locally') {
                     def message = "The build status is ${buildStatus}, on project ${env.JOB_NAME}. Find the test report here: ${env.BUILD_URL}Test_20Report/"
 
                     // Slack notification
-                    slackSend channel: "${SLACK_CHANNEL}",
-                              username: "${SLACK_USERNAME}",
+                    slackSend channel: "#devops-channel",
+                              username: "Sami from Jenkins",
                               message: message
 
                     // // Email notification
