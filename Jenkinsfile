@@ -141,14 +141,14 @@ stage('Run Tests in Docker') {
                     sed -i 's|image: .*|image: ${DOCKER_IMAGE_WEB}:latest|g' /home/ubuntu/ecommerce-django-react/docker-compose.yml
 
                     echo "Running tests inside the web application container..."
-                    docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml up -d
-                    docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web sh -c "
+                    DOCKER_IMAGE_WEB=${DOCKER_IMAGE_WEB} docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml up -d
+                    DOCKER_IMAGE_WEB=${DOCKER_IMAGE_WEB} docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web sh -c "
                         if ! pip show pytest > /dev/null 2>&1; then
                             pip install pytest pytest-html
                         fi &&
                         pytest tests/api/ --html=/app/report.html --self-contained-html | tee /app/test_output.log
                     "
-                    docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml down
+                    DOCKER_IMAGE_WEB=${DOCKER_IMAGE_WEB} docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml down
 EOF
                 '''
 
@@ -171,6 +171,7 @@ EOF
         }
     }
 }
+
 
 
 
