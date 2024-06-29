@@ -102,15 +102,15 @@ stage('Run Tests in Docker') {
             echo "Checking if docker-compose is installed..."
             if ! [ -x "$(command -v docker-compose)" ]; then
               echo "docker-compose not found, installing..."
-              sudo apt-get update -y
-              sudo apt-get install -y libffi-dev libssl-dev
-              sudo apt-get install -y python3 python3-pip
+              sudo yum update -y
+              sudo yum install -y libffi-devel openssl-devel
+              sudo yum install -y python3 python3-pip
               sudo pip3 install docker-compose
             fi
 
             echo "Ensuring libcrypt.so.1 is available..."
-            if ! [ -e /usr/lib/x86_64-linux-gnu/libcrypt.so.1 ]; then
-              sudo ln -s /lib/x86_64-linux-gnu/libcrypt.so.1.1.0 /usr/lib/x86_64-linux-gnu/libcrypt.so.1 || true
+            if ! [ -e /usr/lib64/libcrypt.so.1 ]; then
+              sudo ln -s /lib64/libcrypt.so.1.1.0 /usr/lib64/libcrypt.so.1 || true
             fi
 
             echo "Removing existing containers if they exist..."
@@ -140,11 +140,12 @@ stage('Run Tests in Docker') {
             docker-compose -f docker-compose.yml down
 
             echo "Cleaning up symbolic links..."
-            sudo rm -f /usr/lib/x86_64-linux-gnu/libcrypt.so.1
+            sudo rm -f /usr/lib64/libcrypt.so.1
             '''
         }
     }
 }
+
 
 
 
