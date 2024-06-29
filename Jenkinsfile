@@ -170,8 +170,7 @@ stage('Build Locally') {
                 //         to: 'gagi.shmagi@gmail.com'
             }
         }
-    }
-}
+
 
         // stage('Extract Ubuntu IP') {
         //     steps {
