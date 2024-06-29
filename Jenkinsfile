@@ -128,9 +128,6 @@ stage('Run Tests in Docker') {
                 sh '''
                 ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                     set -e
-                    
-                    echo "Removing old test report if it exists..."
-                    docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web rm -f /app/report.html
 
                     echo "Running tests inside the web application container..."
                     docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web sh -c "
@@ -139,18 +136,13 @@ stage('Run Tests in Docker') {
                         fi &&
                         pytest tests/api/ --html=/app/report.html --self-contained-html | tee /app/test_output.log
                     "
-
-                    echo "Listing contents of /app to verify report.html is created..."
-                    docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web ls -l /app
 EOF
                 '''
 
                 // Copy the report directly from the Docker container to Jenkins workspace
-                def containerId = sh(script: """
-                ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} "docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web"
-                """, returnStdout: true).trim()
-                
-                sh "docker cp ${containerId}:/app/report.html ./report.html"
+                sh '''
+                ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} "docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web cat /app/report.html" > report.html
+                '''
 
                 echo "Publishing test report..."
                 publishHTML(target: [
@@ -166,6 +158,7 @@ EOF
         }
     }
 }
+
 
 
 
