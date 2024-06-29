@@ -99,9 +99,6 @@ stage('Run Tests in Docker') {
     steps {
         script {
             sh '''
-            echo "Setting permissions for the project directory..."
-            sudo chmod -R 777 /home/ubuntu/ecommerce-django-react
-
             echo "Removing existing container if it exists..."
             docker rm -f ${CONTAINER_NAME} || true
 
@@ -135,6 +132,7 @@ stage('Run Tests in Docker') {
         }
     }
 }
+
 
 
 
