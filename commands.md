@@ -27,7 +27,7 @@ sudo yum install -y rsync
 ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ec2-user@18.199.164.91
 ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ec2-user@3.122.53.211
 
-ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@35.159.115.123
+ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@18.194.20.42
 ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.120.180.27
 ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.79.240.158
 
@@ -81,7 +81,7 @@ npm start
 
 
 git add Jenkinsfile
-git commit -m "Update Jenkinsfile 309"
+git commit -m "Update Jenkinsfile 333"
 git push origin main
 
 sudo cat /var/log/user-data.log

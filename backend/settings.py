@@ -30,6 +30,8 @@ ALLOWED_HOSTS = [
     '*',  # Allow all hosts for simplicity, adjust as needed
     'localhost',
     '127.0.0.1',
+    'web',  # Docker service name for the web container
+    'db',  # Docker service name for the database container
     'ec2-18-194-20-42.eu-central-1.compute.amazonaws.com',  # My Ubuntu
     '18.194.20.42',  # My Ubuntu IP address
 ]
