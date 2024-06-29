@@ -16,7 +16,6 @@ pipeline {
         POSTGRES_PASSWORD = 'ecommercedbpassword'
         POSTGRES_HOST = 'db'
         REACT_APP_BACKEND_URL = 'http://18.194.20.42:8000'
-        CONTAINER_NAME = 'ecommerce-test-container'
     }
 
     stages {
@@ -29,15 +28,17 @@ pipeline {
                 echo "Cleaning up workspace and Docker resources"
                 docker system prune -af --volumes || true
                 sudo rm -rf ${WORKSPACE}/*
-                sudo apt-get clean || true
-                sudo apt-get autoremove -y || true
+                sudo yum clean all || true
+                sudo yum autoremove -y || true
                 sudo rm -rf /var/lib/docker/tmp/*
-                sudo rm -rf /var/lib/apt/lists/*
+                sudo rm -rf /var/cache/yum
+                sudo rm -rf /var/lib/yum/yumdb/*
+                sudo rm -rf /var/lib/yum/history/*
 
                 if ! [ -x "$(command -v unzip)" ]; then
                     echo "Unzip not found, installing..."
-                    sudo apt-get update -y
-                    sudo apt-get install -y unzip
+                    sudo yum update -y
+                    sudo yum install -y unzip
                 fi
 
                 echo "Disk usage after cleanup:"
@@ -45,6 +46,7 @@ pipeline {
                 '''
             }
         }
+
 
         stage('Install AWS CLI') {
             steps {
