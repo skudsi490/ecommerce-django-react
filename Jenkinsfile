@@ -93,7 +93,8 @@ stage('Build Locally') {
         docker run --name web -d -p 8000:8000 --link postgres-db:db -e POSTGRES_HOST=postgres-db skudsi/ecommerce-django-react-web:latest
 
         echo "Resetting the database..."
-        docker exec postgres-db psql -U ecommerceuser -d ecommerce -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'
+        docker exec -it postgres-db psql -U ecommerceuser -c 'DROP DATABASE ecommerce;'
+        docker exec -it postgres-db psql -U ecommerceuser -c 'CREATE DATABASE ecommerce;'
 
         echo "Running database migrations and collecting static files..."
         docker exec web sh -c "
@@ -110,28 +111,29 @@ stage('Build Locally') {
 
 
 
-        stage('Test Locally') {
-            steps {
-                sh '''
-                echo "Running tests in the application container..."
-                docker exec web pytest tests/api/ --html=report.html --self-contained-html | tee test_output.log
-                '''
-            }
-            post {
-                always {
-                    echo "Publishing test report..."
-                    publishHTML(target: [
-                        allowMissing: false,
-                        alwaysLinkToLastBuild: true,
-                        keepAll: true,
-                        reportDir: '.',
-                        reportFiles: 'report.html',
-                        reportName: 'Test Report',
-                        reportTitles: 'Test Report'
-                    ])
-                }
-            }
+
+stage('Test Locally') {
+    steps {
+        sh '''
+        echo "Running tests in the application container..."
+        docker exec web pytest tests/api/ --html=report.html --self-contained-html | tee test_output.log
+        '''
+    }
+    post {
+        always {
+            echo "Publishing test report..."
+            publishHTML(target: [
+                allowMissing: false,
+                alwaysLinkToLastBuild: true,
+                keepAll: true,
+                reportDir: '.',
+                reportFiles: 'report.html',
+                reportName: 'Test Report',
+                reportTitles: 'Test Report'
+            ])
         }
+    }
+}
 
 
 
