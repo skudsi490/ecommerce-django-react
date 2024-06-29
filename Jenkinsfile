@@ -132,7 +132,8 @@ stage('Run Tests in Docker') {
                     set -e
 
                     echo "Pulling the latest Docker image..."
-                    docker.pull ${DOCKER_IMAGE_WEB}:latest
+                        docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
+                        docker.image("${DOCKER_IMAGE_WEB}:latest").pull('latest')
 
                     echo "Updating docker-compose.yml to use the latest image..."
                     sed -i 's|image: .*|image: ${DOCKER_IMAGE_WEB}:latest|g' /home/ubuntu/ecommerce-django-react/docker-compose.yml
