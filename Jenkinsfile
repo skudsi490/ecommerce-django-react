@@ -99,7 +99,7 @@ stage('Build Locally') {
     }
 }
 
-        stage('Running Tests') {
+        stage('Test Locally') {
             steps {
                 script {
                     try {
@@ -112,6 +112,7 @@ stage('Build Locally') {
                         '''
                     } catch (Exception e) {
                         currentBuild.result = 'FAILURE'
+                        error("Test stage failed: ${e.message}")
                     }
                 }
             }
@@ -146,28 +147,19 @@ stage('Build Locally') {
                             message: message
 
                     // Email notification
-                    emailext body: message,
-                            subject: "Build ${env.JOB_NAME} - ${env.BUILD_NUMBER} failed",
-                            to: 'gagi.shmagi@gmail.com'
+                    // emailext body: message,
+                    //         subject: "Build ${env.JOB_NAME} - ${env.BUILD_NUMBER} failed",
+                    //         to: 'gagi.shmagi@gmail.com'
                 }
             }
         }
     }
+
     post {
         failure {
             script {
-                def buildStatus = currentBuild.currentResult ?: 'SUCCESS'
-                def message = "The build status is ${buildStatus}, on project ${env.JOB_NAME}. Find the test report here: ${env.BUILD_URL}Test_20Report/"
-
-                // Slack notification
-                slackSend channel: '#jenkins-builds',
-                        username: 'Jenkins',
-                        message: message
-
-                // Email notification
-                // emailext body: message,
-                //         subject: "Build ${env.JOB_NAME} - ${env.BUILD_NUMBER} failed",
-                //         to: 'gagi.shmagi@gmail.com'
+                // This block can be used for additional failure handling if needed
+                echo "Build failed. Please check the notifications sent to the developers."
             }
         }
 
