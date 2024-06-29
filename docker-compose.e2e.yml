@@ -1,0 +1,31 @@
+version: '3'
+
+services:
+  backend:
+    image: skudsi/ecommerce-django-react-backend:latest
+    container_name: backend
+    command: ["pytest", "--maxfail=1", "--disable-warnings", "-v", "--junitxml=/app/reports/e2e_tests.xml"]
+    environment:
+      - DEBUG=1
+    volumes:
+      - ./backend:/app/backend
+      - ./requirements.txt:/app/requirements.txt  
+      - ./backend/reports:/app/reports  
+
+  frontend:
+    image: skudsi/ecommerce-django-react-frontend:latest
+    container_name: frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    command: ["pytest", "--maxfail=1", "--disable-warnings", "-v", "--junitxml=/app/reports/e2e_tests.xml"]
+    volumes:
+      - ./frontend:/app/frontend
+      - ./frontend/reports:/app/reports  
+
+  selenium:
+    image: selenium/standalone-chrome
+    container_name: selenium
+    ports:
+      - "4444:4444"

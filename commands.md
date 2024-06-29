@@ -21,12 +21,14 @@ docker-compose -f docker-compose.e2e.yml up --abort-on-container-exit
 cd /home/ubuntu/ecommerce-django-react
 ls -la media/images
 
+sudo apt-get install rsync
+sudo yum install -y rsync
 
-ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ec2-user@3.76.30.59
-ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ec2-user@18.195.65.211
+ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ec2-user@18.199.164.91
+ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ec2-user@3.122.53.211
 
 ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@35.159.115.123
-ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@18.184.167.254
+ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.120.180.27
 ssh -i "C:\Users\sammo\.ssh\tesi-aws.pem" ubuntu@3.79.240.158
 
 check if docker and docker compose installed :
@@ -79,7 +81,7 @@ npm start
 
 
 git add Jenkinsfile
-git commit -m "Update Jenkinsfile 288"
+git commit -m "Update Jenkinsfile 309"
 git push origin main
 
 sudo cat /var/log/user-data.log
@@ -97,7 +99,7 @@ docker push skudsi/ecommerce-django-react-backend:latest
 
 
 git add .
-git commit -m "Update configuration v127"
+git commit -m "Update configuration v128"
 git push origin main
 
 Please dont use StrictHostKeyChecking-no and use StrictHostKeyChecking=no instead

@@ -30,8 +30,8 @@ ALLOWED_HOSTS = [
     '*',  # Allow all hosts for simplicity, adjust as needed
     'localhost',
     '127.0.0.1',
-    'ec2-35-159-115-123.eu-central-1.compute.amazonaws.com',  # My Ubuntu
-    '35.159.115.123',  # My Ubuntu IP address
+    'ec2-18-194-20-42.eu-central-1.compute.amazonaws.com',  # My Ubuntu
+    '18.194.20.42',  # My Ubuntu IP address
 ]
 
 
@@ -203,8 +203,8 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",
-    "http://35.159.115.123:8000",
-    "http://ec2-35-159-115-123.eu-central-1.compute.amazonaws.com",
+    "http://18.194.20.42:8000",
+    "http://ec2-18-194-20-42.eu-central-1.compute.amazonaws.com",
 ]
 
 

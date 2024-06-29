@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  web:
+    entrypoint: ["sh", "-c"]
+    command: >
+      if ! pip show pytest > /dev/null 2>&1; then
+          pip install pytest pytest-html
+      fi &&
+      pytest --html=/app/report.html
