@@ -99,31 +99,37 @@ stage('Build Locally') {
     }
 }
 
-stage('Test Locally') {
-    steps {
-        sh '''
-        echo "Activating virtual environment..."
-        . .venv/bin/activate
+        stage('Running Tests') {
+            steps {
+                script {
+                    try {
+                        sh '''
+                        echo "Activating virtual environment..."
+                        . .venv/bin/activate
 
-        echo "Running tests..."
-        pytest tests/api/ --html-report=report.html --self-contained-html | tee test_output.log
-        '''
-    }
-    post {
-        always {
-            echo "Publishing test report..."
-            publishHTML(target: [
-                allowMissing: false,
-                alwaysLinkToLastBuild: true,
-                keepAll: true,
-                reportDir: '.',
-                reportFiles: 'report.html',
-                reportName: 'Test Report',
-                reportTitles: 'Test Report'
-            ])
+                        echo "Running tests..."
+                        .venv/bin/pytest tests/api/ --html-report=report.html --self-contained-html | tee test_output.log
+                        '''
+                    } catch (Exception e) {
+                        currentBuild.result = 'FAILURE'
+                    }
+                }
+            }
         }
-    }
-}
+
+        stage('Publish Report') {
+            steps {
+                publishHTML(target: [
+                    allowMissing: false,
+                    alwaysLinkToLastBuild: true,
+                    keepAll: true,
+                    reportDir: '.',
+                    reportFiles: 'report.html',
+                    reportName: 'Test Report',
+                    reportTitles: 'Test Report'
+                ])
+            }
+        }
 
         stage('Notify the Developers') {
             when {
@@ -132,14 +138,14 @@ stage('Test Locally') {
             steps {
                 script {
                     def buildStatus = currentBuild.currentResult ?: 'SUCCESS'
-                    def message = "The build status is ${buildStatus}, on project ${env.JOB_NAME}. Find the test report here: ${env.BUILD_URL}"
+                    def message = "The build status is ${buildStatus}, on project ${env.JOB_NAME}. Find the test report here: ${env.BUILD_URL}Test_20Report/"
 
                     // Slack notification
                     slackSend channel: '#jenkins-builds',
                             username: 'Jenkins',
                             message: message
 
-                    // // Email notification
+                    // Email notification
                     // emailext body: message,
                     //         subject: "Build ${env.JOB_NAME} - ${env.BUILD_NUMBER} failed",
                     //         to: 'gagi.shmagi@gmail.com'
