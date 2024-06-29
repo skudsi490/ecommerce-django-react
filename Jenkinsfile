@@ -77,20 +77,67 @@ pipeline {
             }
         }
 
-        stage('Build and Push Docker Image') {
+        // stage('Build and Push Docker Image') {
+        //     steps {
+        //         script {
+        //             docker.build("${DOCKER_IMAGE_WEB}:latest", "--build-arg REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL} .")
+        //         }
+        //     }
+        // }
+
+        // stage('Push Docker Image') {
+        //     steps {
+        //         script {
+        //             docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
+        //                 docker.image("${DOCKER_IMAGE_WEB}:latest").push('latest')
+        //             }
+        //         }
+        //     }
+        // }
+
+                stage('Run Tests in Docker') {
             steps {
                 script {
-                    docker.build("${DOCKER_IMAGE_WEB}:latest", "--build-arg REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL} .")
+                    sh '''
+                    echo "Removing existing container if it exists..."
+                    docker rm -f ${CONTAINER_NAME} || true
+
+                    echo "Running tests in Docker container..."
+                    docker run --name ${CONTAINER_NAME} -d skudsi/ecommerce-django-react-web:latest
+
+                    docker exec ${CONTAINER_NAME} sh -c "
+                        if ! pip show pytest > /dev/null 2>&1; then
+                            pip install pytest pytest-html
+                        fi &&
+                        pytest tests/api/ --html=/app/report.html --self-contained-html | tee /app/test_output.log
+                    "
+
+                    echo "Copying test report from Docker container to Jenkins workspace..."
+                    docker cp ${CONTAINER_NAME}:/app/report.html ./report.html
+
+                    echo "Listing copied files..."
+                    ls -l report.html
+
+                    echo "Stopping and removing Docker container..."
+                    docker stop ${CONTAINER_NAME}
+                    docker rm ${CONTAINER_NAME}
+                    '''
                 }
             }
         }
 
-        stage('Push Docker Image') {
+        stage('Publish Test Report') {
             steps {
                 script {
-                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
-                        docker.image("${DOCKER_IMAGE_WEB}:latest").push('latest')
-                    }
+                    publishHTML(target: [
+                        allowMissing: false,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: '.',
+                        reportFiles: 'report.html',
+                        reportName: 'Test Report',
+                        reportTitles: 'Test Report'
+                    ])
                 }
             }
         }
@@ -172,161 +219,115 @@ EOF
             }
         }
 
-        stage('Run Tests in Docker') {
-            steps {
-                script {
-                    sh '''
-                    echo "Removing existing container if it exists..."
-                    docker rm -f ${CONTAINER_NAME} || true
 
-                    echo "Running tests in Docker container..."
-                    docker run --name ${CONTAINER_NAME} -d skudsi/ecommerce-django-react-web:latest
+//         stage('Configure Nginx') {
+//             steps {
+//                 script {
+//                     withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
+//                 sh '''
+//                 echo "Configuring Nginx on the server..."
+//                 scp -o StrictHostKeyChecking=no -i ${SSH_KEY} config/nginx.conf ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/nginx.conf
+//                 ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+//                 set -e
 
-                    docker exec ${CONTAINER_NAME} sh -c "
-                        if ! pip show pytest > /dev/null 2>&1; then
-                            pip install pytest pytest-html
-                        fi &&
-                        pytest tests/api/ --html=/app/report.html --self-contained-html | tee /app/test_output.log
-                    "
+//                 # Ensure /tmp is mounted with exec
+//                 if ! mountpoint -q /tmp; then
+//                     echo "/tmp is not mounted, mounting /tmp..."
+//                     sudo mount -t tmpfs tmpfs /tmp
+//                 fi
 
-                    echo "Copying test report from Docker container to Jenkins workspace..."
-                    docker cp ${CONTAINER_NAME}:/app/report.html ./report.html
+//                 sudo mount -o remount,exec /tmp
 
-                    echo "Listing copied files..."
-                    ls -l report.html
+//                 # Clean up /etc/apt/sources.list and /etc/apt/sources.list.d/
+//                 sudo cp /etc/apt/sources.list /etc/apt/sources.list.backup
+//                 sudo tee /etc/apt/sources.list <<EOL
+// deb http://archive.ubuntu.com/ubuntu/ noble main restricted universe multiverse
+// deb http://archive.ubuntu.com/ubuntu/ noble-updates main restricted universe multiverse
+// deb http://archive.ubuntu.com/ubuntu/ noble-backports main restricted universe multiverse
+// deb http://security.ubuntu.com/ubuntu/ noble-security main restricted universe multiverse
+// EOL
+//                 sudo rm -rf /etc/apt/sources.list.d/* || true
 
-                    echo "Stopping and removing Docker container..."
-                    docker stop ${CONTAINER_NAME}
-                    docker rm ${CONTAINER_NAME}
-                    '''
-                }
-            }
-        }
+//                 # Update and upgrade all packages
+//                 sudo apt-get update
+//                 sudo apt-get upgrade -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
+//                 sudo apt-get dist-upgrade -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
 
-        stage('Publish Test Report') {
-            steps {
-                script {
-                    publishHTML(target: [
-                        allowMissing: false,
-                        alwaysLinkToLastBuild: true,
-                        keepAll: true,
-                        reportDir: '.',
-                        reportFiles: 'report.html',
-                        reportName: 'Test Report',
-                        reportTitles: 'Test Report'
-                    ])
-                }
-            }
-        }
+//                 # Fix broken packages
+//                 sudo apt-get --fix-broken install
+//                 sudo dpkg --configure -a
 
-        stage('Configure Nginx') {
-            steps {
-                script {
-                    withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
-                sh '''
-                echo "Configuring Nginx on the server..."
-                scp -o StrictHostKeyChecking=no -i ${SSH_KEY} config/nginx.conf ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/nginx.conf
-                ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
-                set -e
+//                 # Unhold any held packages
+//                 sudo apt-mark unhold libcrypt1 libcrypt-dev libssl-dev systemd-sysv libpam-runtime libpam-modules grub-efi-amd64-signed grub2-common mokutil
 
-                # Ensure /tmp is mounted with exec
-                if ! mountpoint -q /tmp; then
-                    echo "/tmp is not mounted, mounting /tmp..."
-                    sudo mount -t tmpfs tmpfs /tmp
-                fi
+//                 # Install necessary packages
+//                 sudo apt-get install -y libcrypt1 libcrypt-dev libssl-dev systemd-sysv libpam-runtime libpam-modules grub-efi-amd64-signed grub2-common mokutil nginx
 
-                sudo mount -o remount,exec /tmp
+//                 # Check File System Type
+//                 df -Th /usr /lib /lib/x86_64-linux-gnu
 
-                # Clean up /etc/apt/sources.list and /etc/apt/sources.list.d/
-                sudo cp /etc/apt/sources.list /etc/apt/sources.list.backup
-                sudo tee /etc/apt/sources.list <<EOL
-deb http://archive.ubuntu.com/ubuntu/ noble main restricted universe multiverse
-deb http://archive.ubuntu.com/ubuntu/ noble-updates main restricted universe multiverse
-deb http://archive.ubuntu.com/ubuntu/ noble-backports main restricted universe multiverse
-deb http://security.ubuntu.com/ubuntu/ noble-security main restricted universe multiverse
-EOL
-                sudo rm -rf /etc/apt/sources.list.d/* || true
+//                 # Check Library Path and Permissions
+//                 sudo find / -iname "libcrypt.so*"
 
-                # Update and upgrade all packages
-                sudo apt-get update
-                sudo apt-get upgrade -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
-                sudo apt-get dist-upgrade -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
+//                 # Verify library architecture and fix symbolic links
+//                 sudo ln -sf /lib/x86_64-linux-gnu/libcrypt.so.1.1.0 /lib/x86_64-linux-gnu/libcrypt.so.1
+//                 sudo ln -sf /lib/x86_64-linux-gnu/libcrypt.so.1 /usr/lib/libcrypt.so.1
 
-                # Fix broken packages
-                sudo apt-get --fix-broken install
-                sudo dpkg --configure -a
+//                 # Ensure the symbolic links have correct permissions
+//                 sudo chmod 755 /lib/x86_64-linux-gnu/libcrypt.so.1.1.0
+//                 sudo chmod 755 /lib/x86_64-linux-gnu/libcrypt.so.1
+//                 sudo chmod 755 /usr/lib/libcrypt.so.1
+//                 sudo chown root:root /lib/x86_64-linux-gnu/libcrypt.so.1.1.0
+//                 sudo chown root:root /lib/x86_64-linux-gnu/libcrypt.so.1
+//                 sudo chown root:root /usr/lib/libcrypt.so.1
 
-                # Unhold any held packages
-                sudo apt-mark unhold libcrypt1 libcrypt-dev libssl-dev systemd-sysv libpam-runtime libpam-modules grub-efi-amd64-signed grub2-common mokutil
+//                 # Clean up /etc/ld.so.conf and included files
+//                 sudo tee /etc/ld.so.conf <<EOL
+// /lib/x86_64-linux-gnu
+// /usr/lib
+// EOL
+//                 sudo rm -f /etc/ld.so.conf.d/* || true
 
-                # Install necessary packages
-                sudo apt-get install -y libcrypt1 libcrypt-dev libssl-dev systemd-sysv libpam-runtime libpam-modules grub-efi-amd64-signed grub2-common mokutil nginx
+//                 # Rebuild library cache
+//                 sudo ldconfig -v
 
-                # Check File System Type
-                df -Th /usr /lib /lib/x86_64-linux-gnu
+//                 # Check the presence of the library and its permissions
+//                 ls -l /lib/x86_64-linux-gnu/libcrypt.so.1.1.0
+//                 ls -l /lib/x86_64-linux-gnu/libcrypt.so.1
+//                 ls -l /usr/lib/libcrypt.so.1
 
-                # Check Library Path and Permissions
-                sudo find / -iname "libcrypt.so*"
+//                 # Move and enable Nginx configuration
+//                 sudo mv /home/ubuntu/ecommerce-django-react/nginx.conf /etc/nginx/sites-available/ecommerce-django-react
+//                 sudo ln -sf /etc/nginx/sites-available/ecommerce-django-react /etc/nginx/sites-enabled/ecommerce-django-react
 
-                # Verify library architecture and fix symbolic links
-                sudo ln -sf /lib/x86_64-linux-gnu/libcrypt.so.1.1.0 /lib/x86_64-linux-gnu/libcrypt.so.1
-                sudo ln -sf /lib/x86_64-linux-gnu/libcrypt.so.1 /usr/lib/libcrypt.so.1
+//                 echo "Testing Nginx configuration..."
+//                 sudo nginx -t || (echo "Nginx configuration test failed" && exit 1)
 
-                # Ensure the symbolic links have correct permissions
-                sudo chmod 755 /lib/x86_64-linux-gnu/libcrypt.so.1.1.0
-                sudo chmod 755 /lib/x86_64-linux-gnu/libcrypt.so.1
-                sudo chmod 755 /usr/lib/libcrypt.so.1
-                sudo chown root:root /lib/x86_64-linux-gnu/libcrypt.so.1.1.0
-                sudo chown root:root /lib/x86_64-linux-gnu/libcrypt.so.1
-                sudo chown root:root /usr/lib/libcrypt.so.1
+//                 echo "Restarting Nginx..."
+//                 sudo systemctl restart nginx
 
-                # Clean up /etc/ld.so.conf and included files
-                sudo tee /etc/ld.so.conf <<EOL
-/lib/x86_64-linux-gnu
-/usr/lib
-EOL
-                sudo rm -f /etc/ld.so.conf.d/* || true
+//                 # Ensure directory permissions
+//                 sudo chmod 755 /home
+//                 sudo chmod 755 /home/ubuntu
+//                 sudo chmod 755 /home/ubuntu/ecommerce-django-react
+//                 sudo chmod 755 /home/ubuntu/ecommerce-django-react/staticfiles
 
-                # Rebuild library cache
-                sudo ldconfig -v
+//                 # Check SELinux and AppArmor status
+//                 sudo apparmor_status
+//                 sudo setenforce 0 || true
 
-                # Check the presence of the library and its permissions
-                ls -l /lib/x86_64-linux-gnu/libcrypt.so.1.1.0
-                ls -l /lib/x86_64-linux-gnu/libcrypt.so.1
-                ls -l /usr/lib/libcrypt.so.1
+//                 # Adjust AppArmor profile for Nginx
+//                 echo 'Creating AppArmor profile for Nginx...'
+//                 sudo touch /etc/apparmor.d/usr.sbin.nginx
+//                 echo -e '#include <tunables/global>\\n/usr/sbin/nginx {\\n  /home/ubuntu/ecommerce-django-react/staticfiles/** r,\\n}' | sudo tee /etc/apparmor.d/usr.sbin.nginx
 
-                # Move and enable Nginx configuration
-                sudo mv /home/ubuntu/ecommerce-django-react/nginx.conf /etc/nginx/sites-available/ecommerce-django-react
-                sudo ln -sf /etc/nginx/sites-available/ecommerce-django-react /etc/nginx/sites-enabled/ecommerce-django-react
-
-                echo "Testing Nginx configuration..."
-                sudo nginx -t || (echo "Nginx configuration test failed" && exit 1)
-
-                echo "Restarting Nginx..."
-                sudo systemctl restart nginx
-
-                # Ensure directory permissions
-                sudo chmod 755 /home
-                sudo chmod 755 /home/ubuntu
-                sudo chmod 755 /home/ubuntu/ecommerce-django-react
-                sudo chmod 755 /home/ubuntu/ecommerce-django-react/staticfiles
-
-                # Check SELinux and AppArmor status
-                sudo apparmor_status
-                sudo setenforce 0 || true
-
-                # Adjust AppArmor profile for Nginx
-                echo 'Creating AppArmor profile for Nginx...'
-                sudo touch /etc/apparmor.d/usr.sbin.nginx
-                echo -e '#include <tunables/global>\\n/usr/sbin/nginx {\\n  /home/ubuntu/ecommerce-django-react/staticfiles/** r,\\n}' | sudo tee /etc/apparmor.d/usr.sbin.nginx
-
-                sudo apparmor_parser -r /etc/apparmor.d/usr.sbin.nginx || true
-EOF
-                '''
-                    }
-                }
-            }
-        }
+//                 sudo apparmor_parser -r /etc/apparmor.d/usr.sbin.nginx || true
+// EOF
+//                 '''
+//                     }
+//                 }
+//             }
+//         }
 
     }
 }
