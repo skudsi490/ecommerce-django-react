@@ -99,20 +99,17 @@ stage('Run Tests in Docker') {
     steps {
         script {
             sh '''
-            echo "Removing existing container if it exists..."
-            docker rm -f ${CONTAINER_NAME} || true
+            echo "Removing existing containers if they exist..."
+            docker-compose -f docker-compose.yml down --remove-orphans || true
 
-            echo "Running PostgreSQL container..."
-            docker run --name ${CONTAINER_NAME}-db -d --env POSTGRES_DB=ecommerce --env POSTGRES_USER=ecommerceuser --env POSTGRES_PASSWORD=ecommercedbpassword -p 5432:5432 postgres:13
+            echo "Starting services with Docker Compose..."
+            docker-compose -f docker-compose.yml up -d
 
-            echo "Waiting for PostgreSQL to be ready..."
-            sleep 20  # Give PostgreSQL some time to start
-
-            echo "Running web application container..."
-            docker run --name ${CONTAINER_NAME}-web --network host -e POSTGRES_DB=ecommerce -e POSTGRES_USER=ecommerceuser -e POSTGRES_PASSWORD=ecommercedbpassword -e DJANGO_SETTINGS_MODULE=backend.settings -d skudsi/ecommerce-django-react-web:latest
+            echo "Waiting for services to be ready..."
+            sleep 20  # Give services some time to start
 
             echo "Running tests in web application container..."
-            docker exec ${CONTAINER_NAME}-web sh -c "
+            docker-compose -f docker-compose.yml exec -T web sh -c "
                 if ! pip show pytest > /dev/null 2>&1; then
                     pip install pytest pytest-html
                 fi &&
@@ -120,18 +117,18 @@ stage('Run Tests in Docker') {
             "
 
             echo "Copying test report from web container to Jenkins workspace..."
-            docker cp ${CONTAINER_NAME}-web:/app/report.html ./report.html
+            docker cp $(docker-compose -f docker-compose.yml ps -q web):/app/report.html ./report.html
 
             echo "Listing copied files..."
             ls -l report.html
 
-            echo "Stopping and removing Docker containers..."
-            docker stop ${CONTAINER_NAME}-db ${CONTAINER_NAME}-web
-            docker rm ${CONTAINER_NAME}-db ${CONTAINER_NAME}-web
+            echo "Stopping and removing Docker Compose services..."
+            docker-compose -f docker-compose.yml down
             '''
         }
     }
 }
+
 
 
 
