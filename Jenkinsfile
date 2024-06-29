@@ -118,31 +118,28 @@ pipeline {
                             ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                                 set -e
                                 
-                                echo "Removing existing container if it exists..."
-                                docker rm -f ecommerce-test-container || true
+                                echo "Removing existing containers if they exist..."
+                                docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml down --remove-orphans || true
 
-                                echo "Running tests in Docker container..."
-                                docker run --name ecommerce-test-container -d skudsi/ecommerce-django-react-web:latest
+                                echo "Starting services with Docker Compose..."
+                                docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml up -d
 
-                                docker exec ecommerce-test-container sh -c "
-                                    if ! pip show pytest > /dev/null 2>&1; then
-                                        pip install pytest pytest-html
-                                    fi &&
+                                echo "Waiting for services to be ready..."
+                                sleep 20  # Give services some time to start
+
+                                echo "Running tests in web application container..."
+                                docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web sh -c "
                                     pytest tests/api/ --html-report=/app/report.html --self-contained-html | tee /app/test_output.log
                                 "
 
-                                echo "Copying test report from Docker container to local workspace..."
-                                docker cp ecommerce-test-container:/app/report.html ./report.html
-
-                                echo "Stopping and removing Docker container..."
-                                docker stop ecommerce-test-container
-                                docker rm ecommerce-test-container
+                                echo "Stopping and removing Docker Compose services..."
+                                docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml down
                             EOF
                             '''
 
                             echo "Copying test report from remote server to Jenkins workspace..."
                             sh '''
-                            scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/report.html ./report.html
+                            scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.html ./report.html
                             '''
 
                             echo "Listing copied files..."
@@ -169,7 +166,6 @@ pipeline {
         }
     }
 }
-
         stage('Publish Test Report') {
             steps {
                 script {
