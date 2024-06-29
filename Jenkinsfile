@@ -121,49 +121,53 @@ pipeline {
         //     }
         // }
 
-        stage('Run Tests in Docker') {
-            steps {
-                script {
-                    withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
-                        sh '''
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
-                            set -e
-                            
-                            echo "Removing old test report if it exists..."
-                            rm -f /home/ubuntu/report.html
+stage('Run Tests in Docker') {
+    steps {
+        script {
+            withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
+                sh '''
+                ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                    set -e
+                    
+                    echo "Removing old test report if it exists..."
+                    rm -f /home/ubuntu/ecommerce-django-react/report.html
 
-                            echo "Running tests inside the web application container..."
-                            docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web sh -c "
-                                if ! pip show pytest > /dev/null 2>&1; then
-                                    pip install pytest pytest-html
-                                fi &&
-                                pytest tests/api/ --html=/app/report.html --self-contained-html | tee /app/test_output.log
-                            "
+                    echo "Running tests inside the web application container..."
+                    docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web sh -c "
+                        if ! pip show pytest > /dev/null 2>&1; then
+                            pip install pytest pytest-html
+                        fi &&
+                        pytest tests/api/ --html=/app/report.html --self-contained-html | tee /app/test_output.log
+                    "
 
-                            echo "Copying test report from Docker container to local workspace..."
-                            docker cp $(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web):/app/report.html /home/ubuntu/report.html
+                    echo "Copying test report from Docker container to local workspace..."
+                    docker cp $(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web):/app/report.html /home/ubuntu/ecommerce-django-react/report.html
+
+                    echo "Listing contents of /home/ubuntu/ecommerce-django-react to verify report.html is copied..."
+                    ls -l /home/ubuntu/ecommerce-django-react
 EOF
-                        '''
+                '''
 
-                        sh '''
-                        echo "Copying report.html from remote Ubuntu instance to Jenkins workspace..."
-                        scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/report.html .
-                        '''
+                sh '''
+                echo "Copying report.html from remote Ubuntu instance to Jenkins workspace..."
+                scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.html .
+                '''
 
-                        echo "Publishing test report..."
-                        publishHTML(target: [
-                            allowMissing: false,
-                            alwaysLinkToLastBuild: true,
-                            keepAll: true,
-                            reportDir: '.',
-                            reportFiles: 'report.html',
-                            reportName: 'Test Report',
-                            reportTitles: 'Test Report'
-                        ])
-                    }
-                }
+                echo "Publishing test report..."
+                publishHTML(target: [
+                    allowMissing: false,
+                    alwaysLinkToLastBuild: true,
+                    keepAll: true,
+                    reportDir: '.',
+                    reportFiles: 'report.html',
+                    reportName: 'Test Report',
+                    reportTitles: 'Test Report'
+                ])
             }
         }
+    }
+}
+
 
 
         stage('Deploy to Ubuntu') {
