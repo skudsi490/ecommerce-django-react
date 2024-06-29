@@ -99,13 +99,14 @@ stage('Run Tests in Docker') {
     steps {
         script {
             sh '''
+            echo "Setting up a virtual environment..."
+            python3 -m venv venv
+            source venv/bin/activate
+
             echo "Checking if docker-compose is installed..."
             if ! [ -x "$(command -v docker-compose)" ]; then
               echo "docker-compose not found, installing..."
-              sudo apt-get update -y
-              sudo apt-get install -y libffi-dev libssl-dev libcrypt1 libcrypt-dev
-              sudo apt-get install -y python3 python3-pip
-              sudo pip3 install docker-compose
+              pip install docker-compose
             fi
 
             echo "Ensuring libcrypt.so.1 is available..."
@@ -141,10 +142,14 @@ stage('Run Tests in Docker') {
 
             echo "Cleaning up symbolic links..."
             sudo rm -f /usr/lib/libcrypt.so.1
+
+            echo "Deactivating virtual environment..."
+            deactivate
             '''
         }
     }
 }
+
 
 
 
