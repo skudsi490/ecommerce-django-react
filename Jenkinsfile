@@ -95,48 +95,55 @@ pipeline {
         //     }
         // }
 
-        stage('Run Tests in Docker') {
-            steps {
-                script {
-                    sh '''
-                    echo "Removing existing container if it exists..."
-                    docker rm -f ${CONTAINER_NAME} || true
+stage('Run Tests in Docker') {
+    steps {
+        script {
+            sh '''
+            echo "Removing existing container if it exists..."
+            docker rm -f ${CONTAINER_NAME} || true
 
-                    echo "Running tests in Docker container..."
-                    docker run --name ${CONTAINER_NAME} -d skudsi/ecommerce-django-react-web:latest
+            echo "Running tests in Docker container with Docker Compose..."
+            docker-compose -f docker-compose.yml up -d db
+            sleep 10  # Give PostgreSQL some time to start
 
-                    echo "Waiting for container to be fully up and running..."
-                    sleep 10
+            docker run --name ${CONTAINER_NAME} --network app-network -d skudsi/ecommerce-django-react-web:latest
 
-                    echo "Running database migrations and loading initial data..."
-                    docker exec ${CONTAINER_NAME} sh -c "
-                        python manage.py migrate &&
-                        if [ -f /tmp/data_dump.json ]; then
-                            python manage.py loaddata /tmp/data_dump.json
-                        fi
-                    "
+            echo "Waiting for web container to be fully up and running..."
+            sleep 20
 
-                    echo "Running tests in Docker container..."
-                    docker exec ${CONTAINER_NAME} sh -c "
-                        if ! pip show pytest > /dev/null 2>&1; then
-                            pip install pytest pytest-html
-                        fi &&
-                        pytest tests/api/ --html-report=report.html --self-contained-html | tee /app/test_output.log
-                    "
+            echo "Running database migrations and loading initial data..."
+            docker exec ${CONTAINER_NAME} sh -c "
+                python manage.py migrate &&
+                if [ -f /tmp/data_dump.json ]; then
+                    python manage.py loaddata /tmp/data_dump.json
+                fi
+            "
 
-                    echo "Copying test report from Docker container to Jenkins workspace..."
-                    docker cp ${CONTAINER_NAME}:/app/report.html ./report.html
+            echo "Running tests in Docker container..."
+            docker exec ${CONTAINER_NAME} sh -c "
+                if ! pip show pytest > /dev/null 2>&1; then
+                    pip install pytest pytest-html
+                fi &&
+                pytest tests/api/ --html=report.html --self-contained-html | tee /app/test_output.log
+            "
 
-                    echo "Listing copied files..."
-                    ls -l report.html
+            echo "Copying test report from Docker container to Jenkins workspace..."
+            docker cp ${CONTAINER_NAME}:/app/report.html ./report.html
 
-                    echo "Stopping and removing Docker container..."
-                    docker stop ${CONTAINER_NAME}
-                    docker rm ${CONTAINER_NAME}
-                    '''
-                }
-            }
+            echo "Listing copied files..."
+            ls -l report.html
+
+            echo "Stopping and removing Docker container..."
+            docker stop ${CONTAINER_NAME}
+            docker rm ${CONTAINER_NAME}
+
+            echo "Stopping Docker Compose services..."
+            docker-compose -f docker-compose.yml down
+            '''
         }
+    }
+}
+
 
 
         stage('Publish Test Report') {
