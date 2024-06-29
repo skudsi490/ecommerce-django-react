@@ -132,10 +132,10 @@ stage('Run Tests and Publish Report in Docker') {
                         docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web ls -l /app
 
                         echo "Copying test report from Docker container to local workspace..."
-                        docker cp $(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web):/app/report.html /home/ubuntu/ecommerce-django-react/report.html
+                        docker cp $(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web):/app/report.html 
 
                         echo "Listing contents of /home/ubuntu/ecommerce-django-react to verify report.html is copied..."
-                        ls -l /home/ubuntu/ecommerce-django-react
+                        ls -l report.html
 EOF
                     '''
 
