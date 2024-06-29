@@ -180,7 +180,7 @@ EOF
                     docker rm -f ${CONTAINER_NAME} || true
 
                     echo "Running tests in Docker container..."
-                    docker run --name ${CONTAINER_NAME} -d ${DOCKER_IMAGE_WEB}
+                    docker run --name ${CONTAINER_NAME} -d skudsi/ecommerce-django-react-web:latest
 
                     docker exec ${CONTAINER_NAME} sh -c "
                         if ! pip show pytest > /dev/null 2>&1; then
