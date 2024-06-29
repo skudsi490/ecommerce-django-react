@@ -119,6 +119,9 @@ stage('Build Locally') {
         }
 
         stage('Publish Report') {
+            when {
+                expression { currentBuild.result == 'FAILURE' }
+            }
             steps {
                 publishHTML(target: [
                     allowMissing: false,
@@ -142,24 +145,15 @@ stage('Build Locally') {
                     def message = "The build status is ${buildStatus}, on project ${env.JOB_NAME}. Find the test report here: ${env.BUILD_URL}Test_20Report/"
 
                     // Slack notification
-                    slackSend channel: '#jenkins-builds',
-                            username: 'Jenkins',
-                            message: message
+                    slackSend channel: "${SLACK_CHANNEL}",
+                              username: "${SLACK_USERNAME}",
+                              message: message
 
-                    // Email notification
+                    // // Email notification
                     // emailext body: message,
-                    //         subject: "Build ${env.JOB_NAME} - ${env.BUILD_NUMBER} failed",
-                    //         to: 'gagi.shmagi@gmail.com'
+                    //          subject: "Build ${env.JOB_NAME} - ${env.BUILD_NUMBER} failed",
+                    //          to: "${EMAIL_RECIPIENTS}"
                 }
-            }
-        }
-    }
-
-    post {
-        failure {
-            script {
-                // This block can be used for additional failure handling if needed
-                echo "Build failed. Please check the notifications sent to the developers."
             }
         }
 
