@@ -94,7 +94,6 @@ pipeline {
         //         }
         //     }
         // }
-
 stage('Run Tests in Docker') {
     steps {
         script {
@@ -113,7 +112,11 @@ stage('Run Tests in Docker') {
               if [ -e /lib64/libcrypt.so.1.1.0 ]; then
                 sudo ln -s /lib64/libcrypt.so.1.1.0 /usr/lib64/libcrypt.so.1 || true
               elif [ -e /lib/x86_64-linux-gnu/libcrypt.so.1.1.0 ]; then
-                sudo ln -s /lib/x86_64-linux-gnu/libcrypt.so.1.1.0 /usr/lib64/libcrypt.so.1 || true
+                sudo mkdir -p /usr/lib64 && sudo ln -s /lib/x86_64-linux-gnu/libcrypt.so.1.1.0 /usr/lib64/libcrypt.so.1 || true
+              elif [ -e /usr/lib/x86_64-linux-gnu/libcrypt.so.1.1.0 ]; then
+                sudo ln -s /usr/lib/x86_64-linux-gnu/libcrypt.so.1.1.0 /usr/lib64/libcrypt.so.1 || true
+              elif [ -e /lib/libcrypt.so.1.1.0 ]; then
+                sudo ln -s /lib/libcrypt.so.1.1.0 /usr/lib64/libcrypt.so.1 || true
               fi
             fi
 
@@ -149,6 +152,7 @@ stage('Run Tests in Docker') {
         }
     }
 }
+
 
 
 
