@@ -131,17 +131,31 @@ stage('Run Tests in Docker') {
                         echo "Listing contents of /app to verify report.html is created..."
                         docker exec ${CONTAINER_NAME} ls -l /app
 
-                        echo "Copying test report from Docker container to Jenkins workspace..."
-                        docker cp ${CONTAINER_NAME}:/app/report.html ./report.html
+                        echo "Copying test report from Docker container to local workspace..."
+                        docker cp ${CONTAINER_NAME}:/app/report.html /home/ubuntu/ecommerce-django-react/report.html
 
                         echo "Listing contents of /home/ubuntu/ecommerce-django-react to verify report.html is copied..."
                         ls -l /home/ubuntu/ecommerce-django-react
 EOF
                     '''
+
+                    echo "Copying test report from remote server to Jenkins workspace..."
+                    sh '''
+                    scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.html ./report.html
+                    '''
+
+                    echo "Listing copied files..."
+                    sh '''
+                    ls -l report.html
+                    '''
+                } else {
+                    error("Failed to retrieve the IP address of the Ubuntu instance from Terraform state.")
+                }
             }
         }
     }
 }
+
 
 
         stage('Publish Test Report') {
