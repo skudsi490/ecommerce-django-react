@@ -170,15 +170,18 @@ EOF
             }
         }
 
-        stage('Run Tests on Ubuntu') {
+        stage('Run Tests in Workspace') {
             steps {
                 script {
-                    withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
+                    withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                                     string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
+                                     sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
                         try {
                             sh '''
+                            echo "Running tests in Jenkins workspace..."
                             ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                             set -e
-                            # Run tests and generate report in Docker container
+                            # Run tests and generate report in Jenkins workspace
                             cd /home/ubuntu/ecommerce-django-react
                             docker-compose -f docker-compose.yml exec -T web sh -c "
                                 if ! pip show pytest > /dev/null 2>&1; then
@@ -187,27 +190,13 @@ EOF
                                 pytest --html=/app/report.html || true
                             "
 
-                            # Verify the report file was generated inside the Docker container
-                            docker-compose -f docker-compose.yml exec -T web ls -l /app/report.html || exit 1
-
-                            # Debug: List files in Docker container
-                            echo "Listing files in /app directory in Docker container:"
-                            docker-compose -f docker-compose.yml exec -T web ls -l /app
-
-                            # Copy the report from Docker container to the host (Ubuntu instance)
+                            # Copy the report to Jenkins workspace
                             container_id=$(docker-compose -f docker-compose.yml ps -q web)
-                            docker cp $container_id:/app/report.html /home/ubuntu/ecommerce-django-react/report.html || exit 1
+                            docker cp $container_id:/app/report.html report.html || exit 1
 
-                            # Debug: Verify file copy to host
-                            echo "Listing files in /home/ubuntu/ecommerce-django-react directory on host:"
-                            ls -l /home/ubuntu/ecommerce-django-react || exit 1
-
-                            # Set permissions to ensure the file is accessible
-                            sudo chmod 644 /home/ubuntu/ecommerce-django-react/report.html
-
-                            # Verify the report file content and existence on the host (Ubuntu instance)
-                            echo "Content of report.html on Ubuntu instance:"
-                            cat /home/ubuntu/ecommerce-django-react/report.html || exit 1
+                            # Debug: Verify file copy to Jenkins workspace
+                            echo "Listing files in Jenkins workspace directory:"
+                            ls -l || exit 1
 EOF
                             '''
                         } catch (Exception e) {
@@ -216,45 +205,6 @@ EOF
                         }
                     }
                 }
-            }
-        }
-
-        stage('Copy Report to Jenkins Agent') {
-            steps {
-                script {
-                    withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
-                        sh '''
-                        echo "Copying report from Ubuntu instance to Jenkins agent..."
-                        scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.html report.html || exit 1
-
-                        # Debug: Verify file copy to Jenkins agent workspace
-                        echo "Listing files in Jenkins agent workspace directory:"
-                        ls -l report.html || exit 1
-                        '''
-                    }
-                }
-            }
-        }
-
-        stage('Verify Report') {
-            steps {
-                script {
-                    if (!fileExists('report.html')) {
-                        error("Report file 'report.html' does not exist.")
-                    }
-                    def reportContent = readFile('report.html')
-                    if (reportContent.trim().isEmpty()) {
-                        error("Report file 'report.html' is empty.")
-                    }
-                    echo "Report file 'report.html' exists and has content."
-                }
-            }
-        }
-
-        stage('Copy Report to Master') {
-            steps {
-                // Archive the report.html file to make it available on the Jenkins master
-                archiveArtifacts artifacts: 'report.html', allowEmptyArchive: false
             }
         }
 
