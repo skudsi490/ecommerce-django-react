@@ -123,16 +123,13 @@ stage('Run Tests in Docker') {
                         echo "Removing existing container if it exists..."
                         docker rm -f ${CONTAINER_NAME} || true
 
-                        echo "Running tests in Docker container..."
-                        docker run --name ${CONTAINER_NAME} -d skudsi/ecommerce-django-react-web:latest
-
                         echo "Running tests inside the web application container..."
                         docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web sh -c "
                             pytest tests/api/ --html-report=/app/report.html --self-contained-html | tee /app/test_output.log
                         "
 
                         echo "Listing contents of /app to verify report.html is created..."
-                        docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web ls -l /app
+                        docker exec ${CONTAINER_NAME} ls -l /app
 
                         echo "Copying test report from Docker container to local workspace..."
                         docker cp ${CONTAINER_NAME}:/app/report.html /home/ubuntu/ecommerce-django-react/report.html
@@ -158,7 +155,6 @@ EOF
         }
     }
 }
-
 
 
         stage('Publish Test Report') {
