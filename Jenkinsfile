@@ -108,7 +108,7 @@ stage('Build Locally') {
                         . .venv/bin/activate
 
                         echo "Running tests..."
-                        pytest tests/api/ --html-report=report.html --self-contained-html | tee test_output.log
+                        pytest --html-report=./report.html
                         '''
                     }
                 }
