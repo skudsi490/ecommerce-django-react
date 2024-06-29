@@ -16,6 +16,8 @@ pipeline {
         POSTGRES_PASSWORD = 'ecommercedbpassword'
         POSTGRES_HOST = 'db'
         REACT_APP_BACKEND_URL = 'http://35.159.115.123:8000'
+        DOCKER_IMAGE_WEB = 'skudsi/ecommerce-django-react-web'
+        CONTAINER_NAME = 'ecommerce-test-container'
     }
 
     stages {
@@ -170,59 +172,52 @@ EOF
             }
         }
 
-        stage('Run Tests in Workspace') {
+        stage('Run Tests in Docker') {
             steps {
                 script {
-                    withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
-                                     string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
-                                     sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
-                        try {
-                            sh '''
-                            echo "Running tests in Jenkins workspace..."
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
-                            set -e
-                            # Run tests and generate report in Jenkins workspace
-                            cd /home/ubuntu/ecommerce-django-react
-                            docker-compose -f docker-compose.yml exec -T web sh -c "
-                                if ! pip show pytest > /dev/null 2>&1; then
-                                    pip install pytest pytest-html
-                                fi
-                                pytest --html=/app/report.html || true
-                            "
+                    sh '''
+                    echo "Removing existing container if it exists..."
+                    docker rm -f ${CONTAINER_NAME} || true
 
-                            # Copy the report to Jenkins workspace
-                            container_id=$(docker-compose -f docker-compose.yml ps -q web)
-                            docker cp $container_id:/app/report.html report.html || exit 1
+                    echo "Running tests in Docker container..."
+                    docker run --name ${CONTAINER_NAME} -d ${DOCKER_IMAGE_WEB}
 
-                            # Debug: Verify file copy to Jenkins workspace
-                            echo "Listing files in Jenkins workspace directory:"
-                            ls -l || exit 1
-EOF
-                            '''
-                        } catch (Exception e) {
-                            currentBuild.result = 'UNSTABLE'
-                            echo "Tests failed but continuing to publish report: ${e.message}"
-                        }
-                    }
+                    docker exec ${CONTAINER_NAME} sh -c "
+                        if ! pip show pytest > /dev/null 2>&1; then
+                            pip install pytest pytest-html
+                        fi &&
+                        pytest tests/api/ --html=/app/report.html --self-contained-html | tee /app/test_output.log
+                    "
+
+                    echo "Copying test report from Docker container to Jenkins workspace..."
+                    docker cp ${CONTAINER_NAME}:/app/report.html ./report.html
+
+                    echo "Listing copied files..."
+                    ls -l report.html
+
+                    echo "Stopping and removing Docker container..."
+                    docker stop ${CONTAINER_NAME}
+                    docker rm ${CONTAINER_NAME}
+                    '''
                 }
             }
         }
 
-        stage('Publish Report') {
+        stage('Publish Test Report') {
             steps {
-                publishHTML(target: [
-                    allowMissing: false,
-                    alwaysLinkToLastBuild: true,
-                    keepAll: true,
-                    reportDir: '.',
-                    reportFiles: 'report.html',
-                    reportName: 'Test Report',
-                    reportTitles: 'Test Report'
-                ])
+                script {
+                    publishHTML(target: [
+                        allowMissing: false,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: '.',
+                        reportFiles: 'report.html',
+                        reportName: 'Test Report',
+                        reportTitles: 'Test Report'
+                    ])
+                }
             }
         }
-
-
 
 //         stage('Configure Nginx') {
 //             steps {
