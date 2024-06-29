@@ -146,12 +146,32 @@ stage('Build Locally') {
                             message: message
 
                     // Email notification
-                    // emailext body: message,
-                    //         subject: "Build ${env.JOB_NAME} - ${env.BUILD_NUMBER} failed",
-                    //         to: 'gagi.shmagi@gmail.com'
+                    emailext body: message,
+                            subject: "Build ${env.JOB_NAME} - ${env.BUILD_NUMBER} failed",
+                            to: 'gagi.shmagi@gmail.com'
                 }
             }
         }
+    }
+    post {
+        failure {
+            script {
+                def buildStatus = currentBuild.currentResult ?: 'SUCCESS'
+                def message = "The build status is ${buildStatus}, on project ${env.JOB_NAME}. Find the test report here: ${env.BUILD_URL}Test_20Report/"
+
+                // Slack notification
+                slackSend channel: '#jenkins-builds',
+                        username: 'Jenkins',
+                        message: message
+
+                // Email notification
+                // emailext body: message,
+                //         subject: "Build ${env.JOB_NAME} - ${env.BUILD_NUMBER} failed",
+                //         to: 'gagi.shmagi@gmail.com'
+            }
+        }
+    }
+}
 
         // stage('Extract Ubuntu IP') {
         //     steps {
