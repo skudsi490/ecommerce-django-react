@@ -92,6 +92,9 @@ stage('Build Locally') {
         echo "Running the application container..."
         docker run --name web -d -p 8000:8000 --link postgres-db:db -e POSTGRES_HOST=postgres-db skudsi/ecommerce-django-react-web:latest
 
+        echo "Resetting the database..."
+        docker exec postgres-db psql -U ecommerceuser -d ecommerce -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'
+
         echo "Running database migrations and collecting static files..."
         docker exec web sh -c "
             export POSTGRES_HOST=postgres-db &&
@@ -103,6 +106,7 @@ stage('Build Locally') {
         '''
     }
 }
+
 
 
 
