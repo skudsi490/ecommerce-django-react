@@ -142,7 +142,7 @@ stage('Run Tests in Docker') {
                         echo "Listing contents of /home/ubuntu/ecommerce-django-react to verify report.html is copied..."
                         ls -l /home/ubuntu/ecommerce-django-react
 
-                    EOF
+EOF
                     '''
 
                     echo "Copying test report from remote server to Jenkins workspace..."
