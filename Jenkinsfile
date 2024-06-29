@@ -92,6 +92,10 @@ stage('Build Locally') {
         echo "Running the application container..."
         docker run --name web -d -p 8000:8000 --link postgres-db:db -e POSTGRES_HOST=postgres-db -e POSTGRES_DB=ecommerce -e POSTGRES_USER=ecommerceuser -e POSTGRES_PASSWORD=ecommercedbpassword skudsi/ecommerce-django-react-web:latest
 
+        echo "Resetting the database..."
+        docker exec postgres-db psql -U ecommerceuser -d postgres -c 'DROP DATABASE IF EXISTS ecommerce;'
+        docker exec postgres-db psql -U ecommerceuser -d postgres -c 'CREATE DATABASE ecommerce;'
+
         echo "Running database migrations and collecting static files..."
         docker exec web sh -c "
             export POSTGRES_HOST=postgres-db &&
