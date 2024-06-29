@@ -99,65 +99,38 @@ stage('Run Tests in Docker') {
     steps {
         script {
             sh '''
-            echo "Checking if docker-compose is installed..."
-            if ! [ -x "$(command -v docker-compose)" ]; then
-              echo "docker-compose not found, installing..."
-              sudo apt-get update -y
-              sudo apt-get install -y libffi-dev libssl-dev libcrypt1 libcrypt-dev
-              sudo apt-get install -y python3 python3-pip
-              sudo pip3 install docker-compose
-            fi
-
-            echo "Ensuring libcrypt.so.1 is available..."
-            if ! [ -e /usr/lib/libcrypt.so.1 ]; then
-              sudo ln -s /lib/x86_64-linux-gnu/libcrypt.so.1.1.0 /usr/lib/libcrypt.so.1 || true
-            fi
-
             echo "Removing existing container if it exists..."
             docker rm -f ${CONTAINER_NAME} || true
 
-            echo "Running tests in Docker container with Docker Compose..."
-            docker-compose -f docker-compose.yml up -d db
-            sleep 10  # Give PostgreSQL some time to start
+            echo "Running tests in Docker container..."
+            docker run --name ${CONTAINER_NAME} -d --env POSTGRES_DB=ecommerce --env POSTGRES_USER=ecommerceuser --env POSTGRES_PASSWORD=ecommercedbpassword -p 5432:5432 postgres:13
 
-            docker run --name ${CONTAINER_NAME} --network app-network -d ${DOCKER_IMAGE_WEB}:latest
-
-            echo "Waiting for web container to be fully up and running..."
-            sleep 20
-
-            echo "Running database migrations and loading initial data..."
-            docker exec ${CONTAINER_NAME} sh -c "
-                python manage.py migrate &&
-                if [ -f /tmp/data_dump.json ]; then
-                    python manage.py loaddata /tmp/data_dump.json
-                fi
-            "
+            echo "Waiting for PostgreSQL to be ready..."
+            sleep 20  # Give PostgreSQL some time to start
 
             echo "Running tests in Docker container..."
-            docker exec ${CONTAINER_NAME} sh -c "
+            docker run --name ${CONTAINER_NAME}-web --network host -d skudsi/ecommerce-django-react-web:latest
+
+            docker exec ${CONTAINER_NAME}-web sh -c "
                 if ! pip show pytest > /dev/null 2>&1; then
                     pip install pytest pytest-html
                 fi &&
-                pytest tests/api/ --html-report=report.html --self-contained-html | tee /app/test_output.log
+                pytest tests/api/ --html-report=/app/report.html --self-contained-html | tee /app/test_output.log
             "
 
             echo "Copying test report from Docker container to Jenkins workspace..."
-            docker cp ${CONTAINER_NAME}:/app/report.html ./report.html
+            docker cp ${CONTAINER_NAME}-web:/app/report.html ./report.html
 
             echo "Listing copied files..."
             ls -l report.html
 
-            echo "Stopping and removing Docker container..."
-            docker stop ${CONTAINER_NAME}
-            docker rm ${CONTAINER_NAME}
-
-            echo "Stopping Docker Compose services..."
-            docker-compose -f docker-compose.yml down
+            echo "Stopping and removing Docker containers..."
+            docker stop ${CONTAINER_NAME} ${CONTAINER_NAME}-web
+            docker rm ${CONTAINER_NAME} ${CONTAINER_NAME}-web
             '''
         }
     }
 }
-
 
 
         stage('Publish Test Report') {
