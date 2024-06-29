@@ -132,8 +132,14 @@ stage('Run Tests in Docker') {
                             pytest tests/api/ --html-report=/app/report.html --self-contained-html | tee /app/test_output.log
                         "
 
+                        echo "Listing contents of /app to verify report.html is created..."
+                        docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web ls -l /app
+
                         echo "Copying test report from web container to local workspace..."
                         docker cp $(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web):/app/report.html /home/ubuntu/ecommerce-django-react/report.html
+
+                        echo "Listing contents of /home/ubuntu/ecommerce-django-react to verify report.html is copied..."
+                        ls -l /home/ubuntu/ecommerce-django-react
 
                         echo "Stopping and removing Docker Compose services..."
                         docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml down
@@ -156,6 +162,7 @@ stage('Run Tests in Docker') {
         }
     }
 }
+
 
 
         stage('Publish Test Report') {
