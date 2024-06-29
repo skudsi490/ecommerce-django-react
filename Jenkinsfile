@@ -109,8 +109,8 @@ stage('Run Tests in Docker') {
             fi
 
             echo "Ensuring libcrypt.so.1 is available..."
-            if ! [ -e /lib/x86_64-linux-gnu/libcrypt.so.1 ]; then
-              sudo ln -s /lib/x86_64-linux-gnu/libcrypt.so.1.1.0 /lib/x86_64-linux-gnu/libcrypt.so.1 || true
+            if ! [ -e /usr/lib/libcrypt.so.1 ]; then
+              sudo ln -s /lib/x86_64-linux-gnu/libcrypt.so.1.1.0 /usr/lib/libcrypt.so.1 || true
             fi
 
             echo "Removing existing container if it exists..."
@@ -157,6 +157,7 @@ stage('Run Tests in Docker') {
         }
     }
 }
+
 
 
         stage('Publish Test Report') {
