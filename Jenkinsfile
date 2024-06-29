@@ -157,7 +157,7 @@ EOF
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web sh -c "
                                 mkdir -p /app/staticfiles && chmod -R 755 /app/staticfiles &&
                                 python manage.py makemigrations &&
-                                python manage.py migrate --fake sessions 0001_initial &&
+                                (echo \"SELECT 1 FROM django_session LIMIT 1;\" | python manage.py dbshell &>/dev/null && python manage.py migrate --fake sessions 0001_initial || true) &&
                                 python manage.py migrate &&
                                 python manage.py loaddata /tmp/data_dump.json &&
                                 python manage.py collectstatic --noinput
