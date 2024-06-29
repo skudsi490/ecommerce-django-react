@@ -102,8 +102,10 @@ stage('Run Tests in Docker') {
             echo "Checking if docker-compose is installed..."
             if ! [ -x "$(command -v docker-compose)" ]; then
               echo "docker-compose not found, installing..."
-              sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-              sudo chmod +x /usr/local/bin/docker-compose
+              sudo apt-get update -y
+              sudo apt-get install -y libffi-dev libssl-dev
+              sudo apt-get install -y python3 python3-pip
+              sudo pip3 install docker-compose
             fi
 
             echo "Removing existing container if it exists..."
