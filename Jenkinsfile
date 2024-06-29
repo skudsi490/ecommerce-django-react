@@ -144,7 +144,7 @@ EOF
                         allowMissing: false,
                         alwaysLinkToLastBuild: true,
                         keepAll: true,
-                        reportDir: '/home/ubuntu/ecommerce-django-react',
+                        reportDir: '.',
                         reportFiles: 'report.html',
                         reportName: 'Test Report',
                         reportTitles: 'Test Report'
