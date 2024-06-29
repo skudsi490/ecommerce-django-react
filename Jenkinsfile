@@ -92,9 +92,17 @@ stage('Build Locally') {
         echo "Running the application container..."
         docker run --name web -d -p 8000:8000 --link postgres-db:db -e POSTGRES_HOST=postgres-db -e POSTGRES_DB=ecommerce -e POSTGRES_USER=ecommerceuser -e POSTGRES_PASSWORD=ecommercedbpassword skudsi/ecommerce-django-react-web:latest
 
-        echo "Resetting the database..."
-        docker exec postgres-db psql -U ecommerceuser -d postgres -c 'DROP DATABASE IF EXISTS ecommerce;'
-        docker exec postgres-db psql -U ecommerceuser -d postgres -c 'CREATE DATABASE ecommerce;'
+        echo "Resetting the database schema and sequences..."
+        docker exec postgres-db psql -U ecommerceuser -d ecommerce -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'
+        docker exec postgres-db psql -U ecommerceuser -d ecommerce -c '
+            DO $$ DECLARE
+                r RECORD;
+            BEGIN
+                FOR r IN (SELECT sequence_name FROM information_schema.sequences WHERE sequence_schema = 'public') LOOP
+                    EXECUTE 'DROP SEQUENCE ' || quote_ident(r.sequence_name);
+                END LOOP;
+            END $$;
+        '
 
         echo "Running database migrations and collecting static files..."
         docker exec web sh -c "
@@ -103,18 +111,13 @@ stage('Build Locally') {
             export POSTGRES_USER=ecommerceuser &&
             export POSTGRES_PASSWORD=ecommercedbpassword &&
             python manage.py makemigrations &&
-            python manage.py migrate --run-syncdb &&
+            python manage.py migrate &&
             python manage.py loaddata /tmp/data_dump.json &&
             python manage.py collectstatic --noinput
         "
         '''
     }
 }
-
-
-
-
-
 
 
 
@@ -202,59 +205,6 @@ stage('Test Locally') {
         //         }
         //     }
         // }
-
-// stage('Run Tests in Docker') {
-//     steps {
-//         script {
-//             withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
-//                 // Pull the latest Docker image using Jenkins Docker plugin
-//                 docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
-//                     docker.image("${DOCKER_IMAGE_WEB}:latest").pull()
-//                 }
-
-//                 // SSH into the remote machine and update docker-compose.yml
-//                 sh '''
-//                 ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
-//                     set -e
-
-//                     echo "Updating docker-compose.yml to use the latest image..."
-//                     sed -i 's|image: .*|image: ${DOCKER_IMAGE_WEB}:latest|g' /home/ubuntu/ecommerce-django-react/docker-compose.yml
-
-//                     echo "Running tests inside the web application container..."
-//                     DOCKER_IMAGE_WEB=${DOCKER_IMAGE_WEB} docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml up -d
-//                     DOCKER_IMAGE_WEB=${DOCKER_IMAGE_WEB} docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web sh -c "
-//                         if ! pip show pytest > /dev/null 2>&1; then
-//                             pip install pytest pytest-html
-//                         fi &&
-//                         pytest tests/api/ --html=/app/report.html --self-contained-html | tee /app/test_output.log
-//                     "
-//                     DOCKER_IMAGE_WEB=${DOCKER_IMAGE_WEB} docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml down
-// EOF
-//                 '''
-
-//                 // Copy the report directly from the Docker container to Jenkins workspace
-//                 sh '''
-//                 ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} "docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web cat /app/report.html" > report.html
-//                 '''
-
-//                 echo "Publishing test report..."
-//                 publishHTML(target: [
-//                     allowMissing: false,
-//                     alwaysLinkToLastBuild: true,
-//                     keepAll: true,
-//                     reportDir: '.',
-//                     reportFiles: 'report.html',
-//                     reportName: 'Test Report',
-//                     reportTitles: 'Test Report'
-//                 ])
-//             }
-//         }
-//     }
-// }
-
-
-
-
 
 
 //         stage('Deploy to Ubuntu') {
