@@ -107,7 +107,7 @@ stage('Run Tests in Docker') {
             pip install --upgrade pip
 
             echo "Installing compatible versions of docker and docker-compose..."
-            pip install docker==4.2.0 docker-compose==1.29.2
+            pip install docker==5.0.0 docker-compose==1.29.2
 
             echo "Ensuring libcrypt.so.1 is available..."
             if ! [ -e /usr/lib/x86_64-linux-gnu/libcrypt.so.1 ]; then
