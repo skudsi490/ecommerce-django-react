@@ -99,8 +99,8 @@ pipeline {
             steps {
                 script {
                     withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
-                                     string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
-                                     sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
+                                    string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
+                                    sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
                         sh '''
                         export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
                         export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
@@ -132,17 +132,17 @@ EOF
                             ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                             set -e
                             if ! [ -x "$(command -v docker)" ]; then
-                              echo "Docker not found, installing..."
-                              sudo apt update
-                              sudo apt install docker.io -y
-                              sudo systemctl start docker
-                              sudo systemctl enable docker
-                              sudo usermod -aG docker ubuntu
+                            echo "Docker not found, installing..."
+                            sudo apt update
+                            sudo apt install docker.io -y
+                            sudo systemctl start docker
+                            sudo systemctl enable docker
+                            sudo usermod -aG docker ubuntu
                             fi
                             if ! [ -x "$(command -v docker-compose)" ]; then
-                              echo "Docker Compose not found, installing..."
-                              sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-\$(uname -s)-\$(uname -m)" -o /usr/local/bin/docker-compose
-                              sudo chmod +x /usr/local/bin/docker-compose
+                            echo "Docker Compose not found, installing..."
+                            sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-\$(uname -s)-\$(uname -m)" -o /usr/local/bin/docker-compose
+                            sudo chmod +x /usr/local/bin/docker-compose
                             fi
                             docker network create app-network || true
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml down --remove-orphans
@@ -157,6 +157,7 @@ EOF
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web sh -c "
                                 mkdir -p /app/staticfiles && chmod -R 755 /app/staticfiles &&
                                 python manage.py makemigrations &&
+                                python manage.py migrate --fake sessions 0001_initial &&
                                 python manage.py migrate &&
                                 python manage.py loaddata /tmp/data_dump.json &&
                                 python manage.py collectstatic --noinput
