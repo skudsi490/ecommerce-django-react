@@ -123,53 +123,51 @@ pipeline {
         //     }
         // }
 
-stage('Run Tests in Docker') {
-    steps {
-        script {
-            withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
-                sh '''
-                echo "DOCKER_IMAGE_WEB is set to: ${DOCKER_IMAGE_WEB}"
-                ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
-                    set -e
+        stage('Run Tests in Docker') {
+            steps {
+                script {
+                    withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
+                        sh '''
+                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                            set -e
 
-                    echo "Pulling the latest Docker image: ${DOCKER_IMAGE_WEB}:latest"
-                    docker pull ${DOCKER_IMAGE_WEB}:latest
+                            echo "Pulling the latest Docker image: ${DOCKER_IMAGE_WEB}:latest"
+                            docker pull ${DOCKER_IMAGE_WEB}:latest
 
-                    echo "Updating docker-compose.yml to use the latest image..."
-                    sed -i 's|image: .*|image: ${DOCKER_IMAGE_WEB}:latest|g' /home/ubuntu/ecommerce-django-react/docker-compose.yml
+                            echo "Updating docker-compose.yml to use the latest image..."
+                            sed -i 's|image: .*|image: ${DOCKER_IMAGE_WEB}:latest|g' /home/ubuntu/ecommerce-django-react/docker-compose.yml
 
-                    echo "Running tests inside the web application container..."
-                    docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml up -d
-                    docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web sh -c "
-                        if ! pip show pytest > /dev/null 2>&1; then
-                            pip install pytest pytest-html
-                        fi &&
-                        pytest tests/api/ --html=/app/report.html --self-contained-html | tee /app/test_output.log
-                    "
-                    docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml down
+                            echo "Running tests inside the web application container..."
+                            docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml up -d
+                            docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web sh -c "
+                                if ! pip show pytest > /dev/null 2>&1; then
+                                    pip install pytest pytest-html
+                                fi &&
+                                pytest tests/api/ --html=/app/report.html --self-contained-html | tee /app/test_output.log
+                            "
+                            docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml down
 EOF
-                '''
+                        '''
 
-                // Copy the report directly from the Docker container to Jenkins workspace
-                sh '''
-                ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} "docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web cat /app/report.html" > report.html
-                '''
+                        // Copy the report directly from the Docker container to Jenkins workspace
+                        sh '''
+                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} "docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web cat /app/report.html" > report.html
+                        '''
 
-                echo "Publishing test report..."
-                publishHTML(target: [
-                    allowMissing: false,
-                    alwaysLinkToLastBuild: true,
-                    keepAll: true,
-                    reportDir: '.',
-                    reportFiles: 'report.html',
-                    reportName: 'Test Report',
-                    reportTitles: 'Test Report'
-                ])
+                        echo "Publishing test report..."
+                        publishHTML(target: [
+                            allowMissing: false,
+                            alwaysLinkToLastBuild: true,
+                            keepAll: true,
+                            reportDir: '.',
+                            reportFiles: 'report.html',
+                            reportName: 'Test Report',
+                            reportTitles: 'Test Report'
+                        ])
+                    }
+                }
             }
         }
-    }
-}
-
 
 
 
