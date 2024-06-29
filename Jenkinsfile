@@ -72,16 +72,18 @@ pipeline {
                 sh '''
                 echo "Installing dependencies using yum..."
                 sudo yum update -y
-                sudo yum install -y python3 python3-venv python3-pip
+                sudo yum install -y python3 python3-pip
+
+                echo "Installing virtualenv using pip..."
+                pip3 install virtualenv
 
                 echo "Setting up virtual environment and installing Python dependencies..."
-                python3 -m venv .venv
+                virtualenv .venv
                 . .venv/bin/activate
                 pip install --upgrade pip
                 pip install -r requirements.txt
 
                 echo "Running database migrations..."
-                . .venv/bin/activate
                 python manage.py makemigrations
                 python manage.py migrate
 
@@ -97,31 +99,33 @@ pipeline {
             }
         }
 
-stage('Test Locally') {
-    steps {
-        sh '''
-        echo "Activating virtual environment..."
-        . .venv/bin/activate
 
-        echo "Running tests..."
-        pytest tests/api/ --html=report.html --self-contained-html | tee test_output.log
-        '''
-    }
-    post {
-        always {
-            echo "Publishing test report..."
-            publishHTML(target: [
-                allowMissing: false,
-                alwaysLinkToLastBuild: true,
-                keepAll: true,
-                reportDir: '.',
-                reportFiles: 'report.html',
-                reportName: 'Test Report',
-                reportTitles: 'Test Report'
-            ])
+        stage('Test Locally') {
+            steps {
+                sh '''
+                echo "Activating virtual environment..."
+                . .venv/bin/activate
+
+                echo "Running tests..."
+                pytest tests/api/ --html=report.html --self-contained-html | tee test_output.log
+                '''
+            }
+            post {
+                always {
+                    echo "Publishing test report..."
+                    publishHTML(target: [
+                        allowMissing: false,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: '.',
+                        reportFiles: 'report.html',
+                        reportName: 'Test Report',
+                        reportTitles: 'Test Report'
+                    ])
+                }
+            }
         }
-    }
-}
+
 
 
 
