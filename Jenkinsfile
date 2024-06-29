@@ -105,33 +105,34 @@ pipeline {
             }
         }
 
-        stage('Build and Push Docker Image') {
-            steps {
-                script {
-                    docker.build("${DOCKER_IMAGE_WEB}:latest", "--build-arg REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL} .")
-                }
-            }
-        }
+        // stage('Build and Push Docker Image') {
+        //     steps {
+        //         script {
+        //             docker.build("${DOCKER_IMAGE_WEB}:latest", "--build-arg REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL} .")
+        //         }
+        //     }
+        // }
 
-        stage('Push Docker Image') {
-            steps {
-                script {
-                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
-                        docker.image("${DOCKER_IMAGE_WEB}:latest").push('latest')
-                    }
-                }
-            }
-        }
+        // stage('Push Docker Image') {
+        //     steps {
+        //         script {
+        //             docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
+        //                 docker.image("${DOCKER_IMAGE_WEB}:latest").push('latest')
+        //             }
+        //         }
+        //     }
+        // }
 
 stage('Run Tests in Docker') {
     steps {
         script {
             withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
                 sh '''
+                echo "DOCKER_IMAGE_WEB is set to: ${DOCKER_IMAGE_WEB}"
                 ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                     set -e
 
-                    echo "Pulling the latest Docker image..."
+                    echo "Pulling the latest Docker image: ${DOCKER_IMAGE_WEB}:latest"
                     docker pull ${DOCKER_IMAGE_WEB}:latest
 
                     echo "Updating docker-compose.yml to use the latest image..."
