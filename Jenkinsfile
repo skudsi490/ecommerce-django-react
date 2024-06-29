@@ -94,68 +94,82 @@ pipeline {
         //         }
         //     }
         // }
-stage('Run Tests in Docker') {
-    steps {
-        script {
-            sh '''
-            echo "Checking if docker-compose is installed..."
-            if ! [ -x "$(command -v docker-compose)" ]; then
-              echo "docker-compose not found, installing..."
-              sudo yum update -y
-              sudo yum install -y libffi-devel openssl-devel
-              sudo yum install -y python3 python3-pip
-              sudo pip3 install docker-compose==1.29.2
-            fi
 
-            echo "Ensuring libcrypt.so.1 is available..."
-            if ! [ -e /usr/lib64/libcrypt.so.1 ]; then
-              if [ -e /lib64/libcrypt.so.1.1.0 ]; then
-                sudo ln -s /lib64/libcrypt.so.1.1.0 /usr/lib64/libcrypt.so.1 || true
-              elif [ -e /lib/x86_64-linux-gnu/libcrypt.so.1.1.0 ]; then
-                sudo mkdir -p /usr/lib64 && sudo ln -s /lib/x86_64-linux-gnu/libcrypt.so.1.1.0 /usr/lib64/libcrypt.so.1 || true
-              elif [ -e /usr/lib/x86_64-linux-gnu/libcrypt.so.1.1.0 ]; then
-                sudo ln -s /usr/lib/x86_64-linux-gnu/libcrypt.so.1.1.0 /usr/lib64/libcrypt.so.1 || true
-              elif [ -e /lib/libcrypt.so.1.1.0 ]; then
-                sudo ln -s /lib/libcrypt.so.1.1.0 /usr/lib64/libcrypt.so.1 || true
-              fi
-            fi
+        stage('Run Tests in Docker') {
+            steps {
+                script {
+                    withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                                    string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
+                                    sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
+                        sh '''
+                        export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                        export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                        aws s3 cp s3://${S3_BUCKET}/terraform/state/terraform.tfstate terraform.tfstate
+                        unset AWS_ACCESS_KEY_ID
+                        unset AWS_SECRET_ACCESS_KEY
+                        '''
+                        
+                        def terraformState = readFile 'terraform.tfstate'
+                        def ubuntuIp = sh(script: "jq -r '.resources[] | select(.type==\"aws_instance\" and .name==\"my_ubuntu\").instances[0].attributes.public_ip' terraform.tfstate", returnStdout: true).trim()
+                        
+                        if (ubuntuIp) {
+                            env.MY_UBUNTU_IP = ubuntuIp
+                            sh '''
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                                set -e
+                                
+                                echo "Removing existing container if it exists..."
+                                docker rm -f ecommerce-test-container || true
 
-            echo "Removing existing containers if they exist..."
-            docker-compose -f docker-compose.yml down --remove-orphans || true
+                                echo "Running tests in Docker container..."
+                                docker run --name ecommerce-test-container -d skudsi/ecommerce-django-react-web:latest
 
-            echo "Starting services with Docker Compose..."
-            docker-compose -f docker-compose.yml up -d
+                                docker exec ecommerce-test-container sh -c "
+                                    if ! pip show pytest > /dev/null 2>&1; then
+                                        pip install pytest pytest-html
+                                    fi &&
+                                    pytest tests/api/ --html-report=/app/report.html --self-contained-html | tee /app/test_output.log
+                                "
 
-            echo "Waiting for services to be ready..."
-            sleep 20  # Give services some time to start
+                                echo "Copying test report from Docker container to local workspace..."
+                                docker cp ecommerce-test-container:/app/report.html ./report.html
 
-            echo "Running tests in web application container..."
-            docker-compose -f docker-compose.yml exec -T web sh -c "
-                if ! pip show pytest > /dev/null 2>&1; then
-                    pip install pytest pytest-html
-                fi &&
-                pytest tests/api/ --html-report=/app/report.html --self-contained-html | tee /app/test_output.log
-            "
+                                echo "Stopping and removing Docker container..."
+                                docker stop ecommerce-test-container
+                                docker rm ecommerce-test-container
+                            EOF
+                            '''
 
-            echo "Copying test report from web container to Jenkins workspace..."
-            docker cp $(docker-compose -f docker-compose.yml ps -q web):/app/report.html ./report.html
+                            echo "Copying test report from remote server to Jenkins workspace..."
+                            sh '''
+                            scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/report.html ./report.html
+                            '''
 
-            echo "Listing copied files..."
-            ls -l report.html
-
-            echo "Stopping and removing Docker Compose services..."
-            docker-compose -f docker-compose.yml down
-
-            echo "Cleaning up symbolic links..."
-            sudo rm -f /usr/lib64/libcrypt.so.1
-            '''
+                            echo "Listing copied files..."
+                            sh '''
+                            ls -l report.html
+                            '''
+                        } else {
+                            error("Failed to retrieve the IP address of the Ubuntu instance from Terraform state.")
+                        }
+                    }
+                }
+            }
+        }
+    }
+    post {
+        always {
+            echo 'Cleaning up temporary files...'
+            sh 'rm -f terraform.tfstate report.html'
+        }
+        success {
+            echo 'Test run completed successfully.'
+        }
+        failure {
+            echo 'Test run failed.'
         }
     }
 }
-
-
-
-
 
         stage('Publish Test Report') {
             steps {
