@@ -139,12 +139,7 @@ stage('Build Locally') {
             steps {
                 script {
                     def buildStatus = currentBuild.currentResult ?: 'FAILURE'
-                    def message = "The build status is ${buildStatus}, on project ${env.JOB_NAME}. Find the test report here: ${env.BUILD_URL}Test_20Report/"
-
-                    // Slack notification
-                    slackSend channel: "#devops-channel",
-                              username: "jenkins ",
-                              message: message
+                    def message = "The build status is ${currentBuild.currentResult}, on project ${env.JOB_NAME} find test report in this url: ${BUILD_URL}/Test_20Report/"
 
                     // // Email notification
                     // emailext body: message,
