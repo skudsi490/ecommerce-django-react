@@ -92,8 +92,9 @@ stage('Build Locally') {
         echo "Running the application container..."
         docker run --name web -d -p 8000:8000 --link postgres-db:db -e POSTGRES_HOST=postgres-db -e POSTGRES_DB=ecommerce -e POSTGRES_USER=ecommerceuser -e POSTGRES_PASSWORD=ecommercedbpassword skudsi/ecommerce-django-react-web:latest
 
-        echo "Resetting the database schema..."
-        docker exec postgres-db psql -U ecommerceuser -d ecommerce -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'
+        echo "Resetting the database..."
+        docker exec postgres-db psql -U ecommerceuser -d postgres -c 'DROP DATABASE IF EXISTS ecommerce;'
+        docker exec postgres-db psql -U ecommerceuser -d postgres -c 'CREATE DATABASE ecommerce;'
 
         echo "Running database migrations and collecting static files..."
         docker exec web sh -c "
@@ -102,13 +103,14 @@ stage('Build Locally') {
             export POSTGRES_USER=ecommerceuser &&
             export POSTGRES_PASSWORD=ecommercedbpassword &&
             python manage.py makemigrations &&
-            python manage.py migrate &&
+            python manage.py migrate --run-syncdb &&
             python manage.py loaddata /tmp/data_dump.json &&
             python manage.py collectstatic --noinput
         "
         '''
     }
 }
+
 
 
 
