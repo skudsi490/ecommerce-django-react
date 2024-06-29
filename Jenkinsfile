@@ -99,56 +99,63 @@ stage('Build Locally') {
     }
 }
 
-stage('Test Locally') {
-    steps {
-        script {
-            try {
-                sh '''
-                echo "Activating virtual environment..."
-                . .venv/bin/activate
+        stage('Test Locally') {
+            steps {
+                script {
+                    try {
+                        sh '''
+                        echo "Activating virtual environment..."
+                        . .venv/bin/activate
 
-                echo "Running tests..."
-                .venv/bin/pytest tests/api/ --html-report=report.html --self-contained-html | tee test_output.log
-                '''
-            } catch (Exception e) {
-                currentBuild.result = 'FAILURE'
-                error("Test stage failed: ${e.message}")
+                        echo "Running tests..."
+                        pytest --html-report=./report.html
+                        '''
+                    } catch (Exception e) {
+                        currentBuild.result = 'FAILURE'
+                        error("Test stage failed: ${e.message}")
+                    }
+                }
             }
         }
-    }
-    post {
-        always {
-            echo "Publishing test report..."
-            publishHTML(target: [
-                allowMissing: false,
-                alwaysLinkToLastBuild: true,
-                keepAll: true,
-                reportDir: '.',
-                reportFiles: 'report.html',
-                reportName: 'Test Report',
-                reportTitles: 'Test Report'
-            ])
-        }
-        failure {
-            script {
-                echo "Sending notifications due to failure..."
-                def buildStatus = currentBuild.currentResult ?: 'SUCCESS'
-                def message = "The build status is ${buildStatus}, on project ${env.JOB_NAME}. Find the test report here: ${env.BUILD_URL}Test_20Report/"
 
-                // Slack notification
-                slackSend channel: "${SLACK_CHANNEL}",
-                          username: "${SLACK_USERNAME}",
-                          message: message
-
-                // Email notification
-                emailext body: message,
-                         subject: "Build ${env.JOB_NAME} - ${env.BUILD_NUMBER} failed",
-                         to: "${EMAIL_RECIPIENTS}"
+        stage('Publish Report') {
+            when {
+                expression { currentBuild.result == 'FAILURE' }
+            }
+            steps {
+                publishHTML(target: [
+                    allowMissing: false,
+                    alwaysLinkToLastBuild: true,
+                    keepAll: true,
+                    reportDir: '.',
+                    reportFiles: 'report.html',
+                    reportName: 'Test Report',
+                    reportTitles: 'Test Report'
+                ])
             }
         }
-    }
-}
 
+        stage('Notify the Developers') {
+            when {
+                expression { currentBuild.result == 'FAILURE' }
+            }
+            steps {
+                script {
+                    def buildStatus = currentBuild.currentResult ?: 'SUCCESS'
+                    def message = "The build status is ${buildStatus}, on project ${env.JOB_NAME}. Find the test report here: ${env.BUILD_URL}Test_20Report/"
+
+                    // Slack notification
+                    slackSend channel: "${SLACK_CHANNEL}",
+                              username: "${SLACK_USERNAME}",
+                              message: message
+
+                    // // Email notification
+                    // emailext body: message,
+                    //          subject: "Build ${env.JOB_NAME} - ${env.BUILD_NUMBER} failed",
+                    //          to: "${EMAIL_RECIPIENTS}"
+                }
+            }
+        }
 
 
         // stage('Extract Ubuntu IP') {
