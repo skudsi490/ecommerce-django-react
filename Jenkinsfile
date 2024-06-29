@@ -103,12 +103,15 @@ stage('Run Tests in Docker') {
             python3 -m venv venv
             source venv/bin/activate
 
-            echo "Installing docker-compose in virtual environment..."
-            pip install docker-compose
+            echo "Upgrading pip..."
+            pip install --upgrade pip
+
+            echo "Installing compatible versions of docker and docker-compose..."
+            pip install docker==4.2.0 docker-compose==1.29.2
 
             echo "Ensuring libcrypt.so.1 is available..."
-            if ! [ -e /usr/lib/libcrypt.so.1 ]; then
-              sudo ln -s /lib/x86_64-linux-gnu/libcrypt.so.1.1.0 /usr/lib/libcrypt.so.1 || true
+            if ! [ -e /usr/lib/x86_64-linux-gnu/libcrypt.so.1 ]; then
+              sudo ln -s /lib/x86_64-linux-gnu/libcrypt.so.1.1.0 /usr/lib/x86_64-linux-gnu/libcrypt.so.1 || true
             fi
 
             echo "Removing existing containers if they exist..."
@@ -138,7 +141,7 @@ stage('Run Tests in Docker') {
             ./venv/bin/docker-compose -f docker-compose.yml down
 
             echo "Cleaning up symbolic links..."
-            sudo rm -f /usr/lib/libcrypt.so.1
+            sudo rm -f /usr/lib/x86_64-linux-gnu/libcrypt.so.1
 
             echo "Deactivating virtual environment..."
             deactivate
@@ -146,6 +149,7 @@ stage('Run Tests in Docker') {
         }
     }
 }
+
 
 
 
