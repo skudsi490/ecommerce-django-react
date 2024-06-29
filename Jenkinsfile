@@ -16,7 +16,6 @@ pipeline {
         POSTGRES_PASSWORD = 'ecommercedbpassword'
         POSTGRES_HOST = 'db'
         REACT_APP_BACKEND_URL = 'http://35.159.115.123:8000'
-        DOCKER_IMAGE_WEB = 'skudsi/ecommerce-django-react-web'
         CONTAINER_NAME = 'ecommerce-test-container'
     }
 
