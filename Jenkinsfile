@@ -127,13 +127,15 @@ stage('Run Tests in Docker') {
     steps {
         script {
             withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
+                // Pull the latest Docker image using Jenkins Docker plugin
+                docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
+                    docker.image("${DOCKER_IMAGE_WEB}:latest").pull()
+                }
+
+                // SSH into the remote machine and update docker-compose.yml
                 sh '''
                 ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                     set -e
-
-                    echo "Pulling the latest Docker image..."
-                        docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
-                        docker.image("${DOCKER_IMAGE_WEB}:latest").pull('latest')
 
                     echo "Updating docker-compose.yml to use the latest image..."
                     sed -i 's|image: .*|image: ${DOCKER_IMAGE_WEB}:latest|g' /home/ubuntu/ecommerce-django-react/docker-compose.yml
@@ -169,6 +171,7 @@ EOF
         }
     }
 }
+
 
 
 
