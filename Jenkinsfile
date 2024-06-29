@@ -72,28 +72,27 @@ stage('Build Locally') {
         sh '''
         echo "Installing dependencies using yum..."
         sudo yum update -y
-        sudo yum install -y python3 python3-pip docker
+        sudo yum install -y python3 python3-pip
 
-        echo "Stopping and removing any existing application containers..."
-        docker stop web || true
-        docker rm web || true
+        echo "Setting up virtual environment and installing dependencies..."
+        python3 -m venv .venv
+        . .venv/bin/activate
+        pip install --upgrade pip
+        pip install -r requirements.txt
 
-        echo "Building Docker image for the application..."
-        docker build --build-arg REACT_APP_BACKEND_URL=http://localhost:8000 -t skudsi/ecommerce-django-react-web:latest .
+        echo "Running database migrations..."
+        .venv/bin/python manage.py makemigrations
+        .venv/bin/python manage.py migrate
 
-        echo "Running the application container..."
-        docker run --name web -d -p 8000:8000 skudsi/ecommerce-django-react-web:latest
+        echo "Collecting static files..."
+        .venv/bin/python manage.py collectstatic --noinput
 
-        echo "Running database migrations and collecting static files..."
-        docker exec web sh -c "
-            python manage.py makemigrations &&
-            python manage.py migrate &&
-            python manage.py loaddata /tmp/data_dump.json &&
-            python manage.py collectstatic --noinput
-        "
+        echo "Starting Django development server..."
+        nohup .venv/bin/python manage.py runserver 0.0.0.0:8000 &
         '''
     }
 }
+
 
 
 
