@@ -142,9 +142,6 @@ stage('Run Tests in Docker') {
                         echo "Listing contents of /home/ubuntu/ecommerce-django-react to verify report.html is copied..."
                         ls -l /home/ubuntu/ecommerce-django-react
 
-                        echo "Stopping and removing Docker container..."
-                        docker stop ${CONTAINER_NAME}
-                        docker rm ${CONTAINER_NAME}
                     EOF
                     '''
 
