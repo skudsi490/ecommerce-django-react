@@ -99,15 +99,14 @@ stage('Run Tests in Docker') {
     steps {
         script {
             sh '''
-            echo "Setting up a virtual environment..."
-            python3 -m venv venv
-            source venv/bin/activate
-
-            echo "Upgrading pip..."
-            pip install --upgrade pip
-
-            echo "Installing compatible versions of docker and docker-compose..."
-            pip install docker-compose
+            echo "Checking if docker-compose is installed..."
+            if ! [ -x "$(command -v docker-compose)" ]; then
+              echo "docker-compose not found, installing..."
+              sudo yum update -y
+              sudo yum install -y libffi-devel openssl-devel
+              sudo yum install -y python3 python3-pip
+              sudo pip3 install docker-compose==1.29.2
+            fi
 
             echo "Ensuring libcrypt.so.1 is available..."
             if ! [ -e /usr/lib64/libcrypt.so.1 ]; then
@@ -119,16 +118,16 @@ stage('Run Tests in Docker') {
             fi
 
             echo "Removing existing containers if they exist..."
-            ./venv/bin/docker-compose -f docker-compose.yml down --remove-orphans || true
+            docker-compose -f docker-compose.yml down --remove-orphans || true
 
             echo "Starting services with Docker Compose..."
-            ./venv/bin/docker-compose -f docker-compose.yml up -d
+            docker-compose -f docker-compose.yml up -d
 
             echo "Waiting for services to be ready..."
             sleep 20  # Give services some time to start
 
             echo "Running tests in web application container..."
-            ./venv/bin/docker-compose -f docker-compose.yml exec -T web sh -c "
+            docker-compose -f docker-compose.yml exec -T web sh -c "
                 if ! pip show pytest > /dev/null 2>&1; then
                     pip install pytest pytest-html
                 fi &&
@@ -136,23 +135,21 @@ stage('Run Tests in Docker') {
             "
 
             echo "Copying test report from web container to Jenkins workspace..."
-            docker cp $(./venv/bin/docker-compose -f docker-compose.yml ps -q web):/app/report.html ./report.html
+            docker cp $(docker-compose -f docker-compose.yml ps -q web):/app/report.html ./report.html
 
             echo "Listing copied files..."
             ls -l report.html
 
             echo "Stopping and removing Docker Compose services..."
-            ./venv/bin/docker-compose -f docker-compose.yml down
+            docker-compose -f docker-compose.yml down
 
             echo "Cleaning up symbolic links..."
             sudo rm -f /usr/lib64/libcrypt.so.1
-
-            echo "Deactivating virtual environment..."
-            deactivate
             '''
         }
     }
 }
+
 
 
         stage('Publish Test Report') {
