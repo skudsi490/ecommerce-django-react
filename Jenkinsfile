@@ -72,13 +72,19 @@ stage('Build Locally') {
         sh '''
         echo "Installing dependencies using yum..."
         sudo yum update -y
-        sudo yum install -y python3 python3-pip
+        sudo yum install -y python3 python3-pip nodejs npm
 
         echo "Setting up virtual environment and installing dependencies..."
         python3 -m venv .venv
         . .venv/bin/activate
         pip install --upgrade pip
         pip install -r requirements.txt
+
+        echo "Building frontend..."
+        cd frontend
+        npm install
+        npm run build
+        cd ..
 
         echo "Running database migrations..."
         .venv/bin/python manage.py makemigrations
@@ -92,6 +98,7 @@ stage('Build Locally') {
         '''
     }
 }
+
 
 
 
