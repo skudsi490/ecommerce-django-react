@@ -18,7 +18,7 @@ pipeline {
         REACT_APP_BACKEND_URL = 'http://18.194.20.42:8000'
         SLACK_CHANNEL = '#jenkins-builds'
         SLACK_USERNAME = 'Jenkins'
-        EMAIL_RECIPIENTS = 'skudsi40@gmail.com'
+        EMAIL_RECIPIENTS = 'skudsi499@gmail.com'
 
     }
 
@@ -147,10 +147,10 @@ pipeline {
                               username: "${SLACK_USERNAME}",
                               message: message
 
-                    // // Email notification
-                    // emailext body: message,
-                    //          subject: "Build ${env.JOB_NAME} - ${env.BUILD_NUMBER} failed",
-                    //          to: "${EMAIL_RECIPIENTS}"
+                    // Email notification
+                    emailext body: message,
+                             subject: "Build ${env.JOB_NAME} - ${env.BUILD_NUMBER} failed",
+                             to: "${EMAIL_RECIPIENTS}"
                 }
             }
         }
