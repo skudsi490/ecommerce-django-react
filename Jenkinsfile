@@ -99,18 +99,22 @@ stage('Run Tests in Docker') {
     steps {
         script {
             sh '''
+            echo "Setting permissions for the project directory..."
+            sudo chmod -R 777 /home/ubuntu/ecommerce-django-react
+
             echo "Removing existing container if it exists..."
             docker rm -f ${CONTAINER_NAME} || true
 
-            echo "Running tests in Docker container..."
-            docker run --name ${CONTAINER_NAME} -d --env POSTGRES_DB=ecommerce --env POSTGRES_USER=ecommerceuser --env POSTGRES_PASSWORD=ecommercedbpassword -p 5432:5432 postgres:13
+            echo "Running PostgreSQL container..."
+            docker run --name ${CONTAINER_NAME}-db -d --env POSTGRES_DB=ecommerce --env POSTGRES_USER=ecommerceuser --env POSTGRES_PASSWORD=ecommercedbpassword -p 5432:5432 postgres:13
 
             echo "Waiting for PostgreSQL to be ready..."
             sleep 20  # Give PostgreSQL some time to start
 
-            echo "Running tests in Docker container..."
-            docker run --name ${CONTAINER_NAME}-web --network host -d skudsi/ecommerce-django-react-web:latest
+            echo "Running web application container..."
+            docker run --name ${CONTAINER_NAME}-web --network host -e POSTGRES_DB=ecommerce -e POSTGRES_USER=ecommerceuser -e POSTGRES_PASSWORD=ecommercedbpassword -e DJANGO_SETTINGS_MODULE=backend.settings -d skudsi/ecommerce-django-react-web:latest
 
+            echo "Running tests in web application container..."
             docker exec ${CONTAINER_NAME}-web sh -c "
                 if ! pip show pytest > /dev/null 2>&1; then
                     pip install pytest pytest-html
@@ -118,19 +122,20 @@ stage('Run Tests in Docker') {
                 pytest tests/api/ --html-report=/app/report.html --self-contained-html | tee /app/test_output.log
             "
 
-            echo "Copying test report from Docker container to Jenkins workspace..."
+            echo "Copying test report from web container to Jenkins workspace..."
             docker cp ${CONTAINER_NAME}-web:/app/report.html ./report.html
 
             echo "Listing copied files..."
             ls -l report.html
 
             echo "Stopping and removing Docker containers..."
-            docker stop ${CONTAINER_NAME} ${CONTAINER_NAME}-web
-            docker rm ${CONTAINER_NAME} ${CONTAINER_NAME}-web
+            docker stop ${CONTAINER_NAME}-db ${CONTAINER_NAME}-web
+            docker rm ${CONTAINER_NAME}-db ${CONTAINER_NAME}-web
             '''
         }
     }
 }
+
 
 
         stage('Publish Test Report') {
