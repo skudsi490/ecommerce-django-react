@@ -99,15 +99,14 @@ stage('Build Locally') {
     }
 }
 
-
-
-
-
 stage('Test Locally') {
     steps {
         sh '''
-        echo "Running tests in the application container..."
-        docker exec web pytest tests/api/ --html=report.html --self-contained-html | tee test_output.log
+        echo "Activating virtual environment..."
+        . .venv/bin/activate
+
+        echo "Running tests..."
+        pytest tests/api/ --html-report=report.html --self-contained-html | tee test_output.log
         '''
     }
     post {
@@ -125,6 +124,7 @@ stage('Test Locally') {
         }
     }
 }
+
 
 
 
