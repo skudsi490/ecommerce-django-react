@@ -108,13 +108,15 @@ stage('Run Tests in Docker') {
             fi
 
             echo "Ensuring libcrypt.so.1 is available..."
-            if ! [ -e /lib64/libcrypt.so.1 ]; then
-              if [ -e /lib/x86_64-linux-gnu/libcrypt.so.1.1.0 ]; then
-                sudo ln -s /lib/x86_64-linux-gnu/libcrypt.so.1.1.0 /lib64/libcrypt.so.1 || true
+            if ! [ -e /usr/lib64/libcrypt.so.1 ]; then
+              if [ -e /lib64/libcrypt.so.1.1.0 ]; then
+                sudo ln -s /lib64/libcrypt.so.1.1.0 /usr/lib64/libcrypt.so.1 || true
+              elif [ -e /lib/x86_64-linux-gnu/libcrypt.so.1.1.0 ]; then
+                sudo mkdir -p /usr/lib64 && sudo ln -s /lib/x86_64-linux-gnu/libcrypt.so.1.1.0 /usr/lib64/libcrypt.so.1 || true
               elif [ -e /usr/lib/x86_64-linux-gnu/libcrypt.so.1.1.0 ]; then
-                sudo ln -s /usr/lib/x86_64-linux-gnu/libcrypt.so.1.1.0 /lib64/libcrypt.so.1 || true
+                sudo ln -s /usr/lib/x86_64-linux-gnu/libcrypt.so.1.1.0 /usr/lib64/libcrypt.so.1 || true
               elif [ -e /lib/libcrypt.so.1.1.0 ]; then
-                sudo ln -s /lib/libcrypt.so.1.1.0 /lib64/libcrypt.so.1 || true
+                sudo ln -s /lib/libcrypt.so.1.1.0 /usr/lib64/libcrypt.so.1 || true
               fi
             fi
 
@@ -145,7 +147,7 @@ stage('Run Tests in Docker') {
             docker-compose -f docker-compose.yml down
 
             echo "Cleaning up symbolic links..."
-            sudo rm -f /lib64/libcrypt.so.1
+            sudo rm -f /usr/lib64/libcrypt.so.1
             '''
         }
     }
