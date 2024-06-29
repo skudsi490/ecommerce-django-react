@@ -153,18 +153,18 @@ pipeline {
                 }
             }
             
-    // post {
-    //     always {
-    //         echo 'Cleaning up temporary files...'
-    //         sh 'rm -f terraform.tfstate report.html'
-    //     }
-    //     success {
-    //         echo 'Test run completed successfully.'
-    //     }
-    //     failure {
-    //         echo 'Test run failed.'
-    //     }
-    // }
+    post {
+        always {
+            echo 'Cleaning up temporary files...'
+            sh 'rm -f terraform.tfstate report.html'
+        }
+        success {
+            echo 'Test run completed successfully.'
+        }
+        failure {
+            echo 'Test run failed.'
+        }
+    }
 }
         stage('Publish Test Report') {
             steps {
