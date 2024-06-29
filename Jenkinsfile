@@ -16,6 +16,10 @@ pipeline {
         POSTGRES_PASSWORD = 'ecommercedbpassword'
         POSTGRES_HOST = 'db'
         REACT_APP_BACKEND_URL = 'http://18.194.20.42:8000'
+        SLACK_CHANNEL = '#jenkins-builds'
+        SLACK_USERNAME = 'Jenkins'
+        EMAIL_RECIPIENTS = 'skudsi40@gmail.com'
+
     }
 
     stages {
@@ -67,37 +71,37 @@ pipeline {
             }
         }
 
-stage('Build Locally') {
-    steps {
-        sh '''
-        echo "Installing dependencies using yum..."
-        sudo yum update -y
-        sudo yum install -y python3 python3-pip nodejs npm
+        stage('Build Locally') {
+            steps {
+                sh '''
+                echo "Installing dependencies using yum..."
+                sudo yum update -y
+                sudo yum install -y python3 python3-pip nodejs npm
 
-        echo "Setting up virtual environment and installing dependencies..."
-        python3 -m venv .venv
-        . .venv/bin/activate
-        pip install --upgrade pip
-        pip install -r requirements.txt
+                echo "Setting up virtual environment and installing dependencies..."
+                python3 -m venv .venv
+                . .venv/bin/activate
+                pip install --upgrade pip
+                pip install -r requirements.txt
 
-        echo "Building frontend..."
-        cd frontend
-        npm install
-        npm run build
-        cd ..
+                echo "Building frontend..."
+                cd frontend
+                npm install
+                npm run build
+                cd ..
 
-        echo "Running database migrations..."
-        .venv/bin/python manage.py makemigrations
-        .venv/bin/python manage.py migrate
+                echo "Running database migrations..."
+                .venv/bin/python manage.py makemigrations
+                .venv/bin/python manage.py migrate
 
-        echo "Collecting static files..."
-        .venv/bin/python manage.py collectstatic --noinput
+                echo "Collecting static files..."
+                .venv/bin/python manage.py collectstatic --noinput
 
-        echo "Starting Django development server..."
-        nohup .venv/bin/python manage.py runserver 0.0.0.0:8000 &
-        '''
-    }
-}
+                echo "Starting Django development server..."
+                nohup .venv/bin/python manage.py runserver 0.0.0.0:8000 &
+                '''
+            }
+        }
 
         stage('Test Locally') {
             steps {
@@ -116,9 +120,6 @@ stage('Build Locally') {
         }
 
         stage('Publish Report') {
-            when {
-                expression { currentBuild.result == 'FAILURE' }
-            }
             steps {
                 publishHTML(target: [
                     allowMissing: false,
@@ -139,13 +140,37 @@ stage('Build Locally') {
             steps {
                 script {
                     def buildStatus = currentBuild.currentResult ?: 'FAILURE'
-                    def message = "The build status is ${currentBuild.currentResult}, on project ${env.JOB_NAME} find test report in this url: ${BUILD_URL}/Test_20Report/"
+                    def message = "The build status is ${buildStatus}, on project ${env.JOB_NAME}. Find the test report here: ${env.BUILD_URL}/Test_20Report/"
+
+                    // Slack notification
+                    slackSend channel: "${SLACK_CHANNEL}",
+                              username: "${SLACK_USERNAME}",
+                              message: message
 
                     // // Email notification
                     // emailext body: message,
                     //          subject: "Build ${env.JOB_NAME} - ${env.BUILD_NUMBER} failed",
                     //          to: "${EMAIL_RECIPIENTS}"
                 }
+            }
+        }
+    }
+
+    post {
+        failure {
+            script {
+                def buildStatus = currentBuild.currentResult ?: 'FAILURE'
+                def message = "The build status is ${buildStatus}, on project ${env.JOB_NAME}. Find the test report here: ${env.BUILD_URL}Test_20Report/"
+
+                // Slack notification
+                slackSend channel: "${SLACK_CHANNEL}",
+                          username: "${SLACK_USERNAME}",
+                          message: message
+
+                // Email notification
+                // emailext body: message,
+                //          subject: "Build ${env.JOB_NAME} - ${env.BUILD_NUMBER} failed",
+                //          to: "${EMAIL_RECIPIENTS}"
             }
         }
 
