@@ -99,8 +99,8 @@ stage('Run Tests in Docker') {
     steps {
         script {
             withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
-                            string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
-                            sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
+                             string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
+                             sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
                 sh '''
                 export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
                 export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
@@ -118,31 +118,33 @@ stage('Run Tests in Docker') {
                     ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
                         set -e
                         
-                        echo "Removing existing containers if they exist..."
-                        docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml down --remove-orphans || true
+                        CONTAINER_NAME=ecommerce-test-container
 
-                        echo "Starting services with Docker Compose..."
-                        docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml up -d
+                        echo "Removing existing container if it exists..."
+                        docker rm -f ${CONTAINER_NAME} || true
 
-                        echo "Waiting for services to be ready..."
-                        sleep 20  # Give services some time to start
+                        echo "Running tests in Docker container..."
+                        docker run --name ${CONTAINER_NAME} -d skudsi/ecommerce-django-react-web:latest
 
-                        echo "Running tests in web application container..."
-                        docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web sh -c "
+                        docker exec ${CONTAINER_NAME} sh -c "
+                            if ! pip show pytest > /dev/null 2>&1; then
+                                pip install pytest pytest-html
+                            fi &&
                             pytest tests/api/ --html-report=/app/report.html --self-contained-html | tee /app/test_output.log
                         "
 
                         echo "Listing contents of /app to verify report.html is created..."
-                        docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web ls -l /app
+                        docker exec ${CONTAINER_NAME} ls -l /app
 
-                        echo "Copying test report from web container to local workspace..."
-                        docker cp $(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web):/app/report.html /home/ubuntu/ecommerce-django-react/report.html
+                        echo "Copying test report from Docker container to local workspace..."
+                        docker cp ${CONTAINER_NAME}:/app/report.html /home/ubuntu/ecommerce-django-react/report.html
 
                         echo "Listing contents of /home/ubuntu/ecommerce-django-react to verify report.html is copied..."
                         ls -l /home/ubuntu/ecommerce-django-react
 
-                        echo "Stopping and removing Docker Compose services..."
-                        docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml down
+                        echo "Stopping and removing Docker container..."
+                        docker stop ${CONTAINER_NAME}
+                        docker rm ${CONTAINER_NAME}
                     EOF
                     '''
 
@@ -162,7 +164,6 @@ stage('Run Tests in Docker') {
         }
     }
 }
-
 
 
         stage('Publish Test Report') {
