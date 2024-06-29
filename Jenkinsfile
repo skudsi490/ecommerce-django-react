@@ -102,17 +102,14 @@ stage('Build Locally') {
         stage('Test Locally') {
             steps {
                 script {
-                    try {
+                    catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
                         sh '''
                         echo "Activating virtual environment..."
                         . .venv/bin/activate
 
                         echo "Running tests..."
-                        pytest --html-report=./report.html
+                        pytest tests/api/ --html-report=report.html --self-contained-html | tee test_output.log
                         '''
-                    } catch (Exception e) {
-                        currentBuild.result = 'FAILURE'
-                        error("Test stage failed: ${e.message}")
                     }
                 }
             }
@@ -141,7 +138,7 @@ stage('Build Locally') {
             }
             steps {
                 script {
-                    def buildStatus = currentBuild.currentResult ?: 'SUCCESS'
+                    def buildStatus = currentBuild.currentResult ?: 'FAILURE'
                     def message = "The build status is ${buildStatus}, on project ${env.JOB_NAME}. Find the test report here: ${env.BUILD_URL}Test_20Report/"
 
                     // Slack notification
