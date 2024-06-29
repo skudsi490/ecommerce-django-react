@@ -123,7 +123,7 @@ pipeline {
                                     if ! pip show pytest > /dev/null 2>&1; then
                                         pip install pytest pytest-html
                                     fi &&
-                                    pytest tests/api/ --html=/app/report.html --self-contained-html | tee /app/test_output.log
+                                    pytest tests/api/ --html-report=/app/report.html --self-contained-html | tee /app/test_output.log
                                 "
 
                                 echo "Copying test report from Docker container to local workspace..."
