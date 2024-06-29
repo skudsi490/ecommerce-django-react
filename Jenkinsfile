@@ -67,34 +67,43 @@ pipeline {
             }
         }
 
-        stage('Build Locally') {
-            steps {
-                sh '''
-                echo "Installing dependencies using yum..."
-                sudo yum update -y
-                sudo yum install -y python3 python3-pip docker
+stage('Build Locally') {
+    steps {
+        sh '''
+        echo "Installing dependencies using yum..."
+        sudo yum update -y
+        sudo yum install -y python3 python3-pip docker
 
-                echo "Starting PostgreSQL database using Docker..."
-                docker run --name postgres-db -e POSTGRES_DB=ecommerce -e POSTGRES_USER=ecommerceuser -e POSTGRES_PASSWORD=ecommercedbpassword -p 5432:5432 -d postgres:latest
-                sleep 10  # Wait for PostgreSQL to start
+        echo "Stopping and removing any existing PostgreSQL containers..."
+        docker stop postgres-db || true
+        docker rm postgres-db || true
 
-                echo "Building Docker image for the application..."
-                docker build --build-arg REACT_APP_BACKEND_URL=http://localhost:8000 -t skudsi/ecommerce-django-react-web:latest .
+        echo "Stopping and removing any existing application containers..."
+        docker stop web || true
+        docker rm web || true
 
-                echo "Running the application container..."
-                docker run --name web -d -p 8000:8000 --link postgres-db:db -e POSTGRES_HOST=postgres-db skudsi/ecommerce-django-react-web:latest
+        echo "Starting PostgreSQL database using Docker..."
+        docker run --name postgres-db -e POSTGRES_DB=ecommerce -e POSTGRES_USER=ecommerceuser -e POSTGRES_PASSWORD=ecommercedbpassword -p 5432:5432 -d postgres:latest
+        sleep 10  # Wait for PostgreSQL to start
 
-                echo "Running database migrations and collecting static files..."
-                docker exec web sh -c "
-                    export POSTGRES_HOST=postgres-db &&
-                    python manage.py makemigrations &&
-                    python manage.py migrate &&
-                    python manage.py loaddata /tmp/data_dump.json &&
-                    python manage.py collectstatic --noinput
-                "
-                '''
-            }
-        }
+        echo "Building Docker image for the application..."
+        docker build --build-arg REACT_APP_BACKEND_URL=http://localhost:8000 -t skudsi/ecommerce-django-react-web:latest .
+
+        echo "Running the application container..."
+        docker run --name web -d -p 8000:8000 --link postgres-db:db -e POSTGRES_HOST=postgres-db skudsi/ecommerce-django-react-web:latest
+
+        echo "Running database migrations and collecting static files..."
+        docker exec web sh -c "
+            export POSTGRES_HOST=postgres-db &&
+            python manage.py makemigrations &&
+            python manage.py migrate &&
+            python manage.py loaddata /tmp/data_dump.json &&
+            python manage.py collectstatic --noinput
+        "
+        '''
+    }
+}
+
 
 
         stage('Test Locally') {
