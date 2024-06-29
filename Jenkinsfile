@@ -95,53 +95,6 @@ pipeline {
         //     }
         // }
 
-                stage('Run Tests in Docker') {
-            steps {
-                script {
-                    sh '''
-                    echo "Removing existing container if it exists..."
-                    docker rm -f ${CONTAINER_NAME} || true
-
-                    echo "Running tests in Docker container..."
-                    docker run --name ${CONTAINER_NAME} -d skudsi/ecommerce-django-react-web:latest
-
-                    docker exec ${CONTAINER_NAME} sh -c "
-                        if ! pip show pytest > /dev/null 2>&1; then
-                            pip install pytest pytest-html
-                        fi &&
-                        pytest tests/api/ --html-report=/app/report.html --self-contained-html | tee /app/test_output.log
-                    "
-
-                    echo "Copying test report from Docker container to Jenkins workspace..."
-                    docker cp ${CONTAINER_NAME}:/app/report.html ./report.html
-
-                    echo "Listing copied files..."
-                    ls -l report.html
-
-                    echo "Stopping and removing Docker container..."
-                    docker stop ${CONTAINER_NAME}
-                    docker rm ${CONTAINER_NAME}
-                    '''
-                }
-            }
-        }
-
-        stage('Publish Test Report') {
-            steps {
-                script {
-                    publishHTML(target: [
-                        allowMissing: false,
-                        alwaysLinkToLastBuild: true,
-                        keepAll: true,
-                        reportDir: '.',
-                        reportFiles: 'report.html',
-                        reportName: 'Test Report',
-                        reportTitles: 'Test Report'
-                    ])
-                }
-            }
-        }
-
         stage('Deploy to Ubuntu') {
             steps {
                 script {
@@ -215,6 +168,53 @@ EOF
                             error("Missing ubuntu_ip in terraform state.")
                         }
                     }
+                }
+            }
+        }
+
+                stage('Run Tests in Docker') {
+            steps {
+                script {
+                    sh '''
+                    echo "Removing existing container if it exists..."
+                    docker rm -f ${CONTAINER_NAME} || true
+
+                    echo "Running tests in Docker container..."
+                    docker run --name ${CONTAINER_NAME} -d skudsi/ecommerce-django-react-web:latest
+
+                    docker exec ${CONTAINER_NAME} sh -c "
+                        if ! pip show pytest > /dev/null 2>&1; then
+                            pip install pytest pytest-html
+                        fi &&
+                        pytest tests/api/ --html-report=/app/report.html --self-contained-html | tee /app/test_output.log
+                    "
+
+                    echo "Copying test report from Docker container to Jenkins workspace..."
+                    docker cp ${CONTAINER_NAME}:/app/report.html ./report.html
+
+                    echo "Listing copied files..."
+                    ls -l report.html
+
+                    echo "Stopping and removing Docker container..."
+                    docker stop ${CONTAINER_NAME}
+                    docker rm ${CONTAINER_NAME}
+                    '''
+                }
+            }
+        }
+
+        stage('Publish Test Report') {
+            steps {
+                script {
+                    publishHTML(target: [
+                        allowMissing: false,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: '.',
+                        reportFiles: 'report.html',
+                        reportName: 'Test Report',
+                        reportTitles: 'Test Report'
+                    ])
                 }
             }
         }
