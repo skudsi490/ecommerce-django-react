@@ -146,15 +146,10 @@ pipeline {
                             message: message
 
                     // Email notification
-                    emailext(
-                        subject: "Build ${env.JOB_NAME} - ${env.BUILD_NUMBER} Failed",
-                        body: """<p>The build status is ${buildStatus} for project ${env.JOB_NAME}.</p>
-                                <p>Find the test report <a href="${env.BUILD_URL}/Test_20Report/">here</a>.</p>""",
-                        to: 'skudsi499@gmail.com',
-                        from: 'skudsi490@gmail.com',
-                        attachLog: true,
-                        compressLog: true
-                    )
+                emailext body: """The build status is ${buildStatus}, on project ${env.JOB_NAME} find test report in this url: ${BUILD_URL}/Test_20Report/""",
+                subject: """You got a faild build/job ${env.JOB_NAME} - ${env.BUILD_NUMBER} from jenkins""",
+                to: 'skudsi499@gmail.com'
+
                 }
             }
         }
