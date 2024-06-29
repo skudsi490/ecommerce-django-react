@@ -95,7 +95,7 @@ pipeline {
         //     }
         // }
 
-stage('Run Tests in Docker') {
+stage('Run Tests and Publish Report in Docker') {
     steps {
         script {
             withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
@@ -129,29 +129,27 @@ stage('Run Tests in Docker') {
                         "
 
                         echo "Listing contents of /app to verify report.html is created..."
-                        docker exec ${CONTAINER_NAME} ls -l /app
+                        docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web ls -l /app
 
                         echo "Copying test report from Docker container to local workspace..."
-                        docker cp ${CONTAINER_NAME}:/app/report.html /home/ubuntu/ecommerce-django-react/report.html
+                        docker cp $(docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml ps -q web):/app/report.html /home/ubuntu/ecommerce-django-react/report.html
 
                         echo "Listing contents of /home/ubuntu/ecommerce-django-react to verify report.html is copied..."
                         ls -l /home/ubuntu/ecommerce-django-react
 EOF
                     '''
-                } else {
-                    error("Failed to retrieve the IP address of the Ubuntu instance from Terraform state.")
-                }
-            }
-        }
-    }
-}
 
+                    echo "Copying test report from remote server to Jenkins workspace..."
+                    sh '''
+                    scp -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/report.html ./report.html
+                    '''
 
+                    echo "Listing copied files..."
+                    sh '''
+                    ls -l report.html
+                    '''
 
-
-        stage('Publish Test Report') {
-            steps {
-                script {
+                    echo "Publishing test report..."
                     publishHTML(target: [
                         allowMissing: false,
                         alwaysLinkToLastBuild: true,
@@ -161,9 +159,14 @@ EOF
                         reportName: 'Test Report',
                         reportTitles: 'Test Report'
                     ])
+                } else {
+                    error("Failed to retrieve the IP address of the Ubuntu instance from Terraform state.")
                 }
             }
         }
+    }
+}
+
 
         stage('Deploy to Ubuntu') {
             steps {
