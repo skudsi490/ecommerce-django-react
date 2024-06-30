@@ -41,6 +41,7 @@ services:
       - ./data_dump.json:/tmp/data_dump.json
       - ./tests:/app/tests
       - ./pytest.ini:/app/pytest.ini
+      - ./frontend:/app/frontend
     depends_on:
       - db
     ports:
