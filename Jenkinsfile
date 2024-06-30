@@ -146,131 +146,131 @@ pipeline {
                             message: message
 
                     // Email notification
-                emailext body: """The build status is ${buildStatus}, on project ${env.JOB_NAME} find test report in this url: ${BUILD_URL}/Test_20Report/""",
-                subject: """You got a faild build/job ${env.JOB_NAME} - ${env.BUILD_NUMBER} from jenkins""",
-                to: 'skudsi499@gmail.com'
+                    emailext body: """The build status is ${buildStatus}, on project ${env.JOB_NAME} find test report in this url: ${BUILD_URL}/Test_20Report/""",
+                    subject: """You got a faild build/job ${env.JOB_NAME} - ${env.BUILD_NUMBER} from jenkins""",
+                    to: 'skudsi499@gmail.com'
 
                 }
             }
         }
 
 
-//         stage('Extract Ubuntu IP') {
-//             steps {
-//                 script {
-//                     withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
-//                                     string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')]) {
-//                         sh '''
-//                         export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-//                         export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-//                         aws s3 cp s3://${S3_BUCKET}/terraform/state/terraform.tfstate terraform.tfstate
-//                         unset AWS_ACCESS_KEY_ID
-//                         unset AWS_SECRET_ACCESS_KEY
+        stage('Extract Ubuntu IP') {
+            steps {
+                script {
+                    withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                                    string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')]) {
+                        sh '''
+                        export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                        export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                        aws s3 cp s3://${S3_BUCKET}/terraform/state/terraform.tfstate terraform.tfstate
+                        unset AWS_ACCESS_KEY_ID
+                        unset AWS_SECRET_ACCESS_KEY
 
-//                         # Extract the Ubuntu IP address without printing the whole file
-//                         ubuntuIp=$(jq -r '.resources[] | select(.type=="aws_instance" and .name=="my_ubuntu").instances[0].attributes.public_ip' terraform.tfstate)
-//                         echo "UBUNTU_IP=$ubuntuIp" > ip.txt
-//                         '''
-//                     }
-//                     script {
-//                         def ip = readFile('ip.txt').trim()
-//                         env.MY_UBUNTU_IP = ip.split('=')[1]
-//                     }
-//                 }
-//             }
-//         }
-
-
-//         stage('Test Docker Login') {
-//             steps {
-//                 script {
-//                     retry(3) {
-//                         withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-//                             sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
-//                         }
-//                     }
-//                 }
-//             }
-//         }
-
-//         stage('Build and Push Docker Image') {
-//             steps {
-//                 script {
-//                     docker.build("${DOCKER_IMAGE_WEB}:latest", "--build-arg REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL} .")
-//                 }
-//             }
-//         }
-
-//         stage('Push Docker Image') {
-//             steps {
-//                 script {
-//                     docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
-//                         docker.image("${DOCKER_IMAGE_WEB}:latest").push('latest')
-//                     }
-//                 }
-//             }
-//         }
+                        # Extract the Ubuntu IP address without printing the whole file
+                        ubuntuIp=$(jq -r '.resources[] | select(.type=="aws_instance" and .name=="my_ubuntu").instances[0].attributes.public_ip' terraform.tfstate)
+                        echo "UBUNTU_IP=$ubuntuIp" > ip.txt
+                        '''
+                    }
+                    script {
+                        def ip = readFile('ip.txt').trim()
+                        env.MY_UBUNTU_IP = ip.split('=')[1]
+                    }
+                }
+            }
+        }
 
 
-//         stage('Deploy to Ubuntu') {
-//             steps {
-//                 script {
-//                     withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
-//                         sh '''
-//                         ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
-//                             set -e
-//                             echo "Checking disk space and directory permissions..."
-//                             df -h
-//                             sudo rm -rf /home/ubuntu/ecommerce-django-react/
-//                             sudo rm -rf /var/lib/postgresql/data
-//                             mkdir -p /home/ubuntu/ecommerce-django-react/
-//                             chmod 755 /home/ubuntu/ecommerce-django-react/
-// EOF
-//                         '''
-//                         echo "Uploading files to remote server..."
-//                         sh '''
-//                         scp -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.yml ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
-//                         scp -o StrictHostKeyChecking=no -i ${SSH_KEY} -r Dockerfile entrypoint.sh backend base frontend manage.py requirements.txt static media data_dump.json pytest.ini config/nginx.conf tests ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
-//                         '''
-//                         sh '''
-//                         ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
-//                         set -e
-//                         if ! [ -x "$(command -v docker)" ]; then
-//                         echo "Docker not found, installing..."
-//                         sudo apt update
-//                         sudo apt install docker.io -y
-//                         sudo systemctl start docker
-//                         sudo systemctl enable docker
-//                         sudo usermod -aG docker ubuntu
-//                         fi
-//                         if ! [ -x "$(command -v docker-compose)" ]; then
-//                         echo "Docker Compose not found, installing..."
-//                         sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-\$(uname -s)-\$(uname -m)" -o /usr/local/bin/docker-compose
-//                         sudo chmod +x /usr/local/bin/docker-compose
-//                         fi
-//                         docker network create app-network || true
-//                         docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml down --remove-orphans
-//                         docker network prune -f
-//                         docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml up -d
-// EOF
-//                         '''
-//                         echo "Running Django migrations and loading data..."
-//                         sh '''
-//                         ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
-//                         set -e
-//                         docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web sh -c "
-//                             mkdir -p /app/staticfiles && chmod -R 755 /app/staticfiles &&
-//                             python manage.py makemigrations &&
-//                             python manage.py migrate &&
-//                             python manage.py loaddata /tmp/data_dump.json &&
-//                             python manage.py collectstatic --noinput
-//                         "
-// EOF
-//                         '''
-//                     }
-//                 }
-//             }
-//         }
+        stage('Test Docker Login') {
+            steps {
+                script {
+                    retry(3) {
+                        withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                            sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Build and Push Docker Image') {
+            steps {
+                script {
+                    docker.build("${DOCKER_IMAGE_WEB}:latest", "--build-arg REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL} .")
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
+                        docker.image("${DOCKER_IMAGE_WEB}:latest").push('latest')
+                    }
+                }
+            }
+        }
+
+
+        stage('Deploy to Ubuntu') {
+            steps {
+                script {
+                    withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
+                        sh '''
+                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                            set -e
+                            echo "Checking disk space and directory permissions..."
+                            df -h
+                            sudo rm -rf /home/ubuntu/ecommerce-django-react/
+                            sudo rm -rf /var/lib/postgresql/data
+                            mkdir -p /home/ubuntu/ecommerce-django-react/
+                            chmod 755 /home/ubuntu/ecommerce-django-react/
+EOF
+                        '''
+                        echo "Uploading files to remote server..."
+                        sh '''
+                        scp -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.yml ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
+                        scp -o StrictHostKeyChecking=no -i ${SSH_KEY} -r Dockerfile entrypoint.sh backend base frontend manage.py requirements.txt static media data_dump.json pytest.ini config/nginx.conf tests ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
+                        '''
+                        sh '''
+                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                        set -e
+                        if ! [ -x "$(command -v docker)" ]; then
+                        echo "Docker not found, installing..."
+                        sudo apt update
+                        sudo apt install docker.io -y
+                        sudo systemctl start docker
+                        sudo systemctl enable docker
+                        sudo usermod -aG docker ubuntu
+                        fi
+                        if ! [ -x "$(command -v docker-compose)" ]; then
+                        echo "Docker Compose not found, installing..."
+                        sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-\$(uname -s)-\$(uname -m)" -o /usr/local/bin/docker-compose
+                        sudo chmod +x /usr/local/bin/docker-compose
+                        fi
+                        docker network create app-network || true
+                        docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml down --remove-orphans
+                        docker network prune -f
+                        docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml up -d
+EOF
+                        '''
+                        echo "Running Django migrations and loading data..."
+                        sh '''
+                        ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
+                        set -e
+                        docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml exec -T web sh -c "
+                            mkdir -p /app/staticfiles && chmod -R 755 /app/staticfiles &&
+                            python manage.py makemigrations &&
+                            python manage.py migrate &&
+                            python manage.py loaddata /tmp/data_dump.json &&
+                            python manage.py collectstatic --noinput
+                        "
+EOF
+                        '''
+                    }
+                }
+            }
+        }
 
 //         stage('Configure Nginx') {
 //             steps {
