@@ -151,13 +151,7 @@ pipeline {
             }
             steps {
                 script {
-                    // Adding a unique tag to ensure a new image is built
-                    def dockerImageTag = "${DOCKER_IMAGE_WEB}:${env.BUILD_ID}"
-                    docker.build(dockerImageTag, "--build-arg REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL} .")
-                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
-                        docker.image(dockerImageTag).push()
-                        docker.image(dockerImageTag).push('latest')
-                    }
+                    docker.build("${DOCKER_IMAGE_WEB}:latest", "--build-arg REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL} .")
                 }
             }
         }
@@ -211,10 +205,11 @@ EOF
                             sh '''
                             scp -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.yml ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
                             scp -o StrictHostKeyChecking=no -i ${SSH_KEY} -r Dockerfile entrypoint.sh backend base frontend manage.py requirements.txt static media data_dump.json pytest.ini config/nginx.conf tests ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/
+                            scp -o StrictHostKeyChecking=no -i ${SSH_KEY} -r frontend/src ubuntu@${MY_UBUNTU_IP}:/home/ubuntu/ecommerce-django-react/frontend/
                             '''
                             echo "Pulling Docker image from DockerHub..."
                             script {
-                                docker.image("${DOCKER_IMAGE_WEB}:${env.BUILD_ID}").pull()
+                                docker.image("${DOCKER_IMAGE_WEB}:latest").pull()
                             }
                             sh '''
                             ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ubuntu@${MY_UBUNTU_IP} << 'EOF'
