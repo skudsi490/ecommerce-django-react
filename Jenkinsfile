@@ -68,106 +68,106 @@ pipeline {
             }
         }
 
-        stage('Build Locally') {
-            steps {
-                sh '''
-                echo "Installing dependencies using yum..."
-                sudo yum update -y
-                sudo yum install -y python3 python3-pip nodejs npm
+        // stage('Build Locally') {
+        //     steps {
+        //         sh '''
+        //         echo "Installing dependencies using yum..."
+        //         sudo yum update -y
+        //         sudo yum install -y python3 python3-pip nodejs npm
 
-                echo "Setting up virtual environment and installing dependencies..."
-                python3 -m venv .venv
-                . .venv/bin/activate
-                pip install --upgrade pip
-                pip install -r requirements.txt
+        //         echo "Setting up virtual environment and installing dependencies..."
+        //         python3 -m venv .venv
+        //         . .venv/bin/activate
+        //         pip install --upgrade pip
+        //         pip install -r requirements.txt
 
-                echo "Building frontend..."
-                cd frontend
-                npm install
-                npm run build
-                cd ..
+        //         echo "Building frontend..."
+        //         cd frontend
+        //         npm install
+        //         npm run build
+        //         cd ..
 
-                echo "Running database migrations..."
-                .venv/bin/python manage.py makemigrations
-                .venv/bin/python manage.py migrate
+        //         echo "Running database migrations..."
+        //         .venv/bin/python manage.py makemigrations
+        //         .venv/bin/python manage.py migrate
 
-                echo "Collecting static files..."
-                .venv/bin/python manage.py collectstatic --noinput
+        //         echo "Collecting static files..."
+        //         .venv/bin/python manage.py collectstatic --noinput
 
-                echo "Starting Django development server..."
-                nohup .venv/bin/python manage.py runserver 0.0.0.0:8000 &
-                '''
-            }
-        }
+        //         echo "Starting Django development server..."
+        //         nohup .venv/bin/python manage.py runserver 0.0.0.0:8000 &
+        //         '''
+        //     }
+        // }
 
-        stage('Test Locally') {
-            steps {
-                script {
-                    catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-                        sh '''
-                        echo "Activating virtual environment..."
-                        . .venv/bin/activate
+        // stage('Test Locally') {
+        //     steps {
+        //         script {
+        //             catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+        //                 sh '''
+        //                 echo "Activating virtual environment..."
+        //                 . .venv/bin/activate
 
-                        echo "Running tests..."
-                        pytest --html-report=./report.html
-                        '''
-                    }
-                }
-            }
-        }
+        //                 echo "Running tests..."
+        //                 pytest --html-report=./report.html
+        //                 '''
+        //             }
+        //         }
+        //     }
+        // }
 
-        stage('Publish Report') {
-            steps {
-                publishHTML(target: [
-                    allowMissing: false,
-                    alwaysLinkToLastBuild: true,
-                    keepAll: true,
-                    reportDir: '.',
-                    reportFiles: 'report.html',
-                    reportName: 'Test Report',
-                    reportTitles: 'Test Report'
-                ])
-            }
-        }
+        // stage('Publish Report') {
+        //     steps {
+        //         publishHTML(target: [
+        //             allowMissing: false,
+        //             alwaysLinkToLastBuild: true,
+        //             keepAll: true,
+        //             reportDir: '.',
+        //             reportFiles: 'report.html',
+        //             reportName: 'Test Report',
+        //             reportTitles: 'Test Report'
+        //         ])
+        //     }
+        // }
 
-        stage('Test Docker Login') {
-            when {
-                expression { currentBuild.currentResult == 'SUCCESS' }
-            }
-            steps {
-                script {
-                    retry(3) {
-                        withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-                            sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
-                        }
-                    }
-                }
-            }
-        }
+        // stage('Test Docker Login') {
+        //     when {
+        //         expression { currentBuild.currentResult == 'SUCCESS' }
+        //     }
+        //     steps {
+        //         script {
+        //             retry(3) {
+        //                 withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+        //                     sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
 
-        stage('Build and Push Docker Image') {
-            when {
-                expression { currentBuild.currentResult == 'SUCCESS' }
-            }
-            steps {
-                script {
-                    docker.build("${DOCKER_IMAGE_WEB}:latest", "--build-arg REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL} .")
-                }
-            }
-        }
+        // stage('Build and Push Docker Image') {
+        //     when {
+        //         expression { currentBuild.currentResult == 'SUCCESS' }
+        //     }
+        //     steps {
+        //         script {
+        //             docker.build("${DOCKER_IMAGE_WEB}:latest", "--build-arg REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL} .")
+        //         }
+        //     }
+        // }
 
-        stage('Push Docker Image') {
-            when {
-                expression { currentBuild.currentResult == 'SUCCESS' }
-            }
-            steps {
-                script {
-                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
-                        docker.image("${DOCKER_IMAGE_WEB}:latest").push('latest')
-                    }
-                }
-            }
-        }
+        // stage('Push Docker Image') {
+        //     when {
+        //         expression { currentBuild.currentResult == 'SUCCESS' }
+        //     }
+        //     steps {
+        //         script {
+        //             docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
+        //                 docker.image("${DOCKER_IMAGE_WEB}:latest").push('latest')
+        //             }
+        //         }
+        //     }
+        // }
 
         stage('Deploy to Ubuntu') {
             when {
