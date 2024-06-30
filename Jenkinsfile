@@ -154,7 +154,6 @@ pipeline {
             }
         }
 
-
         stage('Extract Ubuntu IP') {
             when {
                 expression { currentBuild.result == 'SUCCESS' }
