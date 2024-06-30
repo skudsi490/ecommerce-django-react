@@ -199,7 +199,7 @@ pipeline {
                                 sudo rm -rf /var/lib/postgresql/data
                                 mkdir -p /home/ubuntu/ecommerce-django-react/
                                 chmod 755 /home/ubuntu/ecommerce-django-react/
-        EOF
+EOF
                             '''
                             echo "Uploading files to remote server..."
                             sh '''
@@ -228,7 +228,7 @@ pipeline {
                             docker network prune -f
                             docker pull ${DOCKER_IMAGE_WEB}:latest
                             docker-compose -f /home/ubuntu/ecommerce-django-react/docker-compose.yml up -d
-        EOF
+EOF
                             '''
                             echo "Running Django migrations and loading data..."
                             sh '''
@@ -241,7 +241,7 @@ pipeline {
                                 python manage.py loaddata /tmp/data_dump.json &&
                                 python manage.py collectstatic --noinput
                             "
-        EOF
+EOF
                             '''
                         } else {
                             error("Missing ubuntu_ip in terraform state.")
