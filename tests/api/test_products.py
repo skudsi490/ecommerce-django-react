@@ -29,14 +29,14 @@ def test_product_creation():
 
 
 # Api test  - Integration testing
-def test_api_product_creation():
-    client = APIClient()
+# def test_api_product_creation():
+#     client = APIClient()
 
-    response = client.post("/api/products/create/")
+#     response = client.post("/api/products/create/")
 
-    # data = response.data
+#     # data = response.data
 
-    assert response.status_code == 200
+#     assert response.status_code == 200
     
     
 

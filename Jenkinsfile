@@ -68,7 +68,7 @@ pipeline {
             }
         }
 
-        stage('Build Locally') {
+        stage('Build') {
             steps {
                 sh '''
                 echo "Installing dependencies using yum..."
@@ -100,7 +100,7 @@ pipeline {
             }
         }
 
-        stage('Test Locally') {
+        stage('Testing') {
             steps {
                 script {
                     catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
@@ -145,7 +145,7 @@ pipeline {
             }
         }
 
-        stage('Build and Push Docker Image') {
+        stage('Build Docker Image') {
             when {
                 expression { currentBuild.currentResult == 'SUCCESS' }
             }
@@ -169,7 +169,7 @@ pipeline {
             }
         }
 
-        stage('Deploy to Ubuntu') {
+        stage('Deploy to Server') {
             when {
                 expression { currentBuild.currentResult == 'SUCCESS' }
             }
