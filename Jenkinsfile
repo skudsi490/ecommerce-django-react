@@ -249,23 +249,19 @@ EOF
 
     post {
         failure {
-            stage('Notify the Developers') {
-                steps {
-                    script {
-                        def buildStatus = currentBuild.currentResult ?: 'FAILURE'
-                        def message = "The build status is ${buildStatus}, on project ${env.JOB_NAME}. Find the test report here: ${env.BUILD_URL}/Test_20Report/"
+            script {
+                def buildStatus = currentBuild.currentResult ?: 'FAILURE'
+                def message = "The build status is ${buildStatus}, on project ${env.JOB_NAME}. Find the test report here: ${env.BUILD_URL}/Test_20Report/"
 
-                        // Slack notification
-                        slackSend channel: "${SLACK_CHANNEL}",
-                                  username: "${SLACK_USERNAME}",
-                                  message: message
+                // Slack notification
+                slackSend channel: "${SLACK_CHANNEL}",
+                          username: "${SLACK_USERNAME}",
+                          message: message
 
-                        // Email notification
-                        emailext body: """The build status is ${buildStatus}, on project ${env.JOB_NAME} find test report in this url: ${BUILD_URL}/Test_20Report/""",
-                                 subject: """You got a failed build/job ${env.JOB_NAME} - ${env.BUILD_NUMBER} from Jenkins""",
-                                 to: 'skudsi499@gmail.com'
-                    }
-                }
+                // Email notification
+                emailext body: """The build status is ${buildStatus}, on project ${env.JOB_NAME} find test report in this url: ${BUILD_URL}/Test_20Report/""",
+                         subject: """You got a failed build/job ${env.JOB_NAME} - ${env.BUILD_NUMBER} from Jenkins""",
+                         to: 'skudsi499@gmail.com'
             }
         }
     }
