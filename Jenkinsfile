@@ -156,6 +156,9 @@ pipeline {
 
 
         stage('Extract Ubuntu IP') {
+            when {
+                expression { currentBuild.result == 'SUCCESS' }
+            }
             steps {
                 script {
                     withCredentials([string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
@@ -182,6 +185,9 @@ pipeline {
 
 
         stage('Test Docker Login') {
+            when {
+                expression { currentBuild.result == 'SUCCESS' }
+            }        
             steps {
                 script {
                     retry(3) {
@@ -194,6 +200,9 @@ pipeline {
         }
 
         stage('Build and Push Docker Image') {
+            when {
+                expression { currentBuild.result == 'SUCCESS' }
+            }
             steps {
                 script {
                     docker.build("${DOCKER_IMAGE_WEB}:latest", "--build-arg REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL} .")
@@ -202,6 +211,9 @@ pipeline {
         }
 
         stage('Push Docker Image') {
+            when {
+                expression { currentBuild.result == 'SUCCESS' }
+            }
             steps {
                 script {
                     docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
@@ -213,6 +225,9 @@ pipeline {
 
 
         stage('Deploy to Ubuntu') {
+            when {
+                expression { currentBuild.result == 'SUCCESS' }
+            }
             steps {
                 script {
                     withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
@@ -273,6 +288,9 @@ EOF
         }
 
 //         stage('Configure Nginx') {
+//             when {
+//                 expression { currentBuild.result == 'SUCCESS' }
+//             }
 //             steps {
 //                 script {
 //                     withCredentials([sshUserPrivateKey(credentialsId: 'tesi_aws', keyFileVariable: 'SSH_KEY')]) {
