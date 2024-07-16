@@ -1,10 +1,8 @@
 # E-commerce Application Infrastructure Setup with Terraform and CI/CD Pipeline
 
 ![CI/CD Pipeline Diagram](./Screenshot%202024-06-26%20204238.png)
-![AWS Infrastructure Overview](./Screenshot%202024-06-30%20182037.png)
-![Jenkins Pipeline Stages](./Screenshot%202024-07-01%20162544.png)
 
-## Comprehensive Explanation of `main.tf`
+##  Explanation of `main.tf`
 
 ### Overview
 
@@ -54,6 +52,8 @@ The `main.tf` file defines and provisions AWS infrastructure to support the e-co
 2. **Jenkins Agent IP**: Public IP of Jenkins agent instance.
 3. **Ubuntu Instance IP**: Public IP of the Ubuntu instance.
 4. **S3 Bucket Name**: Name of the S3 bucket.
+
+![AWS Infrastructure Overview](./Screenshot%202024-06-30%20182037.png)
 
 ## Docker and Docker Compose
 
@@ -143,6 +143,8 @@ Docker automates application deployment in containers, ensuring consistency acro
 - **S3 Bucket**: Used for Terraform state and Jenkins artifacts.
 - **Ubuntu Instance**: Target for deployment.
 - **AWS Credentials**: Provided for AWS operations.
+
+![Jenkins Pipeline Stages](./Screenshot%202024-07-01%20162544.png)
 
 ## Summary
 
